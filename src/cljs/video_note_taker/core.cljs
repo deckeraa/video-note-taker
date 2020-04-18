@@ -42,7 +42,10 @@
             ^{:key key}
             [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
              [:div (str note)]
-             [:button {} "Play"]
+             [:button {:on-click (fn []
+                                   (when-let [video @video-ref-atm]
+                                     (set! (.-currentTime video) (:time note))))}
+              "Go"]
              [svg/trash {:on-click (fn [] (swap! notes-cursor dissoc key))}
               "gray" "32px"]
              ])
@@ -56,12 +59,12 @@
       [:div
        [:p "Video Note Taker v1.0"]
        [video video-ref-atm]
-       [:button {:on-click (fn [e]
-                             (when-let [video @video-ref-atm]
-                               (if (.-paused video)
-                                 (.play video)
-                                 (.pause video))))}
-        "Play/Pause"]
+       ;; [:button {:on-click (fn [e]
+       ;;                       (when-let [video @video-ref-atm]
+       ;;                         (if (.-paused video)
+       ;;                           (.play video)
+       ;;                           (.pause video))))}
+       ;;  "Play/Pause"]
        [notes notes-cursor video-ref-atm]
        [:p (str @ratom)]
        ])))
