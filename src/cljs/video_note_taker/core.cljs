@@ -86,8 +86,8 @@
        ;;  "Play/Pause"]
        [notes notes-cursor video-ref-atm]
        [:button {:on-click (fn []
-                             (go (let [resp (<! (http/post "http://localhost:3000/put-doc"
-                                                           {:json-params {:a 1}
+                             (go (let [resp (<! (http/post "http://localhost:3000/get-notes"
+                                                           {:json-params {:video-key "big-buck-bunny"}
                                                             :with-credentials false}
                                                            ))]
                                    (println resp))))}

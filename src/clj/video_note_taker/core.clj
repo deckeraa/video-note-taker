@@ -45,9 +45,25 @@
 (defn get-doc [id]
   (couch/get-document db id))
 
+;; notes -> by_video
+;; function(doc) {
+;;   if ('video' in doc) {
+;;       emit(doc.video, doc._id );
+;;   }
+;; }
+
+(defn get-notes [video-key]
+  (println "using key " video-key)
+  (couch/get-view db "notes" "by_video" {:key video-key :include_docs true}))
+
+(defn get-notes-handler [req]
+  (let [body (json/read-str (request/body-string req))]
+    (json-response (get-notes (get body "video-key")))))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["put-doc" put-doc-handler]
+        ["get-notes" get-notes-handler]
         [true  (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
