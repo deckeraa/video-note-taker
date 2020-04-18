@@ -1,8 +1,12 @@
 (ns video-note-taker.core
   (:require
    [reagent.core :as reagent]
-   [video-note-taker.svg :as svg]
-   ))
+   [cljs-http.client :as http]
+   [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
+   [video-note-taker.svg :as svg])
+  (:require-macros
+   [devcards.core :refer [defcard deftest]]
+   [cljs.core.async.macros :refer [go go-loop]]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -64,6 +68,13 @@
        ;;                           (.pause video))))}
        ;;  "Play/Pause"]
        [notes notes-cursor video-ref-atm]
+       [:button {:on-click (fn []
+                             (go (let [resp (<! (http/get "http://localhost:3000/hello"
+                                                           ;; {:json-params ""
+                                                           ;;  :with-credentials false}
+                                                           ))]
+                                   (println resp))))}
+        "Test Ring connection"]
        [:p (str @ratom)]
        ])))
 
