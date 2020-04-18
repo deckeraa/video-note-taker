@@ -15,7 +15,8 @@
    [clojure.edn :as edn]
    [cemerick.url]
    [com.ashafa.clutch :as couch]
-   [clojure.data.json :as json])
+   [clojure.data.json :as json]
+   [clojure.walk :refer [keywordize-keys]])
   (:gen-class))
 
 (def db (assoc (cemerick.url/url "http:localhost:5984/video-note-taker")
@@ -52,6 +53,10 @@
 ;;   }
 ;; }
 
+(defn get-body [req]
+  (keywordize-keys (json/read-str (request/body-string req)))
+  )
+
 (defn get-notes [video-key]
   (println "using key " video-key)
   (couch/get-view db "notes" "by_video" {:key video-key :include_docs true}))
@@ -60,10 +65,16 @@
   (let [body (json/read-str (request/body-string req))]
     (json-response (get-notes (get body "video-key")))))
 
+(defn delete-doc-handler [req]
+  (let [doc (get-body req)]
+    (println "deleting doc: " doc)
+    (json-response (couch/delete-document db doc))))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["put-doc" put-doc-handler]
         ["get-notes" get-notes-handler]
+        ["delete-doc" delete-doc-handler]
         [true  (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app

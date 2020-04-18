@@ -39,6 +39,16 @@
         (handler-fn (:body resp) resp)))
   )
 
+(defn delete-doc [doc handler-fn]
+  (go (let [resp (<! (http/post "http://localhost:3000/delete-doc"
+                                {:json-params doc
+                                 :with-credentials false}
+                                ))]
+        (println resp)
+        (println (:body resp))
+        (handler-fn (:body resp) resp)))
+  )
+
 (defn notes [notes-cursor video-ref-atm]
   (fn []
     [:div
@@ -58,14 +68,19 @@
       "Add note"]
      (map (fn [note]
 ;            (println "looping over note: " key note)
-            ^{:key (:uuid key)}
+            ^{:key (:id note)}
             [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
              [:div (str note)]
              [:button {:on-click (fn []
                                    (when-let [video @video-ref-atm]
                                      (set! (.-currentTime video) (:time note))))}
               "Go"]
-             [svg/trash {:on-click (fn [] (swap! notes-cursor dissoc key))}
+             [svg/trash {:on-click (fn []
+                                     (delete-doc note
+                                                 (fn [resp]
+                                                   (swap! notes-cursor (fn [notes]
+                                                                         (filter #(not (= (:id note) (:id %)))
+                                                                                 notes))))))}
               "gray" "32px"]
              ])
           @notes-cursor)]
