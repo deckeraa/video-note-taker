@@ -3,6 +3,7 @@
    [reagent.core :as reagent]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
+   [cljs-uuid-utils.core :as uuid]
    [video-note-taker.svg :as svg])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
@@ -28,16 +29,32 @@
    "Video not supported by your browser :("]
   )
 
+(defn put-doc [doc handler-fn]
+  (go (let [resp (<! (http/post "http://localhost:3000/put-doc"
+                                {:json-params doc
+                                 :with-credentials false}
+                                ))]
+        (println resp)
+        (println (:body resp))
+        (handler-fn (:body resp) resp)))
+  )
+
 (defn notes [notes-cursor video-ref-atm]
   (fn []
     [:div
      [:button {:on-click (fn [e] 
                            (when-let [video @video-ref-atm]
-                             (let [current-time (.-currentTime video)]
+                             (let [current-time (.-currentTime video)
+                                   uuid (uuid/uuid-string (uuid/make-random-uuid))]
                                (println "current time:" current-time)
-                               (swap! notes-cursor assoc current-time
-                                      {:time current-time
-                                       :text (str "Note at " current-time)}))))}
+                               (put-doc {:id uuid
+                                         :video "big-buck-bunny" ;; TODO use actual video URL
+                                         :time current-time
+                                         :text (str "Note at " current-time)}
+                                        (fn [doc]
+                                          (println "handler-fn's doc: " doc)
+                                          (swap! notes-cursor assoc uuid doc)))
+                               )))}
       "Add note"]
      (map (fn [[key note]]
 ;            (println "looping over note: " key note)
@@ -69,9 +86,9 @@
        ;;  "Play/Pause"]
        [notes notes-cursor video-ref-atm]
        [:button {:on-click (fn []
-                             (go (let [resp (<! (http/get "http://localhost:3000/hello"
-                                                           ;; {:json-params ""
-                                                           ;;  :with-credentials false}
+                             (go (let [resp (<! (http/post "http://localhost:3000/put-doc"
+                                                           {:json-params {:a 1}
+                                                            :with-credentials false}
                                                            ))]
                                    (println resp))))}
         "Test Ring connection"]
