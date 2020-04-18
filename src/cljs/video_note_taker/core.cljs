@@ -14,7 +14,7 @@
 ;; Vars
 
 (defonce app-state
-  (reagent/atom {:notes {}}))
+  (reagent/atom {:notes []}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -53,12 +53,12 @@
                                          :text (str "Note at " current-time)}
                                         (fn [doc]
                                           (println "handler-fn's doc: " doc)
-                                          (swap! notes-cursor assoc uuid doc)))
+                                          (swap! notes-cursor conj doc)))
                                )))}
       "Add note"]
-     (map (fn [[key note]]
+     (map (fn [note]
 ;            (println "looping over note: " key note)
-            ^{:key key}
+            ^{:key (:uuid key)}
             [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
              [:div (str note)]
              [:button {:on-click (fn []
@@ -78,20 +78,17 @@
       [:div
        [:p "Video Note Taker v1.0"]
        [video video-ref-atm]
-       ;; [:button {:on-click (fn [e]
-       ;;                       (when-let [video @video-ref-atm]
-       ;;                         (if (.-paused video)
-       ;;                           (.play video)
-       ;;                           (.pause video))))}
-       ;;  "Play/Pause"]
        [notes notes-cursor video-ref-atm]
        [:button {:on-click (fn []
                              (go (let [resp (<! (http/post "http://localhost:3000/get-notes"
                                                            {:json-params {:video-key "big-buck-bunny"}
                                                             :with-credentials false}
                                                            ))]
-                                   (println resp))))}
-        "Test Ring connection"]
+                                   
+                                   (reset! notes-cursor (sort-by :time (mapv :doc (:body resp))))
+
+                                   )))}
+        "Load notes"]
        [:p (str @ratom)]
        ])))
 
