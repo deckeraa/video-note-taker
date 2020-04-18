@@ -35,13 +35,9 @@
 
 (defn put-doc-handler [req]
   (println req)
-  (let [body-string (request/body-string req)]
-    (println "body-string: " body-string)
-    (let [body (json/read-str body-string)]
-      (println body)
-      (json-response (couch/put-document db body)))
-   ; (json-type (response/response "put-doc"))
-    ))
+  (let [doc (get-body req)]
+    (json-response (couch/put-document db doc)))
+  )
 
 (defn get-doc [id]
   (couch/get-document db id))
@@ -54,16 +50,18 @@
 ;; }
 
 (defn get-body [req]
-  (keywordize-keys (json/read-str (request/body-string req)))
-  )
+  (-> req
+      (request/body-string)
+      (json/read-str)
+      (keywordize-keys)))
 
 (defn get-notes [video-key]
   (println "using key " video-key)
   (couch/get-view db "notes" "by_video" {:key video-key :include_docs true}))
 
 (defn get-notes-handler [req]
-  (let [body (json/read-str (request/body-string req))]
-    (json-response (get-notes (get body "video-key")))))
+  (let [doc (get-body req)]
+    (json-response (get-notes (:video-key doc)))))
 
 (defn delete-doc-handler [req]
   (let [doc (get-body req)]
