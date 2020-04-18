@@ -58,6 +58,7 @@
                                    uuid (uuid/uuid-string (uuid/make-random-uuid))]
                                (println "current time:" current-time)
                                (put-doc {:id uuid
+                                         :type :note
                                          :video "big-buck-bunny" ;; TODO use actual video URL
                                          :time current-time
                                          :text (str "Note at " current-time)}
@@ -67,7 +68,6 @@
                                )))}
       "Add note"]
      (map (fn [note]
-;            (println "looping over note: " key note)
             ^{:key (:id note)}
             [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
              [:div (str note)]
