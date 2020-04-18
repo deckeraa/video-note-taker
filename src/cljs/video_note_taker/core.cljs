@@ -8,7 +8,7 @@
 ;; Vars
 
 (defonce app-state
-  (reagent/atom {}))
+  (reagent/atom {:notes {}}))
 
 
 
@@ -25,8 +25,27 @@
    "Video not supported by your browser :("]
   )
 
+(defn notes [notes-cursor video-ref-atm]
+  (fn []
+    [:div
+     [:button {:on-click (fn [e] 
+                           (when-let [video @video-ref-atm]
+                             (let [current-time (.-currentTime video)]
+                               (println "current time:" current-time)
+                               (swap! notes-cursor assoc current-time
+                                      {:time current-time
+                                       :text (str "Note at " current-time)}))))}
+      "Add note"]
+     (map (fn [[key note]]
+;            (println "looping over note: " key note)
+            ^{:key key}
+            [:div {:class "br3 ba b--black-10 pa2 ma2"} (str note)])
+          @notes-cursor)]
+    ))
+
 (defn page [ratom]
-  (let [video-ref-atm (clojure.core/atom nil)]
+  (let [video-ref-atm (clojure.core/atom nil)
+        notes-cursor (reagent/cursor ratom [:notes])]
     (fn []
       [:div
        [:p "Video Note Taker v1.0"]
@@ -37,10 +56,8 @@
                                  (.play video)
                                  (.pause video))))}
         "Play/Pause"]
-       [:button {:on-click (fn [e] (println "clicked!")
-                             (when-let [video @video-ref-atm]
-                               (println "current time:" (.-currentTime video))))}
-        "Add note"]
+       [notes notes-cursor video-ref-atm]
+       [:p (str @ratom)]
        ])))
 
 
