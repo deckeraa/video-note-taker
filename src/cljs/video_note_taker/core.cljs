@@ -1,6 +1,7 @@
 (ns video-note-taker.core
   (:require
    [reagent.core :as reagent]
+   [video-note-taker.svg :as svg]
    ))
 
 
@@ -39,7 +40,12 @@
      (map (fn [[key note]]
 ;            (println "looping over note: " key note)
             ^{:key key}
-            [:div {:class "br3 ba b--black-10 pa2 ma2"} (str note)])
+            [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
+             [:div (str note)]
+             [:button {} "Play"]
+             [svg/trash {:on-click (fn [] (swap! notes-cursor dissoc key))}
+              "gray" "32px"]
+             ])
           @notes-cursor)]
     ))
 
