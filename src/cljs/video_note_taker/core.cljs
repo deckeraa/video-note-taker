@@ -19,10 +19,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 
-(defn video [video-ref-atm]
+(defn video [video-ref-atm video-src]
   [:video {:id "main-video"
            :controls true
-           :src "./big_buck_bunny_720p_surround.mp4"
+           :src video-src
            :width 620
            :ref (fn [el]
                  (reset! video-ref-atm el))}
@@ -49,7 +49,7 @@
         (handler-fn (:body resp) resp)))
   )
 
-(defn notes [notes-cursor video-ref-atm]
+(defn notes [notes-cursor video-ref-atm video-src]
   (fn []
     [:div
      [:button {:on-click (fn [e] 
@@ -59,7 +59,7 @@
                                (println "current time:" current-time)
                                (put-doc {:id uuid
                                          :type :note
-                                         :video "big-buck-bunny" ;; TODO use actual video URL
+                                         :video video-src
                                          :time current-time
                                          :text (str "Note at " current-time)}
                                         (fn [doc]
@@ -94,15 +94,17 @@
 
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
+        video-src "big_buck_bunny_720p_surround.mp4"
         notes-cursor (reagent/cursor ratom [:notes])
-        _auto-load (load-notes notes-cursor "big-buck-bunny")]
+        _auto-load (load-notes notes-cursor video-src)]
     (fn []
       [:div
        [:p "Video Note Taker v1.0"]
-       [video video-ref-atm]
-       [notes notes-cursor video-ref-atm]
-       [:button {:on-click (partial load-notes notes-cursor "big-buck-bunny")}
-        "Load notes"]
+       [video video-ref-atm video-src]
+       [notes notes-cursor video-ref-atm video-src]
+       [:button {:on-click (fn [] (when-let [video @video-ref-atm]
+                                    (println (.-src video))))}
+        "Print video source"]
        [:p (str @ratom)]
        ])))
 
