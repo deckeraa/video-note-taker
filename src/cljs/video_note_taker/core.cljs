@@ -49,9 +49,53 @@
         (handler-fn (:body resp) resp)))
   )
 
+(defn editable-field [initial-val save-fn]
+  (let [editing? (reagent/atom false)
+        restore-val-atm (reagent/atom initial-val)
+        val-atm (reagent/atom initial-val)]
+    (fn []
+      (if @editing?
+        [:div {:class ""}
+         [:input {:type :text :value @val-atm
+                  :on-change (fn [e]
+                               (reset! val-atm (-> e .-target .-value)))}]
+         [:button {:on-click (fn []
+                               (reset! val-atm @restore-val-atm)
+                               (reset! editing? false))}
+          "Cancel"]
+         [:button {:on-click (fn []
+                               (save-fn @val-atm #(reset! editing? false)))}
+          "Save"]]
+        [:div {:class ""}
+         [:p {:class ""} @val-atm]
+         [:button {:on-click #(do (reset! editing? true)
+                                  (reset! restore-val-atm @val-atm))} "edit"]]
+        ))))
+
+(defn upsert-note [notes-cursor doc]
+  (swap! notes-cursor
+         (fn [notes]
+           (let [new-notes
+                 (mapv (fn [note]
+                         (if (= (:id note) (:id doc))
+                           doc ; update if they are the same
+                           note ; otherwise leave as is
+                           ))
+                       notes)]
+             (sort-by :time new-notes))))
+  )
+  
+
 (defn note [note notes-cursor video-ref-atm]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
    [:div (:type note)]
+   [editable-field (:text note)
+    (fn [new-val done-fn]
+      (put-doc (assoc note :text new-val)
+               (fn [new-doc]
+                 (println "new-doc" new-doc)
+                 (upsert-note notes-cursor new-doc)
+                 (done-fn))))]
    [:button {:on-click (fn []
                          (when-let [video @video-ref-atm]
                            (set! (.-currentTime video) (:time note))))}
@@ -85,7 +129,7 @@
       "Add note"]
      (map (fn [note-val]
             ^{:key (:id note-val)}
-            [note note-val video-ref-atm])
+            [note note-val notes-cursor video-ref-atm])
           @notes-cursor)]
     ))
 
@@ -107,7 +151,8 @@
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
        [:button {:on-click (fn [] (when-let [video @video-ref-atm]
-                                    (println (.-src video))))}
+                                    (println (.-src video))
+                                    (println @notes-cursor)))}
         "Print video source"]
        [:p (str @ratom)]
        ])))
