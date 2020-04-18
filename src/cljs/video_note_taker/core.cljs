@@ -49,6 +49,23 @@
         (handler-fn (:body resp) resp)))
   )
 
+(defn note [note notes-cursor video-ref-atm]
+  [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
+   [:div (:type note)]
+   [:button {:on-click (fn []
+                         (when-let [video @video-ref-atm]
+                           (set! (.-currentTime video) (:time note))))}
+    "Go"]
+   [svg/trash {:on-click (fn []
+                           (delete-doc note
+                                       (fn [resp]
+                                         (swap! notes-cursor (fn [notes]
+                                                               (filter #(not (= (:id note) (:id %)))
+                                                                       notes))))))}
+    "gray" "32px"]
+   ]
+  )
+
 (defn notes [notes-cursor video-ref-atm video-src]
   (fn []
     [:div
@@ -66,22 +83,9 @@
                                           (println "handler-fn's doc: " doc)
                                           (swap! notes-cursor conj doc))))))}
       "Add note"]
-     (map (fn [note]
-            ^{:key (:id note)}
-            [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
-             [:div (:type note)]
-             [:button {:on-click (fn []
-                                   (when-let [video @video-ref-atm]
-                                     (set! (.-currentTime video) (:time note))))}
-              "Go"]
-             [svg/trash {:on-click (fn []
-                                     (delete-doc note
-                                                 (fn [resp]
-                                                   (swap! notes-cursor (fn [notes]
-                                                                         (filter #(not (= (:id note) (:id %)))
-                                                                                 notes))))))}
-              "gray" "32px"]
-             ])
+     (map (fn [note-val]
+            ^{:key (:id note-val)}
+            [note note-val video-ref-atm])
           @notes-cursor)]
     ))
 
