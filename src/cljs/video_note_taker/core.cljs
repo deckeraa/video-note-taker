@@ -11,8 +11,6 @@
 (defonce app-state
   (reagent/atom {:notes {}}))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
 
@@ -68,8 +66,6 @@
        [notes notes-cursor video-ref-atm]
        [:p (str @ratom)]
        ])))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App

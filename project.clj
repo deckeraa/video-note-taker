@@ -3,13 +3,25 @@
                  [org.clojure/clojurescript "1.9.946"]
                  [javax.xml.bind/jaxb-api "2.2.11"]
                  [reagent "0.7.0"]
-                 [devcards "0.2.4" :exclusions [cljsjs/react]]]
+                 [devcards "0.2.4" :exclusions [cljsjs/react]]
+                 [bidi "2.1.6"]
+                 [ring "1.7.1"]
+                 [ring-cors "0.1.12"]
+                 [ring/ring-json "0.4.0"]
+                 [ring/ring-defaults "0.3.2"]
+                 [clj-http "3.9.1"]
+                 [cljs-http "0.1.46"]
+                 [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
+                 [com.cemerick/url "0.1.1"]]
 
   :min-lein-version "2.5.3"
 
   :source-paths ["src/clj"]
 
-  :plugins [[lein-cljsbuild "1.1.4"]]
+  :plugins [[lein-cljsbuild "1.1.4"]
+            [lein-ring "0.12.5"]]
+
+  :ring {:handler video-note-taker.core/app}
 
   :clean-targets ^{:protect false} ["resources/public/js"
                                     "target"
