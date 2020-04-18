@@ -84,11 +84,25 @@
                        notes)]
              (sort-by :time new-notes))))
   )
-  
+
+(defn format-time [time-in-seconds]
+  (let [minutes (Math/round (/ time-in-seconds 60))
+        seconds (/ (Math/round (* (mod time-in-seconds 60) 10)) 10)]
+    (str minutes ":" seconds)))
+
+(defn time-scrubber [note notes-cursor video-ref-atm]
+  [:div {:class ""}
+   [svg/chevron-left {} "black" "32px"]
+   [:div {:class ""}
+    (format-time (:time note))]
+   [svg/chevron-right {} "black" "32px"]])
 
 (defn note [note notes-cursor video-ref-atm]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
-   [:div (:type note)]
+   [:button {:on-click (fn []
+                         (when-let [video @video-ref-atm]
+                           (set! (.-currentTime video) (:time note))))}
+    "Go"]
    [editable-field (:text note)
     (fn [new-val done-fn]
       (put-doc (assoc note :text new-val)
@@ -96,10 +110,7 @@
                  (println "new-doc" new-doc)
                  (upsert-note notes-cursor new-doc)
                  (done-fn))))]
-   [:button {:on-click (fn []
-                         (when-let [video @video-ref-atm]
-                           (set! (.-currentTime video) (:time note))))}
-    "Go"]
+   [time-scrubber note notes-cursor video-ref-atm]
    [svg/trash {:on-click (fn []
                            (delete-doc note
                                        (fn [resp]
