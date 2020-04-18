@@ -64,13 +64,12 @@
                                          :text (str "Note at " current-time)}
                                         (fn [doc]
                                           (println "handler-fn's doc: " doc)
-                                          (swap! notes-cursor conj doc)))
-                               )))}
+                                          (swap! notes-cursor conj doc))))))}
       "Add note"]
      (map (fn [note]
             ^{:key (:id note)}
             [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
-             [:div (str note)]
+             [:div (:type note)]
              [:button {:on-click (fn []
                                    (when-let [video @video-ref-atm]
                                      (set! (.-currentTime video) (:time note))))}
@@ -86,23 +85,23 @@
           @notes-cursor)]
     ))
 
+(defn load-notes [notes-cursor video-key]
+  (go (let [resp (<! (http/post "http://localhost:3000/get-notes"
+                                {:json-params {:video-key video-key}
+                                 :with-credentials false}
+                                ))]
+        (reset! notes-cursor (sort-by :time (mapv :doc (:body resp)))))))
+
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
-        notes-cursor (reagent/cursor ratom [:notes])]
+        notes-cursor (reagent/cursor ratom [:notes])
+        _auto-load (load-notes notes-cursor "big-buck-bunny")]
     (fn []
       [:div
        [:p "Video Note Taker v1.0"]
        [video video-ref-atm]
        [notes notes-cursor video-ref-atm]
-       [:button {:on-click (fn []
-                             (go (let [resp (<! (http/post "http://localhost:3000/get-notes"
-                                                           {:json-params {:video-key "big-buck-bunny"}
-                                                            :with-credentials false}
-                                                           ))]
-                                   
-                                   (reset! notes-cursor (sort-by :time (mapv :doc (:body resp))))
-
-                                   )))}
+       [:button {:on-click (partial load-notes notes-cursor "big-buck-bunny")}
         "Load notes"]
        [:p (str @ratom)]
        ])))
