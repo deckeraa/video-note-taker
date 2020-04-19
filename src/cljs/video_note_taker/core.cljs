@@ -72,7 +72,7 @@
   (let [editing? (reagent/atom false)
         restore-val-atm (reagent/atom initial-val)
         val-atm (reagent/atom initial-val)]
-    (fn []
+    (fn [initial-val save-fn]
       (if @editing?
         [:div {:class "flex items-center"}
          [:textarea {:type :text :value @val-atm
