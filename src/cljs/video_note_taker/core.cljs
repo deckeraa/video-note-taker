@@ -7,28 +7,11 @@
    [cljs-uuid-utils.core :as uuid]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
+   [video-note-taker.db :as db]
    [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Page
-
-(defn get-server-url
-  ([]
-   (get-server-url (str "http://" (.. js/window -location -host))))
-  ([url]
-   (if (re-matches #".*:3450" url)
-     "http://localhost:3000"
-     url)))
-
-(defn resolve-endpoint [endpoint]
-  (str (get-server-url) "/" endpoint))
-
-(deftest get-server-url-test
-  (is (= (get-server-url "http://localhost:3450") "http://localhost:3000"))
-  (is (= (get-server-url "http://localhost:3002") "http://localhost:3002")))
 
 (defn video [video-ref-atm video-src]
   [:video {:id "main-video"
@@ -39,33 +22,6 @@
            :ref (fn [el]
                  (reset! video-ref-atm el))}
    "Video not supported by your browser :("]
-  )
-
-(defn toast-server-error-if-needed [resp doc]
-  (when (not (= 200 (:status resp)))
-    (toaster-oven/add-toast (str "Server error: " resp doc) svg/x "red"
-                            {:ok-fn    (fn [] nil)})))
-
-(defn put-doc [doc handler-fn]
-  (go (let [resp (<! (http/post (resolve-endpoint "put-doc")
-                                {:json-params doc
-                                 :with-credentials false}
-                                ))]
-        (toast-server-error-if-needed resp doc)
-        (println resp)
-        (println (:body resp))
-        (handler-fn (:body resp) resp)))
-  )
-
-(defn delete-doc [doc handler-fn]
-  (go (let [resp (<! (http/post (resolve-endpoint "delete-doc")
-                                {:json-params doc
-                                 :with-credentials false}
-                                ))]
-        (toast-server-error-if-needed resp doc)
-        (println resp)
-        (println (:body resp))
-        (handler-fn (:body resp) resp)))
   )
 
 (defn editable-field [initial-val save-fn]
@@ -119,7 +75,7 @@
                      (when (= 0 (swap! scrub-timer-count-atm dec))
                        (do
                          (println "Updating the time scrubbing")
-                         (put-doc @note-cursor (fn [doc] (swap! note-cursor assoc :_rev (:_rev doc))))))) 2000)
+                         (db/put-doc @note-cursor (fn [doc] (swap! note-cursor assoc :_rev (:_rev doc))))))) 2000)
     ))
 
 (defn format-time [time-in-seconds]
@@ -130,9 +86,6 @@
 (deftest format-time-test
   (is (= (format-time 40.4583330000001) "0:40.5"))
   (is (= (format-time 95.553641) "1:35.6")))
-
-(defcard hello-card
-  "hello")
 
 ;; (defn format-time-in-seconds [seconds]
 ;;   (let [min (Math/floor (/ seconds 60))
@@ -169,7 +122,7 @@
                                    (set! (.-currentTime video) (:time @note-cursor))))} "green" "32px"]
     [editable-field (:text @note-cursor)
      (fn [new-val done-fn]
-       (put-doc (assoc @note-cursor :text new-val)
+       (db/put-doc (assoc @note-cursor :text new-val)
                 (fn [new-doc]
                   (println "new-doc" new-doc)
                   (upsert-note! notes-cursor new-doc)
@@ -182,7 +135,7 @@
                              "Delete note?" nil nil
                              {:cancel-fn (fn [] nil)
                               :ok-fn (fn [] 
-                                       (delete-doc @note-cursor
+                                       (db/delete-doc @note-cursor
                                                    (fn [resp]
                                                      (swap! notes-cursor (fn [notes]
                                                                            (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
@@ -198,7 +151,7 @@
                          (when-let [video @video-ref-atm]
                            (let [current-time (.-currentTime video)
                                  uuid (uuid/uuid-string (uuid/make-random-uuid))]
-                             (put-doc {:_id uuid
+                             (db/put-doc {:_id uuid
                                        :type :note
                                        :video video-src
                                        :time current-time
@@ -221,11 +174,11 @@
 
 (defn load-notes [notes-cursor video-key]
   (println "calling load-notes")
-  (go (let [resp (<! (http/post (resolve-endpoint "get-notes")
+  (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
-        (toast-server-error-if-needed resp nil)
+        (db/toast-server-error-if-needed resp nil)
         (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn page [ratom]
@@ -238,11 +191,6 @@
        [:p {:class "f3"} "Video Note Taker"]
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
-       ;; [:button {:on-click (fn []
-       ;;                       (toaster-oven/add-toast "Test" svg/check "green"
-       ;;                                               {:ok-fn    (fn [] (println "ok"))
-       ;;                                                }))}
-       ;;  "Test toast"]
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
        ])))
