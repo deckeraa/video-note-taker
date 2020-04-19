@@ -3,7 +3,7 @@
    [reagent.core :as reagent]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
-   [cljs.test :as t :include-macros true :refer-macros [testing is]]
+   [cljs.test :include-macros true :refer-macros [testing is]]
    [cljs-uuid-utils.core :as uuid]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
@@ -123,9 +123,28 @@
     ))
 
 (defn format-time [time-in-seconds]
-  (let [minutes (Math/round (/ time-in-seconds 60))
+  (let [minutes (Math/floor (/ time-in-seconds 60)) ; floor instead of round since the remainder of minutes is dplayed in seconds
         seconds (/ (Math/round (* (mod time-in-seconds 60) 10)) 10)]
     (str minutes ":" seconds)))
+
+(deftest format-time-test
+  (is (= (format-time 40.4583330000001) "0:40.5"))
+  (is (= (format-time 95.553641) "1:35.6")))
+
+(defcard hello-card
+  "hello")
+
+;; (defn format-time-in-seconds [seconds]
+;;   (let [min (Math/floor (/ seconds 60))
+;;         sec (as-> (rem seconds 60) $
+;;               (str $)
+;;               (if (= 1 (count $)) (str "0" $) $))]
+;;     (str min ":" sec)))
+
+;; (deftest format-time-in-seconds-test
+;;   (is (= "2:00" (format-time-in-seconds 120)))
+;;   (is (= "0:12" (format-time-in-seconds  12)))
+;;   (is (= "1:01" (format-time-in-seconds  61))))
 
 (defn time-scrubber [note-cursor notes-cursor video-ref-atm]
   (let [scrub-timer-count-atm (reagent/atom 0)]

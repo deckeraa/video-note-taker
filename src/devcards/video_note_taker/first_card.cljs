@@ -1,11 +1,13 @@
 (ns video-note-taker.first-card
   (:require-macros
-   [devcards.core :refer [defcard-doc
+   [devcards.core :refer [deftest
+                          defcard-doc
                           defcard-rg
                           mkdn-pprint-source]])
   (:require
    [devcards.core]
-   [reagent.core :as reagent]))
+   [reagent.core :as reagent]
+   [cljs.test :include-macros true :refer-macros [testing is]]))
 
 
 (defonce app-state (reagent/atom {:count 0}))
