@@ -3,6 +3,7 @@
    [reagent.core :as reagent]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
+   [cljs.test :as t :include-macros true :refer-macros [testing is]]
    [cljs-uuid-utils.core :as uuid]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
@@ -13,6 +14,21 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
+
+(defn get-server-url
+  ([]
+   (get-server-url (str "http://" (.. js/window -location -host))))
+  ([url]
+   (if (re-matches #".*:3450" url)
+     "http://localhost:3000"
+     url)))
+
+(defn resolve-endpoint [endpoint]
+  (str (get-server-url) "/" endpoint))
+
+(deftest get-server-url-test
+  (is (= (get-server-url "http://localhost:3450") "http://localhost:3000"))
+  (is (= (get-server-url "http://localhost:3002") "http://localhost:3002")))
 
 (defn video [video-ref-atm video-src]
   [:video {:id "main-video"
@@ -31,7 +47,7 @@
                             {:ok-fn    (fn [] nil)})))
 
 (defn put-doc [doc handler-fn]
-  (go (let [resp (<! (http/post "http://localhost:3000/put-doc"
+  (go (let [resp (<! (http/post (resolve-endpoint "put-doc")
                                 {:json-params doc
                                  :with-credentials false}
                                 ))]
@@ -42,7 +58,7 @@
   )
 
 (defn delete-doc [doc handler-fn]
-  (go (let [resp (<! (http/post "http://localhost:3000/delete-doc"
+  (go (let [resp (<! (http/post (resolve-endpoint "delete-doc")
                                 {:json-params doc
                                  :with-credentials false}
                                 ))]
@@ -186,7 +202,7 @@
 
 (defn load-notes [notes-cursor video-key]
   (println "calling load-notes")
-  (go (let [resp (<! (http/post "http://localhost:3000/get-notes"
+  (go (let [resp (<! (http/post (resolve-endpoint "get-notes")
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
