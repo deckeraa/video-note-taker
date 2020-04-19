@@ -129,9 +129,11 @@
      [svg/trash {:on-click (fn []
                              (delete-doc @note-cursor
                                          (fn [resp]
+                                           (println "delete-doc resp: " resp)
+                                           (println "before " @notes-cursor )
                                            (swap! notes-cursor (fn [notes]
-                                                                 (filter #(not (= (:id note) (:id %)))
-                                                                         notes))))))}
+                                                                 (vec (filter #(not (= (:id @note-cursor) (:id %)))
+                                                                              notes)))))))}
       "gray" "32px"]
      ])
   )
@@ -154,17 +156,11 @@
                                           (println "handler-fn's doc: " doc)
                                           (swap! notes-cursor conj doc))))))}
       "Add note"]
-     ;; [:ul
-     ;;  (map (fn [idx]
-     ;;          ^{:key idx}
-     ;;         [:li (str @(reagent/cursor notes-cursor [idx]))])
-     ;;        (range 0 (count @notes-cursor)))]
      (doall
       (map (fn [idx]
-             (let [cursor (reagent/cursor notes-cursor [idx])]
-               ^{:key (get-in @cursor [:id])}
-               [note cursor notes-cursor video-ref-atm]
-               ;; [:div {} (str @cursor)]
+             (let [note-cursor (reagent/cursor notes-cursor [idx])]
+               ^{:key (get-in @note-cursor [:id])}
+               [note note-cursor notes-cursor video-ref-atm]
                ))
            (range 0 (count @notes-cursor))))
      ]
