@@ -77,7 +77,7 @@
          (fn [notes]
            (let [new-notes
                  (mapv (fn [note]
-                         (if (= (:id note) (:id doc))
+                         (if (= (:_id note) (:_id doc))
                            doc ; update if they are the same
                            note ; otherwise leave as is
                            ))
@@ -136,7 +136,7 @@
                              (delete-doc @note-cursor
                                          (fn [resp]
                                            (swap! notes-cursor (fn [notes]
-                                                                 (vec (filter #(not (= (:id @note-cursor) (:id %)))
+                                                                 (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
                                                                               notes)))))))}
       "gray" "32px"]
      ])
@@ -149,18 +149,21 @@
                            (when-let [video @video-ref-atm]
                              (let [current-time (.-currentTime video)
                                    uuid (uuid/uuid-string (uuid/make-random-uuid))]
-                               (put-doc {:id uuid
+                               (put-doc {:_id uuid
                                          :type :note
                                          :video video-src
                                          :time current-time
                                          :text (str "Note at " current-time)}
                                         (fn [doc]
-                                          (swap! notes-cursor conj doc))))))}
+                                          (swap! notes-cursor (fn [notes]
+;                                                                (vec (conj notes doc))
+                                                                (vec (concat [doc] notes))
+                                                                )))))))}
       "Add note"]
      (doall
       (map (fn [idx]
              (let [note-cursor (reagent/cursor notes-cursor [idx])]
-               ^{:key (get-in @note-cursor [:id])}
+               ^{:key (get-in @note-cursor [:_id])}
                [note note-cursor notes-cursor video-ref-atm]
                ))
            (range 0 (count @notes-cursor))))
