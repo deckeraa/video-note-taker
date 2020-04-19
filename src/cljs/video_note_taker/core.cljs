@@ -180,6 +180,7 @@
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
+        (toaster-oven/add-toast "Notes loaded!" svg/check "green" nil)
         (println "load-notes " resp)
         (println "notes-cursor " notes-cursor)
         (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
@@ -194,10 +195,9 @@
        [:p {:class "f3"} "Video Note Taker"]
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
-       ;; [:button {:on-click (fn [] (when-let [video @video-ref-atm]
-       ;;                              (println (.-src video))
-       ;;                              (println @notes-cursor)))}
-       ;;  "Print video source"]
+       [:button {:on-click (fn []
+                             (toaster-oven/add-toast "Test" svg/check "green" nil))}
+        "Test toast"]
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
        ])))
