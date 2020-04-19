@@ -71,7 +71,7 @@
                    (let [cancel-fn (:cancel-fn button-fns)
                          ok-fn     (:ok-fn     button-fns)]
                      [:div {:style {:display :flex :justify-content :flex-end}}
-                      (when cancel-fn [:div {:class "ba br3 b--black-10"
+                      (when cancel-fn [:div {:class "br3 pa3 shadow-4 dim"
                                              :on-click (fn []
                                                             (@remove-delegate-atm)
                                                             (cancel-fn))} "Cancel"])
