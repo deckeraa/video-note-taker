@@ -187,13 +187,13 @@
         _auto-load (load-notes notes-cursor video-src)]
     (fn []
       [:div {:class "flex flex-column items-center"}
-       [:p {:class "f3"} "Video Note Taker v1.0"]
+       [:p {:class "f3"} "Video Note Taker"]
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
-       [:button {:on-click (fn [] (when-let [video @video-ref-atm]
-                                    (println (.-src video))
-                                    (println @notes-cursor)))}
-        "Print video source"]
+       ;; [:button {:on-click (fn [] (when-let [video @video-ref-atm]
+       ;;                              (println (.-src video))
+       ;;                              (println @notes-cursor)))}
+       ;;  "Print video source"]
        [:p (str @ratom)]
        ])))
 
