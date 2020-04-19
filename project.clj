@@ -14,7 +14,8 @@
                  [cljs-http "0.1.46"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
                  [com.cemerick/url "0.1.1"]
-                 [com.ashafa/clutch "0.4.0"]]
+                 [com.ashafa/clutch "0.4.0"]
+                 [doo "0.1.11"]]
 
   :min-lein-version "2.5.3"
 
@@ -43,7 +44,7 @@
                    [binaryage/devtools "0.9.9"]]
 
     :plugins      [[lein-figwheel "0.5.15"]
-                   [lein-doo "0.1.8"]]
+                   [lein-doo "0.1.11"]]
     }}
 
   :cljsbuild
