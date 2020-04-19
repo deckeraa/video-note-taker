@@ -9,7 +9,8 @@
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
    [video-note-taker.toaster-oven :as toaster-oven]
-   [video-note-taker.editable-field :refer [editable-field]])
+   [video-note-taker.editable-field :refer [editable-field]]
+   [video-note-taker.video-notes :as notes])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -25,145 +26,17 @@
    "Video not supported by your browser :("]
   )
 
-(defn upsert-note! [notes-cursor doc]
-  (swap! notes-cursor
-         (fn [notes]
-           (let [new-notes
-                 (mapv (fn [note]
-                         (if (= (:_id note) (:_id doc))
-                           doc ; update if they are the same
-                           note ; otherwise leave as is
-                           ))
-                       notes)]
-             (vec (sort-by :time new-notes)))))
-  )
-
-(defn change-time-scrub [note-cursor notes-cursor video-ref-atm scrub-timer-count-atm change]
-  (let [new-time (+ (:time @note-cursor) change)]
-    (when-let [video @video-ref-atm]
-      (set! (.-currentTime video) new-time))
-    (swap! note-cursor assoc :time new-time)
-    (swap! scrub-timer-count-atm inc)
-    (js/setTimeout (fn []
-                     (when (= 0 (swap! scrub-timer-count-atm dec))
-                       (do
-                         (println "Updating the time scrubbing")
-                         (db/put-doc @note-cursor (fn [doc] (swap! note-cursor assoc :_rev (:_rev doc))))))) 2000)
-    ))
-
-(defn format-time [time-in-seconds]
-  (let [minutes (Math/floor (/ time-in-seconds 60)) ; floor instead of round since the remainder of minutes is dplayed in seconds
-        seconds (/ (Math/round (* (mod time-in-seconds 60) 10)) 10)]
-    (str minutes ":" seconds)))
-
-(deftest format-time-test
-  (is (= (format-time 40.4583330000001) "0:40.5"))
-  (is (= (format-time 95.553641) "1:35.6")))
-
-;; (defn format-time-in-seconds [seconds]
-;;   (let [min (Math/floor (/ seconds 60))
-;;         sec (as-> (rem seconds 60) $
-;;               (str $)
-;;               (if (= 1 (count $)) (str "0" $) $))]
-;;     (str min ":" sec)))
-
-;; (deftest format-time-in-seconds-test
-;;   (is (= "2:00" (format-time-in-seconds 120)))
-;;   (is (= "0:12" (format-time-in-seconds  12)))
-;;   (is (= "1:01" (format-time-in-seconds  61))))
-
-(defn time-scrubber [note-cursor notes-cursor video-ref-atm]
-  (let [scrub-timer-count-atm (reagent/atom 0)]
-    (fn [note-cursor notes-cursor video-ref-atm]
-      [:div {:class "flex items-center"}
-       [svg/chevron-left {:class "ma2 dim"
-                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm -0.1)}
-        "gray" "32px"]
-       [:div {:class "f3"}
-        [:div (format-time (:time @note-cursor))]]
-       [svg/chevron-right {:class "ma2 dim"
-                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm 0.1)}
-        "gray" "32px"]])))
-
-(defn note [note-cursor notes-cursor video-ref-atm]
-  [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
-                                        ;   [:button {}]
-   [:div {:class "flex items-center"}
-    [svg/media-play {:class "ml1 mr4 dim"
-                     :on-click (fn []
-                                 (when-let [video @video-ref-atm]
-                                   (set! (.-currentTime video) (:time @note-cursor))))} "green" "32px"]
-    [editable-field (:text @note-cursor)
-     (fn [new-val done-fn]
-       (db/put-doc (assoc @note-cursor :text new-val)
-                (fn [new-doc]
-                  (println "new-doc" new-doc)
-                  (upsert-note! notes-cursor new-doc)
-                  (done-fn))))]]
-   [:div {:class "flex items-center ml3"}
-    [time-scrubber note-cursor notes-cursor video-ref-atm]
-    [svg/trash {:class "dim ml3"
-                :on-click (fn []
-                            (toaster-oven/add-toast
-                             "Delete note?" nil nil
-                             {:cancel-fn (fn [] nil)
-                              :ok-fn (fn [] 
-                                       (db/delete-doc @note-cursor
-                                                   (fn [resp]
-                                                     (swap! notes-cursor (fn [notes]
-                                                                           (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
-                                                                                                               notes)))))))}))}
-     "gray" "32px"]]
-   ]
-  )
-
-(defn notes [notes-cursor video-ref-atm video-src]
-  [:div {:class "flex flex-column items-center"}
-   [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
-          :on-click (fn [e] 
-                         (when-let [video @video-ref-atm]
-                           (let [current-time (.-currentTime video)
-                                 uuid (uuid/uuid-string (uuid/make-random-uuid))]
-                             (db/put-doc {:_id uuid
-                                       :type :note
-                                       :video video-src
-                                       :time current-time
-                                       :text (str "Note at " current-time)}
-                                      (fn [doc]
-                                        (swap! notes-cursor (fn [notes]
-                                                              (vec (concat [doc] notes))
-                                                              )))))))}
-    [:div {:class "f2 b white"} "Add note"]]
-   [:div {:class "flex flex-column"}
-    (doall
-     (map (fn [idx]
-            (let [note-cursor (reagent/cursor notes-cursor [idx])]
-              ^{:key (get-in @note-cursor [:_id])}
-              [note note-cursor notes-cursor video-ref-atm]
-              ))
-          (range 0 (count @notes-cursor))))]
-   ]
-    )
-
-(defn load-notes [notes-cursor video-key]
-  (println "calling load-notes")
-  (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
-                                {:json-params {:video-key video-key}
-                                 :with-credentials false}
-                                ))]
-        (db/toast-server-error-if-needed resp nil)
-        (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
         video-src "big_buck_bunny_720p_surround.mp4"
         notes-cursor atoms/notes-cursor
-        _auto-load (load-notes notes-cursor video-src)]
+        _auto-load (notes/load-notes notes-cursor video-src)]
     (fn []
       [:div {:class "flex flex-column items-center"}
        [:p {:class "f3"} "Video Note Taker"]
        [video video-ref-atm video-src]
-       [notes notes-cursor video-ref-atm video-src]
+       [notes/notes notes-cursor video-ref-atm video-src]
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
        ])))
