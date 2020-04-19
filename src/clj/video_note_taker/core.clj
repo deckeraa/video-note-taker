@@ -33,6 +33,12 @@
 (defn hello-handler [req]
   (text-type (response/response "hello")))
 
+(defn get-body [req]
+  (-> req
+      (request/body-string)
+      (json/read-str)
+      (keywordize-keys)))
+
 (defn put-doc-handler [req]
   (println req)
   (let [doc (get-body req)]
@@ -48,12 +54,6 @@
 ;;       emit(doc.video, doc._id );
 ;;   }
 ;; }
-
-(defn get-body [req]
-  (-> req
-      (request/body-string)
-      (json/read-str)
-      (keywordize-keys)))
 
 (defn get-notes [video-key]
   (println "using key " video-key)
