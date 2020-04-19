@@ -21,6 +21,7 @@
 
 (defn video [video-ref-atm video-src]
   [:video {:id "main-video"
+           :class "mb3"
            :controls true
            :src video-src
            :width 620
@@ -181,8 +182,8 @@
         notes-cursor (reagent/cursor ratom [:notes])
         _auto-load (load-notes notes-cursor video-src)]
     (fn []
-      [:div
-       [:p "Video Note Taker v1.0"]
+      [:div {:class "flex flex-column items-center"}
+       [:p {:class "f3"} "Video Note Taker v1.0"]
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
        [:button {:on-click (fn [] (when-let [video @video-ref-atm]
