@@ -190,9 +190,7 @@
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
-        (if (= 200 (:status resp))
-          (toaster-oven/add-toast "Notes loaded!" svg/check "green" nil)
-          (toaster-oven/add-toast "Couldn't load notes." svg/x "red" nil))
+        (toast-server-error-if-needed resp nil)
         (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn page [ratom]
