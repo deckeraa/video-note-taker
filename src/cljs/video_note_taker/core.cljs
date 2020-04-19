@@ -67,11 +67,12 @@
          [:button {:on-click (fn []
                                (save-fn @val-atm #(reset! editing? false)))}
           "Save"]]
-        [:div {:class ""}
+        [:div {:class "flex items-center"}
          [:p {:class ""} @val-atm]
-         [:button {:on-click #(do (reset! editing? true)
-                                  (reset! restore-val-atm @val-atm))} "edit"]]
-        ))))
+         [svg/pencil {:class "dim ma2"
+                     :on-click #(do (reset! editing? true)
+                                    (reset! restore-val-atm @val-atm))}
+          "black" "18px"]]))))
 
 (defn upsert-note! [notes-cursor doc]
   (swap! notes-cursor
