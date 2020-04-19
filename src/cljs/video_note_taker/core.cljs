@@ -152,7 +152,7 @@
 
 (defn notes [notes-cursor video-ref-atm video-src]
   [:div {:class "flex flex-column items-center"}
-   [:div {:class "b--black-10 ba br3 w5 pa3 flex items-center justify-center"
+   [:div {:class "b--black-10 ba br3 pa2 pr4 pl2 flex items-center justify-center bg-green dim"
           :on-click (fn [e] 
                          (when-let [video @video-ref-atm]
                            (let [current-time (.-currentTime video)
@@ -166,8 +166,8 @@
                                         (swap! notes-cursor (fn [notes]
                                                               (vec (concat [doc] notes))
                                                               )))))))}
-    [svg/plus {:class "mr2"} "green" "24px"]
-    [:div {:class "f3"} "Add note"]]
+    [svg/plus {:class "mr4"} "white" "24px"]
+    [:div {:class "f2 b white"} "Add note"]]
    [:div {:class "flex flex-column"}
     (doall
      (map (fn [idx]
