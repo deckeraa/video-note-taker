@@ -70,3 +70,8 @@
   [:div style
    [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 8 8" :fill color}
     [:path {:d "M6 0l-1 1 2 2 1-1-2-2zm-2 2l-4 4v2h2l4-4-2-2z"}]]])
+
+(defn plus [style color size]
+  [:div style
+   [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 8 8" :fill color}
+    [:path {:d "M3 0v3h-3v2h3v3h2v-3h3v-2h-3v-3h-2z"}]]])

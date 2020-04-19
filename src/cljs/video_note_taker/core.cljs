@@ -151,8 +151,9 @@
   )
 
 (defn notes [notes-cursor video-ref-atm video-src]
-  [:div
-   [:button {:on-click (fn [e] 
+  [:div {:class "flex flex-column items-center"}
+   [:div {:class "b--black-10 ba br3 w5 pa3 flex items-center justify-center"
+          :on-click (fn [e] 
                          (when-let [video @video-ref-atm]
                            (let [current-time (.-currentTime video)
                                  uuid (uuid/uuid-string (uuid/make-random-uuid))]
@@ -163,17 +164,18 @@
                                        :text (str "Note at " current-time)}
                                       (fn [doc]
                                         (swap! notes-cursor (fn [notes]
-                                        ;                                                                (vec (conj notes doc))
                                                               (vec (concat [doc] notes))
                                                               )))))))}
-    "Add note"]
-   (doall
-    (map (fn [idx]
-           (let [note-cursor (reagent/cursor notes-cursor [idx])]
-             ^{:key (get-in @note-cursor [:_id])}
-             [note note-cursor notes-cursor video-ref-atm]
-             ))
-         (range 0 (count @notes-cursor))))
+    [svg/plus {:class "mr2"} "green" "24px"]
+    [:div {:class "f3"} "Add note"]]
+   [:div {:class "flex flex-column"}
+    (doall
+     (map (fn [idx]
+            (let [note-cursor (reagent/cursor notes-cursor [idx])]
+              ^{:key (get-in @note-cursor [:_id])}
+              [note note-cursor notes-cursor video-ref-atm]
+              ))
+          (range 0 (count @notes-cursor))))]
    ]
     )
 
