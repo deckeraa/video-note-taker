@@ -56,23 +56,27 @@
         val-atm (reagent/atom initial-val)]
     (fn []
       (if @editing?
-        [:div {:class ""}
-         [:input {:type :text :value @val-atm
-                  :on-change (fn [e]
-                               (reset! val-atm (-> e .-target .-value)))}]
-         [:button {:on-click (fn []
-                               (reset! val-atm @restore-val-atm)
-                               (reset! editing? false))}
-          "Cancel"]
-         [:button {:on-click (fn []
-                               (save-fn @val-atm #(reset! editing? false)))}
-          "Save"]]
+        [:div {:class "flex items-center"}
+         [:textarea {:type :text :value @val-atm
+                     :rows 5 :cols 35
+                     :on-change (fn [e]
+                                  (reset! val-atm (-> e .-target .-value)))}]
+         [:div {:class "flex flex-column"}
+          [svg/check {:class "dim ma2"
+                      :on-click (fn []
+                                  (save-fn @val-atm #(reset! editing? false)))}
+           "green" "24px"]
+          [svg/x {:class "dim ma2"
+                  :on-click (fn []
+                              (reset! val-atm @restore-val-atm)
+                              (reset! editing? false))}
+           "red" "24px"]]]
         [:div {:class "flex items-center"}
          [:p {:class ""} @val-atm]
          [svg/pencil {:class "dim ma2"
                      :on-click #(do (reset! editing? true)
                                     (reset! restore-val-atm @val-atm))}
-          "black" "18px"]]))))
+          "gray" "18px"]]))))
 
 (defn upsert-note! [notes-cursor doc]
   (swap! notes-cursor
@@ -111,12 +115,12 @@
       [:div {:class "flex items-center"}
        [svg/chevron-left {:class "ma2 dim"
                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm -0.1)}
-        "black" "32px"]
+        "gray" "32px"]
        [:div {:class "f3"}
         [:div (format-time (:time @note-cursor))]]
        [svg/chevron-right {:class "ma2 dim"
                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm 0.1)}
-        "black" "32px"]])))
+        "gray" "32px"]])))
 
 (defn note [note-cursor notes-cursor video-ref-atm]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
