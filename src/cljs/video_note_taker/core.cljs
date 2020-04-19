@@ -118,11 +118,12 @@
         "black" "32px"]])))
 
 (defn note [note-cursor notes-cursor video-ref-atm]
-  [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
-   [:button {:on-click (fn []
-                         (when-let [video @video-ref-atm]
-                           (set! (.-currentTime video) (:time @note-cursor))))}
-    "Go"]
+  [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
+;   [:button {}]
+   [svg/media-play {:class "ml1 mr4 dim"
+                    :on-click (fn []
+                                (when-let [video @video-ref-atm]
+                                  (set! (.-currentTime video) (:time @note-cursor))))} "green" "32px"]
    [editable-field (:text @note-cursor)
     (fn [new-val done-fn]
       (put-doc (assoc @note-cursor :text new-val)

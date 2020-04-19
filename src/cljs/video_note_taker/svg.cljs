@@ -60,3 +60,8 @@
   [:div style
    [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 8 8" :fill color}
     [:path {:d "M5 0v2h-5v1h5v2l3-2.53-3-2.47z" :transform "translate(0 1)"}]]])
+
+(defn media-play [style color size]
+  [:div style
+   [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 8 8" :fill color}
+    [:path {:d "M0 0v6l6-3-6-3z" :transform "translate(1 1)"}]]])
