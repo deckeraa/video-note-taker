@@ -108,12 +108,12 @@
   (let [scrub-timer-count-atm (reagent/atom 0)]
     (fn [note-cursor notes-cursor video-ref-atm]
       [:div {:class "flex items-center"}
-       [svg/chevron-left {:class "ma2"
+       [svg/chevron-left {:class "ma2 dim"
                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm -0.1)}
         "black" "32px"]
        [:div {:class "f3"}
         [:div (format-time (:time @note-cursor))]]
-       [svg/chevron-right {:class "ma2"
+       [svg/chevron-right {:class "ma2 dim"
                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm 0.1)}
         "black" "32px"]])))
 
@@ -133,7 +133,8 @@
                  (done-fn))))]
    ;; [:div (str @note-cursor)]
    [time-scrubber note-cursor notes-cursor video-ref-atm]
-   [svg/trash {:on-click (fn []
+   [svg/trash {:class "dim"
+               :on-click (fn []
                            (delete-doc @note-cursor
                                        (fn [resp]
                                          (swap! notes-cursor (fn [notes]
