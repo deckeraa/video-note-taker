@@ -68,13 +68,15 @@
                     [icon-fn {:style {:display :inline-block :padding "8px"}} color 32])
                   toast-msg]
                  (when button-fns
-                   (let [cancel-fn (or (:cancel-fn button-fns) (fn [] nil))
-                         ok-fn     (or (:ok-fn     button-fns) (fn [] nil))]
+                   (let [cancel-fn (:cancel-fn button-fns)
+                         ok-fn     (:ok-fn     button-fns)]
                      [:div {:style {:display :flex :justify-content :flex-end}}
-                      (when cancel-fn [:button {:on-click (fn []
+                      (when cancel-fn [:div {:class "ba br3 b--black-10"
+                                             :on-click (fn []
                                                             (@remove-delegate-atm)
                                                             (cancel-fn))} "Cancel"])
-                      (when ok-fn     [:button {:on-click (fn []
+                      (when ok-fn     [:div {:class "br3 pa3 shadow-4 dim"
+                                             :on-click (fn []
                                                             (@remove-delegate-atm)
                                                             (ok-fn))} "Ok"])]))]
                 remove-delegate-atm ; if buttons are present, then the remove-delegate-atm is set and the toast doesn't disappear after a certain time.

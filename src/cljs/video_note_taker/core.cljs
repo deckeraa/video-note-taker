@@ -196,7 +196,9 @@
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
        [:button {:on-click (fn []
-                             (toaster-oven/add-toast "Test" svg/check "green" nil))}
+                             (toaster-oven/add-toast "Test" svg/check "green"
+                                                     {:ok-fn    (fn [] (println "ok"))
+                                                      }))}
         "Test toast"]
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
