@@ -4,17 +4,12 @@
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
    [cljs-uuid-utils.core :as uuid]
-   [video-note-taker.svg :as svg])
+   [video-note-taker.atoms :as atoms]
+   [video-note-taker.svg :as svg]
+   [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Vars
-
-(defonce app-state
-  (reagent/atom {:notes []}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page
@@ -180,16 +175,19 @@
     )
 
 (defn load-notes [notes-cursor video-key]
+  (println "calling load-notes")
   (go (let [resp (<! (http/post "http://localhost:3000/get-notes"
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
+        (println "load-notes " resp)
+        (println "notes-cursor " notes-cursor)
         (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
         video-src "big_buck_bunny_720p_surround.mp4"
-        notes-cursor (reagent/cursor ratom [:notes])
+        notes-cursor atoms/notes-cursor
         _auto-load (load-notes notes-cursor video-src)]
     (fn []
       [:div {:class "flex flex-column items-center"}
@@ -201,6 +199,7 @@
        ;;                              (println @notes-cursor)))}
        ;;  "Print video source"]
        [:p (str @ratom)]
+       [toaster-oven/toaster-control]
        ])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -213,7 +212,7 @@
     ))
 
 (defn reload []
-  (reagent/render [page app-state]
+  (reagent/render [page atoms/app-state]
                   (.getElementById js/document "app")))
 
 (defn ^:export main []
