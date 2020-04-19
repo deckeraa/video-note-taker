@@ -85,11 +85,17 @@
              (sort-by :time new-notes))))
   )
 
-(defn change-time-scrub [note-cursor notes-cursor video-ref-atm change]
+(defn change-time-scrub [note-cursor notes-cursor video-ref-atm scrub-timer-count-atm change]
   (let [new-time (+ (:time @note-cursor) change)]
     (when-let [video @video-ref-atm]
       (set! (.-currentTime video) new-time))
     (swap! note-cursor assoc :time new-time)
+    (swap! scrub-timer-count-atm inc)
+    (js/setTimeout (fn []
+                     (when (= 0 (swap! scrub-timer-count-atm dec))
+                       (do
+                         (println "Updating the time scrubbing")
+                         (put-doc @note-cursor (fn [] nil))))) 2000)
     ))
 
 (defn format-time [time-in-seconds]
@@ -102,12 +108,12 @@
     (fn []
       [:div {:class "flex items-center"}
        [svg/chevron-left {:class "ma2"
-                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm -0.1)}
+                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm -0.1)}
         "black" "32px"]
        [:div {:class "f3"}
         [:div (format-time (:time @note-cursor))]]
        [svg/chevron-right {:class "ma2"
-                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm 0.1)}
+                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm 0.1)}
         "black" "32px"]])))
 
 (defn note [note-cursor notes-cursor video-ref-atm]
@@ -129,8 +135,6 @@
      [svg/trash {:on-click (fn []
                              (delete-doc @note-cursor
                                          (fn [resp]
-                                           (println "delete-doc resp: " resp)
-                                           (println "before " @notes-cursor )
                                            (swap! notes-cursor (fn [notes]
                                                                  (vec (filter #(not (= (:id @note-cursor) (:id %)))
                                                                               notes)))))))}
@@ -141,19 +145,16 @@
 (defn notes [notes-cursor video-ref-atm video-src]
   (fn []
     [:div
-     ;; [:p @notes-cursor]
      [:button {:on-click (fn [e] 
                            (when-let [video @video-ref-atm]
                              (let [current-time (.-currentTime video)
                                    uuid (uuid/uuid-string (uuid/make-random-uuid))]
-                               (println "current time:" current-time)
                                (put-doc {:id uuid
                                          :type :note
                                          :video video-src
                                          :time current-time
                                          :text (str "Note at " current-time)}
                                         (fn [doc]
-                                          (println "handler-fn's doc: " doc)
                                           (swap! notes-cursor conj doc))))))}
       "Add note"]
      (doall
