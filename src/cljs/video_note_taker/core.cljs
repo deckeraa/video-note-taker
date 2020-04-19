@@ -143,11 +143,15 @@
     [time-scrubber note-cursor notes-cursor video-ref-atm]
     [svg/trash {:class "dim ml3"
                 :on-click (fn []
-                            (delete-doc @note-cursor
-                                        (fn [resp]
-                                          (swap! notes-cursor (fn [notes]
-                                                                (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
-                                                                             notes)))))))}
+                            (toaster-oven/add-toast
+                             "Delete note?" nil nil
+                             {:cancel-fn (fn [] nil)
+                              :ok-fn (fn [] 
+                                       (delete-doc @note-cursor
+                                                   (fn [resp]
+                                                     (swap! notes-cursor (fn [notes]
+                                                                           (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
+                                                                                                               notes)))))))}))}
      "gray" "32px"]]
    ]
   )
