@@ -119,7 +119,7 @@
                      (when (= 0 (swap! scrub-timer-count-atm dec))
                        (do
                          (println "Updating the time scrubbing")
-                         (put-doc @note-cursor (fn [] nil))))) 2000)
+                         (put-doc @note-cursor (fn [doc] (swap! note-cursor assoc :_rev (:_rev doc))))))) 2000)
     ))
 
 (defn format-time [time-in-seconds]
