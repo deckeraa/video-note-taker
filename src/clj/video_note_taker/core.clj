@@ -19,7 +19,7 @@
    [clojure.walk :refer [keywordize-keys]])
   (:gen-class))
 
-(def db (assoc (cemerick.url/url "http:localhost:5984/video-note-taker")
+(def db (assoc (cemerick.url/url "http://localhost:5984/video-note-taker")
                :username "admin"
                :password "test"         ; TODO add real credential handling
                ))
