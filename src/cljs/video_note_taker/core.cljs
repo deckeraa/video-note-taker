@@ -25,11 +25,17 @@
    "Video not supported by your browser :("]
   )
 
+(defn toast-server-error-if-needed [resp doc]
+  (when (not (= 200 (:status resp)))
+    (toaster-oven/add-toast (str "Server error: " resp doc) svg/x "red"
+                            {:ok-fn    (fn [] nil)})))
+
 (defn put-doc [doc handler-fn]
   (go (let [resp (<! (http/post "http://localhost:3000/put-doc"
                                 {:json-params doc
                                  :with-credentials false}
                                 ))]
+        (toast-server-error-if-needed resp doc)
         (println resp)
         (println (:body resp))
         (handler-fn (:body resp) resp)))
@@ -40,6 +46,7 @@
                                 {:json-params doc
                                  :with-credentials false}
                                 ))]
+        (toast-server-error-if-needed resp doc)
         (println resp)
         (println (:body resp))
         (handler-fn (:body resp) resp)))
@@ -195,11 +202,11 @@
        [:p {:class "f3"} "Video Note Taker"]
        [video video-ref-atm video-src]
        [notes notes-cursor video-ref-atm video-src]
-       [:button {:on-click (fn []
-                             (toaster-oven/add-toast "Test" svg/check "green"
-                                                     {:ok-fn    (fn [] (println "ok"))
-                                                      }))}
-        "Test toast"]
+       ;; [:button {:on-click (fn []
+       ;;                       (toaster-oven/add-toast "Test" svg/check "green"
+       ;;                                               {:ok-fn    (fn [] (println "ok"))
+       ;;                                                }))}
+       ;;  "Test toast"]
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
        ])))
