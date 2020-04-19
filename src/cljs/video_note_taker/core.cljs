@@ -72,7 +72,7 @@
                                   (reset! restore-val-atm @val-atm))} "edit"]]
         ))))
 
-(defn upsert-note [notes-cursor doc]
+(defn upsert-note! [notes-cursor doc]
   (swap! notes-cursor
          (fn [notes]
            (let [new-notes
@@ -85,45 +85,61 @@
              (sort-by :time new-notes))))
   )
 
+(defn change-time-scrub [note-cursor notes-cursor video-ref-atm change]
+  (let [new-time (+ (:time @note-cursor) change)]
+    (when-let [video @video-ref-atm]
+      (set! (.-currentTime video) new-time))
+    (swap! note-cursor assoc :time new-time)
+    ))
+
 (defn format-time [time-in-seconds]
   (let [minutes (Math/round (/ time-in-seconds 60))
         seconds (/ (Math/round (* (mod time-in-seconds 60) 10)) 10)]
     (str minutes ":" seconds)))
 
-(defn time-scrubber [note notes-cursor video-ref-atm]
-  [:div {:class ""}
-   [svg/chevron-left {} "black" "32px"]
-   [:div {:class ""}
-    (format-time (:time note))]
-   [svg/chevron-right {} "black" "32px"]])
+(defn time-scrubber [note-cursor notes-cursor video-ref-atm]
+  (let [scrub-timer-count-atm (reagent/atom 0)]
+    (fn []
+      [:div {:class "flex items-center"}
+       [svg/chevron-left {:class "ma2"
+                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm -0.1)}
+        "black" "32px"]
+       [:div {:class "f3"}
+        [:div (format-time (:time @note-cursor))]]
+       [svg/chevron-right {:class "ma2"
+                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm 0.1)}
+        "black" "32px"]])))
 
-(defn note [note notes-cursor video-ref-atm]
-  [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
-   [:button {:on-click (fn []
-                         (when-let [video @video-ref-atm]
-                           (set! (.-currentTime video) (:time note))))}
-    "Go"]
-   [editable-field (:text note)
-    (fn [new-val done-fn]
-      (put-doc (assoc note :text new-val)
-               (fn [new-doc]
-                 (println "new-doc" new-doc)
-                 (upsert-note notes-cursor new-doc)
-                 (done-fn))))]
-   [time-scrubber note notes-cursor video-ref-atm]
-   [svg/trash {:on-click (fn []
-                           (delete-doc note
-                                       (fn [resp]
-                                         (swap! notes-cursor (fn [notes]
-                                                               (filter #(not (= (:id note) (:id %)))
-                                                                       notes))))))}
-    "gray" "32px"]
-   ]
+(defn note [note-cursor notes-cursor video-ref-atm]
+  (fn []
+    [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between"}
+     [:button {:on-click (fn []
+                           (when-let [video @video-ref-atm]
+                             (set! (.-currentTime video) (:time @note-cursor))))}
+      "Go"]
+     [editable-field (:text @note-cursor)
+      (fn [new-val done-fn]
+        (put-doc (assoc @note-cursor :text new-val)
+                 (fn [new-doc]
+                   (println "new-doc" new-doc)
+                   (upsert-note! notes-cursor new-doc)
+                   (done-fn))))]
+     ;; [:div (str @note-cursor)]
+     [time-scrubber note-cursor notes-cursor video-ref-atm]
+     [svg/trash {:on-click (fn []
+                             (delete-doc @note-cursor
+                                         (fn [resp]
+                                           (swap! notes-cursor (fn [notes]
+                                                                 (filter #(not (= (:id note) (:id %)))
+                                                                         notes))))))}
+      "gray" "32px"]
+     ])
   )
 
 (defn notes [notes-cursor video-ref-atm video-src]
   (fn []
     [:div
+     ;; [:p @notes-cursor]
      [:button {:on-click (fn [e] 
                            (when-let [video @video-ref-atm]
                              (let [current-time (.-currentTime video)
@@ -138,10 +154,20 @@
                                           (println "handler-fn's doc: " doc)
                                           (swap! notes-cursor conj doc))))))}
       "Add note"]
-     (map (fn [note-val]
-            ^{:key (:id note-val)}
-            [note note-val notes-cursor video-ref-atm])
-          @notes-cursor)]
+     ;; [:ul
+     ;;  (map (fn [idx]
+     ;;          ^{:key idx}
+     ;;         [:li (str @(reagent/cursor notes-cursor [idx]))])
+     ;;        (range 0 (count @notes-cursor)))]
+     (doall
+      (map (fn [idx]
+             (let [cursor (reagent/cursor notes-cursor [idx])]
+               ^{:key (get-in @cursor [:id])}
+               [note cursor notes-cursor video-ref-atm]
+               ;; [:div {} (str @cursor)]
+               ))
+           (range 0 (count @notes-cursor))))
+     ]
     ))
 
 (defn load-notes [notes-cursor video-key]
@@ -149,7 +175,7 @@
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
-        (reset! notes-cursor (sort-by :time (mapv :doc (:body resp)))))))
+        (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
