@@ -9,7 +9,7 @@
   (:require-macros
    [devcards.core :refer [defcard defcard-rg]]))
 
-(def toasting-time (* 2 1000)) ; minimum time, in milliseconds, that toasts are shown.
+(def toasting-time (* 3 1000)) ; minimum time, in milliseconds, that toasts are shown.
 
 (defn add-toast
   "Adds a toast that will disappear by itself. The time it disappears is controlled by the addition of

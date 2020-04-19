@@ -180,9 +180,9 @@
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
                                 ))]
-        (toaster-oven/add-toast "Notes loaded!" svg/check "green" nil)
-        (println "load-notes " resp)
-        (println "notes-cursor " notes-cursor)
+        (if (= 200 (:status resp))
+          (toaster-oven/add-toast "Notes loaded!" svg/check "green" nil)
+          (toaster-oven/add-toast "Couldn't load notes." svg/x "red" nil))
         (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn page [ratom]
