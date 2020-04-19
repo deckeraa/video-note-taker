@@ -120,18 +120,19 @@
 
 (defn note [note-cursor notes-cursor video-ref-atm]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
-;   [:button {}]
-   [svg/media-play {:class "ml1 mr4 dim"
-                    :on-click (fn []
-                                (when-let [video @video-ref-atm]
-                                  (set! (.-currentTime video) (:time @note-cursor))))} "green" "32px"]
-   [editable-field (:text @note-cursor)
-    (fn [new-val done-fn]
-      (put-doc (assoc @note-cursor :text new-val)
-               (fn [new-doc]
-                 (println "new-doc" new-doc)
-                 (upsert-note! notes-cursor new-doc)
-                 (done-fn))))]
+                                        ;   [:button {}]
+   [:div {:class "flex items-center"}
+    [svg/media-play {:class "ml1 mr4 dim"
+                     :on-click (fn []
+                                 (when-let [video @video-ref-atm]
+                                   (set! (.-currentTime video) (:time @note-cursor))))} "green" "32px"]
+    [editable-field (:text @note-cursor)
+     (fn [new-val done-fn]
+       (put-doc (assoc @note-cursor :text new-val)
+                (fn [new-doc]
+                  (println "new-doc" new-doc)
+                  (upsert-note! notes-cursor new-doc)
+                  (done-fn))))]]
    [:div {:class "flex items-center ml3"}
     [time-scrubber note-cursor notes-cursor video-ref-atm]
     [svg/trash {:class "dim ml3"
