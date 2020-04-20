@@ -19,7 +19,7 @@
   [:video {:id "main-video"
            :class "mb3"
            :controls true
-           :src video-src
+           :src (str "videos/" video-src)
            :width 620
            :ref (fn [el]
                  (reset! video-ref-atm el))}

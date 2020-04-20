@@ -16,6 +16,7 @@
    [cemerick.url]
    [com.ashafa.clutch :as couch]
    [clojure.data.json :as json]
+   [clojure.java.shell :as shell :refer [sh]]
    [clojure.walk :refer [keywordize-keys]])
   (:gen-class))
 
@@ -68,11 +69,20 @@
     (println "deleting doc: " doc)
     (json-response (couch/delete-document db doc))))
 
+(defn get-videos-handler [req]
+  (json-response
+   (as-> (shell/with-sh-dir "./resources/public/videos"
+           (sh "ls" "-1")) %
+     (:out %)
+     (clojure.string/split % #"\n")
+     )))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["put-doc" put-doc-handler]
         ["get-notes" get-notes-handler]
         ["delete-doc" delete-doc-handler]
+        ["get-videos" get-videos-handler]
         [true  (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
