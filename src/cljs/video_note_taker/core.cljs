@@ -26,6 +26,17 @@
    "Video not supported by your browser :("]
   )
 
+(defn header [screen-cursor video-cursor]
+  [:div {:class "flex items-center f3 justify-between w-100"}
+   [:div {:class "flex items-center"}                             ; left side
+    [:div {:class "f3 ma2 dim"
+           :on-click (fn [] (swap! screen-cursor pop)) } "Video Note Taker"]
+    (when (= :video (peek @screen-cursor))
+      [svg/chevron-right {} "black" "24px"])
+    (when (= :video (peek @screen-cursor))
+      [:div {:class ""} (:src @video-cursor)])]
+   ])
+
 
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
@@ -34,9 +45,18 @@
         _auto-load (notes/load-notes notes-cursor video-src)]
     (fn []
       [:div {:class "flex flex-column items-center"}
-       [:p {:class "f3"} "Video Note Taker"]
-       [video video-ref-atm video-src]
-       [notes/notes notes-cursor video-ref-atm video-src]
+       ;; [:p {:class "f3"} "Video Note Taker"]
+       [header atoms/screen-cursor atoms/video-cursor]
+       (when (= :video-selection (peek @atoms/screen-cursor))
+         [:div {:class ""
+                :on-click (fn []
+                            (reset! atoms/video-cursor {:src "big_buck_bunny_720p_surround.mp4"})
+                            (swap! atoms/screen-cursor conj :video))}
+          "Big Buck Bunny"])
+       (when (= :video (peek @atoms/screen-cursor))
+         [:div
+          [video video-ref-atm video-src]
+          [notes/notes notes-cursor video-ref-atm video-src]])
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
        ])))

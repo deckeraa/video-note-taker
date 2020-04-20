@@ -10,6 +10,7 @@
 
 (defonce app-state
   (reagent/atom {:notes []
+                 :video {}
                  :screen-stack [:video-selection]
                  :settings {}
                  :toaster {:toasts [] :old-toasts []}}))
@@ -18,3 +19,4 @@
 (defonce settings-cursor (reagent/cursor app-state [:settings]))
 (defonce toaster-cursor  (reagent/cursor app-state [:toaster]))
 (defonce notes-cursor    (reagent/cursor app-state [:notes]))
+(defonce video-cursor    (reagent/cursor app-state [:video]))
