@@ -13,7 +13,7 @@
                  :video {}
                  :video-listing []
                  :screen-stack [:video-selection]
-                 :settings {}
+                 :settings {:_id "settings"}
                  :toaster {:toasts [] :old-toasts []}}))
 
 (defonce screen-cursor   (reagent/cursor app-state [:screen-stack]))

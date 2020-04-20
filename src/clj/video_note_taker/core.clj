@@ -49,6 +49,10 @@
 (defn get-doc [id]
   (couch/get-document db id))
 
+(defn get-doc-handler [req]
+  (let [doc (get-body req)]
+    (json-response (get-doc (:_id doc)))))
+
 ;; notes -> by_video
 ;; function(doc) {
 ;;   if ('video' in doc) {
@@ -79,11 +83,12 @@
 
 (def api-routes
   ["/" [["hello" hello-handler]
+        ["get-doc" get-doc-handler]
         ["put-doc" put-doc-handler]
         ["get-notes" get-notes-handler]
         ["delete-doc" delete-doc-handler]
         ["get-video-listing" get-video-listing-handler]
-        [true  (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
+        [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
   (-> (make-handler api-routes)

@@ -30,6 +30,25 @@
     (toaster-oven/add-toast (str "Server error: " resp doc) svg/x "red"
                             {:ok-fn    (fn [] nil)})))
 
+(defn get-doc [id success-fn fail-fn]
+  (go (let [resp (<! (http/post (resolve-endpoint "get-doc")
+                                {:json-params {:_id id}
+                                 :with-credentials false}
+                                ))]
+        (toast-server-error-if-needed resp nil)
+        (when (and
+               (= 200 (:status resp))
+               (:body resp)
+               success-fn)
+          (success-fn (:body resp) resp))
+        (when (and
+               (or
+                (not (= 200 (:status resp)))
+                (nil? (:body resp)))
+               fail-fn)
+          (fail-fn (:body resp) resp))
+        )))
+
 (defn put-doc [doc handler-fn]
   (go (let [resp (<! (http/post (resolve-endpoint "put-doc")
                                 {:json-params doc
