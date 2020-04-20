@@ -42,7 +42,8 @@
   (let [video-ref-atm (clojure.core/atom nil)
         video-src "big_buck_bunny_720p_surround.mp4"
         notes-cursor atoms/notes-cursor
-        _auto-load (notes/load-notes notes-cursor video-src)]
+;        _auto-load (notes/load-notes notes-cursor video-src)
+        ]
     (fn []
       [:div {:class "flex flex-column items-center"}
        ;; [:p {:class "f3"} "Video Note Taker"]
@@ -51,6 +52,8 @@
          [:div {:class ""
                 :on-click (fn []
                             (reset! atoms/video-cursor {:src "big_buck_bunny_720p_surround.mp4"})
+                            (when (empty? @notes-cursor)
+                              (notes/load-notes notes-cursor (:src @atoms/video-cursor)))
                             (swap! atoms/screen-cursor conj :video))}
           "Big Buck Bunny"])
        (when (= :video (peek @atoms/screen-cursor))
