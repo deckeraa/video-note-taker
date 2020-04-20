@@ -10,6 +10,7 @@
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.3.2"]
                  [ring-json-response "0.2.0"]
+                 [ring/ring-codec "1.1.1"]
                  [clj-http "3.9.1"]
                  [cljs-http "0.1.46"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]

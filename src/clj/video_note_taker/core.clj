@@ -12,6 +12,7 @@
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.file :refer [wrap-file]]
    [ring.adapter.jetty :refer [run-jetty]]
+   [ring.util.codec :as codec]
    [clojure.edn :as edn]
    [cemerick.url]
    [com.ashafa.clutch :as couch]
@@ -81,6 +82,32 @@
      (clojure.string/split % #"\n")
      )))
 
+(defn get-notes-spreadsheet [video-src]
+  nil
+  )
+
+(defn escape-csv-field [s]
+  (str "\"" (clojure.string/escape s {\" "\"\""}) "\""))
+
+(defn get-notes-spreadsheet-handler [req]
+  (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
+        notes     (couch/get-view db "notes" "by_video"
+                                  {:key (:video_src query-map) :include_docs true})]
+    (as-> notes $
+      (map (fn [note-result]
+             (let [note (:doc note-result)]
+               (str (escape-csv-field (:video note)) ","
+                    (float (/ (Math/round (* 100 (:time note))) 100)) ","
+                    (escape-csv-field (:text note)))))
+           $)
+      (conj $ "video,time in seconds,note text")
+      (clojure.string/join "\n" $)
+      (do (println "Joined together: " $)
+          $)
+      (response/response $)
+      (content-type $ "text/csv"))
+    ))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
@@ -88,6 +115,7 @@
         ["get-notes" get-notes-handler]
         ["delete-doc" delete-doc-handler]
         ["get-video-listing" get-video-listing-handler]
+        ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
