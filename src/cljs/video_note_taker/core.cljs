@@ -28,14 +28,20 @@
   )
 
 (defn header [screen-cursor video-cursor]
-  [:div {:class "flex items-center f3 justify-between w-100"}
+  [:div {:class "flex items-center f4 justify-between w-100 bg-blue white mb1"}
    [:div {:class "flex items-center"}                             ; left side
-    [:div {:class "f3 ma2 dim"
-           :on-click (fn [] (swap! screen-cursor pop)) } "Video Note Taker"]
+    (if (= :video-selection (peek @screen-cursor))
+      [:div {:class "b ma2"} "Video Note Taker"]
+      [:div {:class "bg-white br-100 pa1 ma1 dim"}
+       [svg/chevron-left {:on-click (fn [] (swap! screen-cursor pop))} "#357edd" "24px"]])
+    ;; (when (= :video (peek @screen-cursor))
+    ;;   )
     (when (= :video (peek @screen-cursor))
-      [svg/chevron-right {} "black" "24px"])
-    (when (= :video (peek @screen-cursor))
-      [:div {:class ""} (:src @video-cursor)])]
+      [:div {:class ""} (:src @video-cursor)])
+    (when (= :settings (peek @screen-cursor))
+      [:div {:class "b ma2"} "Settings"])]
+   [svg/cog {:class "ma2 dim"
+             :on-click (fn [] (swap! screen-cursor conj :settings))} "white" "26px"]
    ])
 
 
