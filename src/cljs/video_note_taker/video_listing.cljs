@@ -25,7 +25,7 @@
         (reset! video-listing-cursor (:body resp)))))
 
 (defn single-video-listing [video-src video-cursor notes-cursor screen-cursor]
-  [:div {:class ""
+  [:div {:class "br3 shadow-4 pa3 dim"
          :on-click (fn []
                      ;; clear out the notes cursor if a different video was selected than before
                      (when (not (= (:src @video-cursor) video-src))
