@@ -10,7 +10,8 @@
    [video-note-taker.db :as db]
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.editable-field :refer [editable-field]]
-   [video-note-taker.video-notes :as notes])
+   [video-note-taker.video-notes :as notes]
+   [video-note-taker.video-listing :as listing])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -42,20 +43,22 @@
   (let [video-ref-atm (clojure.core/atom nil)
         video-src "big_buck_bunny_720p_surround.mp4"
         notes-cursor atoms/notes-cursor
-;        _auto-load (notes/load-notes notes-cursor video-src)
+        _auto-load (listing/load-video-listing atoms/video-listing-cursor)
         ]
     (fn []
       [:div {:class "flex flex-column items-center"}
        ;; [:p {:class "f3"} "Video Note Taker"]
        [header atoms/screen-cursor atoms/video-cursor]
        (when (= :video-selection (peek @atoms/screen-cursor))
-         [:div {:class ""
-                :on-click (fn []
-                            (reset! atoms/video-cursor {:src "big_buck_bunny_720p_surround.mp4"})
-                            (when (empty? @notes-cursor)
-                              (notes/load-notes notes-cursor (:src @atoms/video-cursor)))
-                            (swap! atoms/screen-cursor conj :video))}
-          "Big Buck Bunny"])
+         [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
+         ;; [:div {:class ""
+         ;;        :on-click (fn []
+         ;;                    (reset! atoms/video-cursor {:src "big_buck_bunny_720p_surround.mp4"})
+         ;;                    (when (empty? @notes-cursor)
+         ;;                      (notes/load-notes notes-cursor (:src @atoms/video-cursor)))
+         ;;                    (swap! atoms/screen-cursor conj :video))}
+         ;;  "Big Buck Bunny"]
+         )
        (when (= :video (peek @atoms/screen-cursor))
          [:div
           [video video-ref-atm video-src]

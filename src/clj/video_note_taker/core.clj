@@ -69,7 +69,7 @@
     (println "deleting doc: " doc)
     (json-response (couch/delete-document db doc))))
 
-(defn get-videos-handler [req]
+(defn get-video-listing-handler [req]
   (json-response
    (as-> (shell/with-sh-dir "./resources/public/videos"
            (sh "ls" "-1")) %
@@ -82,7 +82,7 @@
         ["put-doc" put-doc-handler]
         ["get-notes" get-notes-handler]
         ["delete-doc" delete-doc-handler]
-        ["get-videos" get-videos-handler]
+        ["get-video-listing" get-video-listing-handler]
         [true  (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app

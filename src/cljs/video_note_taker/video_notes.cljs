@@ -135,7 +135,7 @@
     )
 
 (defn load-notes [notes-cursor video-key]
-  (println "calling load-notes")
+  (println "calling load-notes with video-key: " video-key)
   (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
                                 {:json-params {:video-key video-key}
                                  :with-credentials false}
