@@ -41,28 +41,19 @@
 
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
-        video-src "big_buck_bunny_720p_surround.mp4"
         notes-cursor atoms/notes-cursor
         _auto-load (listing/load-video-listing atoms/video-listing-cursor)
         ]
     (fn []
       [:div {:class "flex flex-column items-center"}
-       ;; [:p {:class "f3"} "Video Note Taker"]
        [header atoms/screen-cursor atoms/video-cursor]
        (when (= :video-selection (peek @atoms/screen-cursor))
          [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
-         ;; [:div {:class ""
-         ;;        :on-click (fn []
-         ;;                    (reset! atoms/video-cursor {:src "big_buck_bunny_720p_surround.mp4"})
-         ;;                    (when (empty? @notes-cursor)
-         ;;                      (notes/load-notes notes-cursor (:src @atoms/video-cursor)))
-         ;;                    (swap! atoms/screen-cursor conj :video))}
-         ;;  "Big Buck Bunny"]
          )
        (when (= :video (peek @atoms/screen-cursor))
          [:div
-          [video video-ref-atm video-src]
-          [notes/notes notes-cursor video-ref-atm video-src]])
+          [video video-ref-atm (:src @atoms/video-cursor)]
+          [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
        [:p (str @ratom)]
        [toaster-oven/toaster-control]
        ])))
