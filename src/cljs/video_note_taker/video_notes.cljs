@@ -42,12 +42,21 @@
 
 (defn format-time [time-in-seconds]
   (let [minutes (Math/floor (/ time-in-seconds 60)) ; floor instead of round since the remainder of minutes is dplayed in seconds
-        seconds (/ (Math/round (* (mod time-in-seconds 60) 10)) 10)]
-    (str minutes ":" seconds)))
+        seconds (/ (Math/round (* (mod time-in-seconds 60) 10)) 10)
+        ;; pad to two digits if needed
+        padded-seconds (if (< seconds 10)
+                         (str "0" seconds)
+                         (str seconds))
+        ;; make sure there's a decimal point on the end
+        padded-seconds (if (clojure.string/includes? padded-seconds ".")
+                         padded-seconds
+                         (str padded-seconds ".0"))]
+    (str minutes ":" padded-seconds)))
 
 (deftest format-time-test
   (is (= (format-time 40.4583330000001) "0:40.5"))
-  (is (= (format-time 95.553641) "1:35.6")))
+  (is (= (format-time 95.553641) "1:35.6"))
+  (is (= (format-time 95.00001) "1:35.0")))
 
 ;; (defn format-time-in-seconds [seconds]
 ;;   (let [min (Math/floor (/ seconds 60))
