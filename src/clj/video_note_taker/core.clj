@@ -16,6 +16,7 @@
    [ring.util.codec :as codec]
    [clojure.edn :as edn]
    [cemerick.url :as url]
+   [clj-http.client :as http]
    [com.ashafa.clutch :as couch]
    [com.ashafa.clutch.utils :as utils]
    [com.ashafa.clutch.http-client :refer [couchdb-request]]
@@ -151,7 +152,13 @@
     (json-response {:didnt-import @failed-imports})))
 
 (defn get-cookie-handler [req]
-  (json-response (couchdb-request :get (url/url db "/_all_dbs"))))
+  (let [resp (http/post "http://localhost:5984/_session" {:as :json
+                                                         :content-type :json
+                                                         :form-params {:name "alpha"
+                                                                       :password "alpha"}})]
+    (println resp)
+    (json-response {:body (:body resp) :cookies (:cookies resp)}))
+  )
 
 (def api-routes
   ["/" [["hello" hello-handler]

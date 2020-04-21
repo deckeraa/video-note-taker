@@ -33,7 +33,7 @@
                                                          :with-credentials false}))]
                                 (reset! cookie-atm resp))))}
         "Retrieve Cookie"]
-       [:div (str @cookie-atm)]])))
+       [:div (str (:body @cookie-atm))]])))
 
 (defn settings [settings-cursor]
   (let [file-input-ref-el (reagent/atom nil)
