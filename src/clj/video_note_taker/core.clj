@@ -12,6 +12,7 @@
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [ring.middleware.file :refer [wrap-file]]
+   [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
    [clojure.edn :as edn]
@@ -25,6 +26,7 @@
    [clojure.walk :refer [keywordize-keys]]
    [clojure.java.io :as io]
    [clj-uuid :as uuid]
+   [clj-time.format :as format]
    [clojure.data.csv :refer [read-csv write-csv]])
   (:gen-class))
 
@@ -151,14 +153,33 @@
                 lines))
     (json-response {:didnt-import @failed-imports})))
 
+(defn- remove-cookie-attrs-not-supported-by-ring
+  "CouchDB sends back cookie attributes like :version that ring can't handle. This removes those."
+  [cookies]
+  (apply merge
+         (map (fn [[cookie-name v]]
+                (let [v (select-keys v [:value :domain :path :secure :http-only :max-age :same-site :expires])]
+                  {cookie-name (update v :expires #(.toString %))} ;; the :expires attr also needs changed frmo a java.util.Date to a string
+                  ))
+              cookies)))
+
 (defn get-cookie-handler [req]
   (let [resp (http/post "http://localhost:5984/_session" {:as :json
                                                          :content-type :json
                                                          :form-params {:name "alpha"
                                                                        :password "alpha"}})]
     (println resp)
-    (json-response {:body (:body resp) :cookies (:cookies resp)}))
-  )
+    (let [d (get-in resp [:cookies "AuthSession" :expires])]
+      (println (.toString d)))
+;    (println (format/unparse (format/formatter "EEE, dd-MM-YYYY HH:mm:ss") (get-in resp [:cookies "AuthSession" :expires])))
+    (let [ring-resp
+          (assoc 
+           (json-response {:body (:body resp) :cookies (:cookies resp)})
+           :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
+           ;; :cookies {"secret" {:value "foobar", :secure true, :max-age 3600}}
+           )]
+;      (println ring-resp)
+      ring-resp)))
 
 (def api-routes
   ["/" [["hello" hello-handler]
@@ -177,6 +198,7 @@
       (wrap-file "resources/public")
       (wrap-content-type)
       (wrap-multipart-params)
+      (wrap-cookies)
       (wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]
