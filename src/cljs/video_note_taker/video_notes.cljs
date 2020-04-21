@@ -141,7 +141,7 @@
               ))
           (range 0 (count @notes-cursor))))]
    [:a {:class "b--black-10 ba br3 pa2 dim"
-        :href (str "http://localhost:3000/get-notes-spreadsheet?video_src=" video-src)}
+        :href (str (db/get-server-url) "/get-notes-spreadsheet?video_src=" video-src)}
     "Download notes as spreadsheet"]
    ])
 
