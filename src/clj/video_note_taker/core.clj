@@ -166,20 +166,40 @@
               cookies)))
 
 (defn get-cookie-handler [req]
-  (let [params (get-body req)
-        resp (http/post "http://localhost:5984/_session" {:as :json
-                                                         :content-type :json
-                                                         :form-params {:name (:user params)
-                                                                       :password (:pass params)}})]
-    (println params (type params))
-    (let [ring-resp
-          (assoc 
-           (json-response {:body (:body resp) :cookies (:cookies resp)})
-           :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
-           ;; :cookies {"secret" {:value "foobar", :secure true, :max-age 3600}}
-           )]
-;      (println ring-resp)
-      ring-resp)))
+  (try
+    (let [params (get-body req)
+          resp (http/post "http://localhost:5984/_session" {:as :json
+                                                            :content-type :json
+                                                            :form-params {:name (:user params)
+                                                                          :password (:pass params)}})]
+
+      (println params (type params))
+      (println resp)
+      (println (get-in resp [:body :ok]))
+      (let [ring-resp
+            (assoc 
+             (json-response {:body (:body resp) :cookies (:cookies resp)})
+             :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
+             ;; :cookies {"secret" {:value "foobar", :secure true, :max-age 3600}}
+             )]
+                                        ;      (println ring-resp)
+        ring-resp))
+    (catch Exception e
+      (json-response {:result "login failed"}))))
+
+(defn login-handler [req]
+  (try
+    (let [params (get-body req)
+          resp (http/post "http://localhost:5984/_session" {:as :json
+                                                            :content-type :json
+                                                            :form-params {:name     (:user params)
+                                                                          :password (:pass params)}})]
+      (assoc 
+       (json-response true)
+       :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
+       ))
+    (catch Exception e
+      (json-response false))))
 
 (defn get-session-handler [req]
   (let [;params (get-body req)
@@ -208,6 +228,7 @@
         ["upload-spreadsheet" upload-spreadsheet-handler]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
+        ["login" login-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
