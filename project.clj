@@ -14,9 +14,11 @@
                  [clj-http "3.9.1"]
                  [cljs-http "0.1.46"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
+                 [danlentz/clj-uuid "0.1.9"]
                  [com.cemerick/url "0.1.1"]
                  [com.ashafa/clutch "0.4.0"]
-                 [doo "0.1.11"]]
+                 [doo "0.1.11"]
+                 [org.clojure/data.csv "1.0.0"]]
 
   :min-lein-version "2.5.3"
 

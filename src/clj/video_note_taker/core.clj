@@ -10,6 +10,7 @@
    [ring.middleware.defaults :refer [wrap-defaults site-defaults api-defaults]]
    [ring.middleware.content-type :refer [wrap-content-type]]
    [ring.middleware.params :refer [wrap-params]]
+   [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [ring.middleware.file :refer [wrap-file]]
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
@@ -18,7 +19,10 @@
    [com.ashafa.clutch :as couch]
    [clojure.data.json :as json]
    [clojure.java.shell :as shell :refer [sh]]
-   [clojure.walk :refer [keywordize-keys]])
+   [clojure.walk :refer [keywordize-keys]]
+   [clojure.java.io :as io]
+   [clj-uuid :as uuid]
+   [clojure.data.csv :refer [read-csv write-csv]])
   (:gen-class))
 
 (def db (assoc (cemerick.url/url "http://localhost:5984/video-note-taker")
@@ -108,6 +112,43 @@
       (content-type $ "text/csv"))
     ))
 
+(defn import-note-spreadsheet-line [notes-by-video failed-imports video time-in-seconds note-text line]
+  ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
+  (when (not (get-in @notes-by-video [video])) 
+    (as-> (get-notes video) $
+      (map (fn [{{time :time} :doc}]
+             time) ; grab the time associated with the note returned by the view
+           $)
+      (swap! notes-by-video assoc video $)
+      (println "Updated notes-by-video to: " @notes-by-video)))
+  (if (empty? (filter #(< (Math/abs (- time-in-seconds %)) 1)
+                      (get-in @notes-by-video [video])))
+    (do (couch/put-document db {:type "note" :video video :time time-in-seconds :text note-text})
+        (swap! notes-by-video #(assoc % video
+                                      (conj (get % video) time-in-seconds)))
+        (println "Updated2 notes-by-video to: " @notes-by-video))
+    (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."})))
+
+;; to test this via cURL, do something like:
+;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
+(defn upload-spreadsheet-handler [req]
+  (let [id (uuid/to-string (uuid/v4))
+        notes-by-video (atom {})
+        failed-imports (atom [])
+        lines (read-csv (io/reader (get-in req [:params "file" :tempfile])))]
+    (println "upload-spreadsheet-handler req: " req)
+    (println "lines: " (type lines) (count lines) lines)
+    ;; (io/copy (get-in req [:params "file" :tempfile])
+    ;;          (io/file (str "./uploads/" id)))
+    (doall (map (fn [[video time-in-seconds note-text :as line]]
+                  (let [time-in-seconds (edn/read-string time-in-seconds)]
+                                        ;                    (println "type: " time-in-seconds (type time-in-seconds))
+                    (if (number? time-in-seconds) ; filter out the title row, if present
+                      (import-note-spreadsheet-line notes-by-video failed-imports video time-in-seconds note-text line)
+                      (swap! failed-imports conj {:line line :reason "time-in-seconds not a number"}))))
+                lines))
+    (json-response {:didnt-import @failed-imports})))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
@@ -116,12 +157,14 @@
         ["delete-doc" delete-doc-handler]
         ["get-video-listing" get-video-listing-handler]
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
+        ["upload-spreadsheet" upload-spreadsheet-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
   (-> (make-handler api-routes)
       (wrap-file "resources/public")
       (wrap-content-type)
+      (wrap-multipart-params)
       (wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]
