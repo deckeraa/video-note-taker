@@ -1,0 +1,16 @@
+# Place this in /etc/systemd/system/video-note-taker-qa.service
+[Unit]
+Description=video-note-taker QA
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDirectory=/home/pi/code/video-note-taker
+User=pi
+ExecStart=/usr/bin/java -jar /home/pi/code/video-note-taker/target/video-note-taker-0.1.0-SNAPSHOT-standalone.jar 3001
+
+[Install]
+WantedBy=multi-user.target
