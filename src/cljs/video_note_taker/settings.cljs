@@ -17,14 +17,14 @@
   (let [file-input-ref-el (reagent/atom nil)
         import-issues     (reagent/atom [])]
     (fn [settings-cursor]
-      [:div {:class "w-100 pa3"}
+      [:div {:class "w-100 pa3 flex flex-column items-start"}
        [:h2 "Import & Export"]
        [:form {:id "upload-form" :action (str (db/get-server-url) "/upload-spreadsheet") :method "post" :enctype "multipart/form-data"
                }
         [:input {:name "file" :type "file" :size "20" :multiple false
                  :ref (fn [el]
                       (reset! file-input-ref-el el))}]]
-       [:div {:class "br3 ba b--black-10 pa2 dim w5"
+       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
               :on-click (fn []
                           (when-let [file-input @file-input-ref-el]
                             (go (let [resp (<! (http/post
@@ -43,6 +43,9 @@
                   ^{:key (str (:line issue))}
                   [:li (str (:line issue) ": " (:reason issue))])
                 @import-issues)]])
+       [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
+            :href (str (db/get-server-url) "/get-notes-spreadsheet")}
+        "Download all notes as spreadsheet"]
        [:h2 "Developer settings"]
        [:div {:class "flex items-center"}
         [:input {:type :checkbox :class "ma2"
