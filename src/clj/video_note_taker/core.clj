@@ -132,11 +132,11 @@
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
 (defn upload-spreadsheet-handler [req]
+  (println "upload-spreadsheet-handler req: " req)
   (let [id (uuid/to-string (uuid/v4))
         notes-by-video (atom {})
         failed-imports (atom [])
         lines (read-csv (io/reader (get-in req [:params "file" :tempfile])))]
-    (println "upload-spreadsheet-handler req: " req)
     (println "lines: " (type lines) (count lines) lines)
     ;; (io/copy (get-in req [:params "file" :tempfile])
     ;;          (io/file (str "./uploads/" id)))
