@@ -98,16 +98,15 @@
         notes     (couch/get-view db "notes" "by_video"
                                   {:key (:video_src query-map) :include_docs true})]
     (as-> notes $
-      (map (fn [note-result]
-             (let [note (:doc note-result)]
-               (str (escape-csv-field (:video note)) ","
-                    (float (/ (Math/round (* 100 (:time note))) 100)) ","
-                    (escape-csv-field (:text note)))))
+      (map :doc $) ; pull out the docs
+      (sort-by :time $) ; sort
+      (map (fn [note]
+             (str (escape-csv-field (:video note)) ","
+                  (float (/ (Math/round (* 100 (:time note))) 100)) ","
+                  (escape-csv-field (:text note))))
            $)
       (conj $ "video,time in seconds,note text")
       (clojure.string/join "\n" $)
-      (do (println "Joined together: " $)
-          $)
       (response/response $)
       (content-type $ "text/csv"))
     ))
