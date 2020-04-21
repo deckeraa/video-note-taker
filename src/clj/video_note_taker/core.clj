@@ -181,6 +181,22 @@
 ;      (println ring-resp)
       ring-resp)))
 
+(defn get-session-handler [req]
+  (let [;params (get-body req)
+        cookie-value (get-in req [:cookies "AuthSession" :value])
+        resp (http/get "http://localhost:5984/_session" {:as :json
+                                                         :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                                                         :content-type :json
+                                                         })
+        ]
+    (println cookie-value)
+    (println resp)
+    ;; (println params)
+    ;; (println req)
+
+    (json-response {:body (:body resp)})))
+  
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
@@ -191,6 +207,7 @@
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" upload-spreadsheet-handler]
         ["get-cookie" get-cookie-handler]
+        ["get-session" get-session-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
