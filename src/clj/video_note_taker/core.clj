@@ -156,6 +156,8 @@
 (defn- remove-cookie-attrs-not-supported-by-ring
   "CouchDB sends back cookie attributes like :version that ring can't handle. This removes those."
   [cookies]
+  ;; CouchDB sends a cookies map that looks something like
+  ;; {AuthSession {:discard false, :expires #inst "2020-04-21T19:51:08.000-00:00", :path /, :secure false, :value YWxwaGE6NUU5RjQ5RkM6MXHV10hKUXVSuaY8GcMOZ2wFfeA, :version 0}}
   (apply merge
          (map (fn [[cookie-name v]]
                 (let [v (select-keys v [:value :domain :path :secure :http-only :max-age :same-site :expires])]
@@ -164,14 +166,12 @@
               cookies)))
 
 (defn get-cookie-handler [req]
-  (let [resp (http/post "http://localhost:5984/_session" {:as :json
+  (let [params (get-body req)
+        resp (http/post "http://localhost:5984/_session" {:as :json
                                                          :content-type :json
-                                                         :form-params {:name "alpha"
-                                                                       :password "alpha"}})]
-    (println resp)
-    (let [d (get-in resp [:cookies "AuthSession" :expires])]
-      (println (.toString d)))
-;    (println (format/unparse (format/formatter "EEE, dd-MM-YYYY HH:mm:ss") (get-in resp [:cookies "AuthSession" :expires])))
+                                                         :form-params {:name (:user params)
+                                                                       :password (:pass params)}})]
+    (println params (type params))
     (let [ring-resp
           (assoc 
            (json-response {:body (:body resp) :cookies (:cookies resp)})
@@ -197,6 +197,7 @@
   (-> (make-handler api-routes)
       (wrap-file "resources/public")
       (wrap-content-type)
+      (wrap-params)
       (wrap-multipart-params)
       (wrap-cookies)
       (wrap-cors

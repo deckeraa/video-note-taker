@@ -17,19 +17,19 @@
               nil))
 
 (defn cookie-retriever []
-  (let [user-atm (reagent/atom "")
-        pass-atm (reagent/atom "")
+  (let [user-atm (reagent/atom "alpha")
+        pass-atm (reagent/atom "alpha")
         cookie-atm (reagent/atom {})]
     (fn []
       [:div
        [:h2 "Cookie Retriever"]
-       [:input {:type :text :value @user-atm :on-changed #(reset! user-atm (-> % .-target .-value))}]
-       [:input {:type :text :value @pass-atm :on-changed #(reset! pass-atm (-> % .-target .-value))}]
+       [:input {:type :text :value @user-atm :on-change #(reset! user-atm (-> % .-target .-value))}]
+       [:input {:type :text :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]
        [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
               :on-click (fn []
                           (go (let [resp (<! (http/post (db/resolve-endpoint "get-cookie")
-                                                        {:json-params {:user "alpha"
-                                                                       :pass "alpha"}
+                                                        {:json-params {:user @user-atm
+                                                                       :pass @pass-atm}
                                                          :with-credentials false}))]
                                 (reset! cookie-atm resp))))}
         "Retrieve Cookie"]
