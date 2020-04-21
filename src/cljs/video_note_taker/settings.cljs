@@ -2,8 +2,11 @@
   (:require
    [reagent.core :as reagent]
    [cljs-http.client :as http]
-   [cljs.core.async :refer [<! >! chan close! timeout put!] :as async :refer-macros [go]]
-   [video-note-taker.db :as db]))
+   [cljs.core.async :refer [<! >! chan close! timeout put!]]
+   [video-note-taker.db :as db])
+  (:require-macros
+   [devcards.core :refer [defcard deftest]]
+   [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn load-settings [settings-cursor]
   (println "Calling load-settings")

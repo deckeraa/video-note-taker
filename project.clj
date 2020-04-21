@@ -18,7 +18,9 @@
                  [com.cemerick/url "0.1.1"]
                  [com.ashafa/clutch "0.4.0"]
                  [doo "0.1.11"]
-                 [org.clojure/data.csv "1.0.0"]]
+                 [org.clojure/data.csv "1.0.0"]
+                 [org.clojure/core.incubator "0.1.4"] ; workaround https://github.com/clojure-clutch/clutch/issues/86
+                 ]
 
   :min-lein-version "2.5.3"
 
@@ -47,7 +49,10 @@
                    [binaryage/devtools "0.9.9"]]
 
     :plugins      [[lein-figwheel "0.5.15"]
-                   [lein-doo "0.1.11"]]
+                   [lein-doo "0.1.11"]]}
+   :uberjar
+   {:aot :all
+    :main video-note-taker.core
     }}
 
   :cljsbuild
