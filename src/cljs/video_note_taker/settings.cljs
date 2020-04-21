@@ -16,6 +16,25 @@
                 (println "Got settings: " doc))
               nil))
 
+(defn cookie-retriever []
+  (let [user-atm (reagent/atom "")
+        pass-atm (reagent/atom "")
+        cookie-atm (reagent/atom {})]
+    (fn []
+      [:div
+       [:h2 "Cookie Retriever"]
+       [:input {:type :text :value @user-atm :on-changed #(reset! user-atm (-> % .-target .-value))}]
+       [:input {:type :text :value @pass-atm :on-changed #(reset! pass-atm (-> % .-target .-value))}]
+       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
+              :on-click (fn []
+                          (go (let [resp (<! (http/post (db/resolve-endpoint "get-cookie")
+                                                        {:json-params {:user "alpha"
+                                                                       :pass "alpha"}
+                                                         :with-credentials false}))]
+                                (reset! cookie-atm resp))))}
+        "Retrieve Cookie"]
+       [:div (str @cookie-atm)]])))
+
 (defn settings [settings-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         import-issues     (reagent/atom [])]
@@ -50,6 +69,7 @@
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
        [:h2 "Developer settings"]
+       [cookie-retriever]
        [:div {:class "flex items-center"}
         [:input {:type :checkbox :class "ma2"
                  :checked (:show-app-state @settings-cursor)

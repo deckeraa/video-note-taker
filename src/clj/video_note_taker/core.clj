@@ -15,8 +15,10 @@
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
    [clojure.edn :as edn]
-   [cemerick.url]
+   [cemerick.url :as url]
    [com.ashafa.clutch :as couch]
+   [com.ashafa.clutch.utils :as utils]
+   [com.ashafa.clutch.http-client :refer [couchdb-request]]
    [clojure.data.json :as json]
    [clojure.java.shell :as shell :refer [sh]]
    [clojure.walk :refer [keywordize-keys]]
@@ -148,6 +150,9 @@
                 lines))
     (json-response {:didnt-import @failed-imports})))
 
+(defn get-cookie-handler [req]
+  (json-response (couchdb-request :get (url/url db "/_all_dbs"))))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
@@ -157,6 +162,7 @@
         ["get-video-listing" get-video-listing-handler]
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" upload-spreadsheet-handler]
+        ["get-cookie" get-cookie-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
