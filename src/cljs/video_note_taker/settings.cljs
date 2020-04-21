@@ -14,34 +14,35 @@
               nil))
 
 (defn settings [settings-cursor]
-  (let [file-input-ref-el (reagent/atom nil)]
+  (let [file-input-ref-el (reagent/atom nil)
+        import-issues     (reagent/atom [])]
     (fn [settings-cursor]
-      [:div {:class ""}
+      [:div {:class "w-100 pa3"}
        [:h2 "Import & Export"]
        [:form {:id "upload-form" :action (str (db/get-server-url) "/upload-spreadsheet") :method "post" :enctype "multipart/form-data"
                }
         [:input {:name "file" :type "file" :size "20" :multiple false
                  :ref (fn [el]
-                      (reset! file-input-ref-el el))}]
-                                        ;    [:input {:type "submit" :name "submit" :value "submit"}]
-        ]
-       [:div {:class "br3 ba b--black-10 pa2 dim"
+                      (reset! file-input-ref-el el))}]]
+       [:div {:class "br3 ba b--black-10 pa2 dim w5"
               :on-click (fn []
                           (when-let [file-input @file-input-ref-el]
-                            (let [name (.-name file-input)
-                                  file (aget (.-files file-input) 0)
-                                  ;; form-data (doto (js/FormData.)
-                                  ;;             (.append name file))
-                                  ]
-                              (println "file-input: " file-input)
-                              (println "name: " name)
-                              (println "file: " file)
-                              ;; (println "form-data: " form-data)
-                              (go (let [resp (<! (http/post (db/resolve-endpoint "upload-spreadsheet")
-                                                            {:multipart-params [["file" file]]}))]
-                                    (println "multipart resp: " resp)))
-                              )))}
+                            (go (let [resp (<! (http/post
+                                                (db/resolve-endpoint "upload-spreadsheet")
+                                                {:multipart-params
+                                                 [["file" (aget (.-files file-input) 0)]]}))]
+                                  (reset! import-issues (get-in resp [:body :didnt-import]))
+                                  ))
+                              ))}
         "Import spreadsheet"]
+       (when (not (empty? @import-issues))
+         [:div {:class "ma2"}
+          "The following lines were not imported: "
+          [:ul {:class ""}
+           (map (fn [issue]
+                  ^{:key (str (:line issue))}
+                  [:li (str (:line issue) ": " (:reason issue))])
+                @import-issues)]])
        [:h2 "Developer settings"]
        [:div {:class "flex items-center"}
         [:input {:type :checkbox :class "ma2"
