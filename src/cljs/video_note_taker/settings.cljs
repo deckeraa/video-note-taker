@@ -43,9 +43,9 @@
                   ^{:key (str (:line issue))}
                   [:li (str (:line issue) ": " (:reason issue))])
                 @import-issues)]])
-       [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
-            :href (str (db/get-server-url) "/get-notes-spreadsheet")}
-        "Download all notes as spreadsheet"]
+       ;; [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
+       ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
+       ;;  "Download all notes as spreadsheet"]
        [:h2 "Developer settings"]
        [:div {:class "flex items-center"}
         [:input {:type :checkbox :class "ma2"
