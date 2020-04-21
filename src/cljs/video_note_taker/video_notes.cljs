@@ -9,7 +9,8 @@
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
    [video-note-taker.toaster-oven :as toaster-oven]
-   [video-note-taker.editable-field :refer [editable-field]])
+   [video-note-taker.editable-field :refer [editable-field]]
+   [video-note-taker.auth])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))

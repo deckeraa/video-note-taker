@@ -12,7 +12,8 @@
    [video-note-taker.editable-field :refer [editable-field]]
    [video-note-taker.video-notes :as notes]
    [video-note-taker.video-listing :as listing]
-   [video-note-taker.settings :as settings])
+   [video-note-taker.settings :as settings]
+   [video-note-taker.auth :as auth])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -51,23 +52,26 @@
         notes-cursor atoms/notes-cursor
         _auto-load-video-listing (listing/load-video-listing atoms/video-listing-cursor)
         _auto-load-settings (settings/load-settings atoms/settings-cursor)
+        logged-in-atm (reagent/atom 0) ;; used to redraw main page when the auth cookie gets set
         ]
     (fn []
-      [:div {:class "flex flex-column items-center"}
-       [header atoms/screen-cursor atoms/video-cursor]
-       (when (= :video-selection (peek @atoms/screen-cursor))
-         [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
-         )
-       (when (= :video (peek @atoms/screen-cursor))
-         [:div
-          [video video-ref-atm (:src @atoms/video-cursor)]
-          [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
-       (when (= :settings (peek @atoms/screen-cursor))
-         [settings/settings atoms/settings-cursor])
-       (when (:show-app-state @atoms/settings-cursor)
-         [:p (str @ratom)])
-       [toaster-oven/toaster-control]
-       ])))
+      (if (auth/needs-auth-cookie)
+        [auth/login logged-in-atm @logged-in-atm]
+        [:div {:class "flex flex-column items-center"}
+         [header atoms/screen-cursor atoms/video-cursor]
+         (when (= :video-selection (peek @atoms/screen-cursor))
+           [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
+           )
+         (when (= :video (peek @atoms/screen-cursor))
+           [:div
+            [video video-ref-atm (:src @atoms/video-cursor)]
+            [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
+         (when (= :settings (peek @atoms/screen-cursor))
+           [settings/settings atoms/settings-cursor])
+         (when (:show-app-state @atoms/settings-cursor)
+           [:p (str @ratom)])
+         [toaster-oven/toaster-control]
+         ]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App
