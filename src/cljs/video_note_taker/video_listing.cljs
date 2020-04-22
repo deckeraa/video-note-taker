@@ -41,9 +41,22 @@
    (str video-src)]
   )
 
+(defn upload-card []
+  [:div {:class "br3 shadow-4 dim mt3 flex"
+         :style {:position :relative}}
+;   [svg/cloud-upload {:class "relative"} "white" "32px"]
+   [:label {:for "file-upload"
+            :class "f2 bg-green white b br3 dib pa2 w-100 tc"}
+    "Upload video"]
+   [:input {:id "file-upload"
+            :type :file
+            :class "dn"
+            }]])
+
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
   [:div
    (map (fn [video-src]
           ^{:key video-src}
           [single-video-listing video-src video-cursor notes-cursor screen-cursor])
-        @video-listing-cursor)])
+        @video-listing-cursor)
+   [upload-card]])
