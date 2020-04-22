@@ -232,7 +232,7 @@
     (json-response {:body (:body resp)})))
 
 (defn cookie-check
-  "Checks the cookies in a request against CouchDB. Returns [is-valid {:name :roles} new_cookie].
+  "Checks the cookies in a request against CouchDB. Returns [{:name :roles} new_cookie] if it's valid, false otherwise.
   Note that
     1) A new cookie being issued does not invalidate old cookies.
     2) New cookies won't always be issued. It takes about a minute after getting a cookie before
@@ -247,19 +247,17 @@
     (println resp)
     (println "cookies: " (:cookies resp))
     (println "processed cookies: " (remove-cookie-attrs-not-supported-by-ring (:cookies resp)))
-    [(not (nil? (get-in resp [:body :userCtx :name])))
-     (get-in resp [:body :userCtx])
-     (remove-cookie-attrs-not-supported-by-ring (:cookies resp))]))
+    (if (nil? (get-in resp [:body :userCtx :name]))
+      false
+      [(get-in resp [:body :userCtx])
+       (remove-cookie-attrs-not-supported-by-ring (:cookies resp))])))
 
 (defn cookie-check-handler [req]
   (println "cookie-check-handler: " (get-in req [:cookies "AuthSession" :value]))
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])
-        [is-valid userCtx new-cookie] (cookie-check cookie-value)
-        resp (json-response [is-valid userCtx])]
-    (println "new-cookie: " new-cookie)
-    (if is-valid
-      (assoc resp :cookies new-cookie)
-      resp)))
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (if-let [[userCtxt new-cookie] (cookie-check cookie-value)]
+      (assoc (json-response userCtxt) :cookies new-cookie)
+      (json-response false))))
 
 
 (def api-routes
