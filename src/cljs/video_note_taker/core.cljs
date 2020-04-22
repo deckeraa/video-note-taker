@@ -36,7 +36,9 @@
                                    (when-let [video @video-ref-atm]
                                      (set! (.-currentTime video) requested-time))))))
            :ref (fn [el]
-                 (reset! video-ref-atm el))}
+                  (reset! video-ref-atm el)
+                  (when-let [requested-time (:requested-time @video-cursor)]
+                    (set! (.-currentTime el) requested-time)))}
    "Video not supported by your browser :("]
   )
 

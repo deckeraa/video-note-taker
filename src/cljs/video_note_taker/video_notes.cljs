@@ -15,8 +15,11 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
+(defn request-video-time [video-cursor time]
+  (swap! video-cursor assoc :requested-time time))
+
 (defn try-set-video-time [video-ref-atm video-cursor time]
-  (swap! video-cursor assoc :requested-time time)
+  (request-video-time video-cursor time)
   (when-let [video @video-ref-atm]
       (set! (.-currentTime video) time)))
 

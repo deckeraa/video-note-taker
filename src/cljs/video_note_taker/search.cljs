@@ -55,7 +55,7 @@
           (map (fn [note]
                  [:div {:class "br3 ba b--black-10 pa3 mv2 bg-animate hover-bg-yellow"
                         :on-click (fn []
-                                    (reset! video-cursor {:src (:video note)})
+                                    (reset! video-cursor {:src (:video note) :requested-time (:time note)})
                                     (swap! screen-cursor conj :video))}
                   [:div {:class "f2"}
                    [highlight-str (:text note) @input-atm]]
