@@ -4,7 +4,8 @@
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!]]
    [video-note-taker.db :as db]
-   [video-note-taker.auth :as auth])
+   [video-note-taker.auth :as auth]
+   [video-note-taker.video-notes :as video-notes])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -47,18 +48,31 @@
 
 (defn note-finder []
   (let [input-atm   (reagent/atom "")
-        results-atm (reagent/atom "")]
-    (fn []
-      [:div {:class ""}
-       [:input {:type :text :value @input-atm :on-change #(reset! input-atm (-> % .-target .-value))}]
-       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
-              :on-click (fn []
+        results-atm (reagent/atom "")
+        search-fn (fn []
                           (go (let [resp (<! (http/post (db/resolve-endpoint "search-text")
                                                         {:json-params {:text @input-atm}
                                                          :with-credentials true}))]
-                                (reset! results-atm resp))))}
+                                (reset! results-atm resp))))
+        search-as-you-type true]
+    (fn []
+      [:div {:class ""}
+       [:input {:type :text :value @input-atm :on-change (fn [e]
+                                                           (reset! input-atm (-> e .-target .-value))
+                                                           (when (and search-as-you-type
+                                                                      (not (empty? @input-atm)))
+                                                             (search-fn)))}]
+       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
+              :on-click search-fn}
         "Run search"]
-       [:div (str (:body @results-atm))]])))
+                                        ;       [:div (str (:body @results-atm))]
+       (when (not (empty? @input-atm))
+         [:div {:class ""}
+          (map (fn [note]
+                 [:div {:class "br3 ba b--black-10 pa3 mv2"}
+                  [:div {:class "f2"} (:text note)]
+                  [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
+               (get-in @results-atm [:body :docs]))])])))
 
 
 (defn settings [settings-cursor login-cursor]
