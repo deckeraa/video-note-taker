@@ -24,7 +24,7 @@
   [:div {}
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
 
-(defn search []
+(defn search [video-cursor screen-cursor]
   (let [input-atm   (reagent/atom "")
         results-atm (reagent/atom "")
         search-fn (fn []
@@ -51,8 +51,12 @@
        ;[:div (str (:body @results-atm))]
        (when (not (empty? @input-atm))
          [:div {:class ""}
+          ;; Search result cards
           (map (fn [note]
-                 [:div {:class "br3 ba b--black-10 pa3 mv2"}
+                 [:div {:class "br3 ba b--black-10 pa3 mv2 bg-animate hover-bg-yellow"
+                        :on-click (fn []
+                                    (reset! video-cursor {:src (:video note)})
+                                    (swap! screen-cursor conj :video))}
                   [:div {:class "f2"}
                    [highlight-str (:text note) @input-atm]]
                   [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])

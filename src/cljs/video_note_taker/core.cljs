@@ -71,7 +71,7 @@
            [header atoms/screen-cursor atoms/video-cursor]
            (when (= :video-selection (peek @atoms/screen-cursor))
              [:div {:class "mh3"}
-              [search/search]
+              [search/search atoms/video-cursor atoms/screen-cursor]
               [:h2 {:class "mh3"} "Videos"]
               [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor]] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
              )
