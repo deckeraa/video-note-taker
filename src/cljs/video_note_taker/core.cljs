@@ -50,27 +50,37 @@
 (defn page [ratom]
   (let [video-ref-atm (clojure.core/atom nil)
         notes-cursor atoms/notes-cursor
-        _auto-load-video-listing (listing/load-video-listing atoms/video-listing-cursor)
-        _auto-load-settings (settings/load-settings atoms/settings-cursor)]
+        _auto-loaded-video-listing (reagent/atom false)
+        _auto-loaded-settings      (reagent/atom false)
+        ;_auto-load-video-listing (listing/load-video-listing atoms/video-listing-cursor)
+        ;_auto-load-settings (settings/load-settings atoms/settings-cursor)
+        ]
     (fn []
       @atoms/login-cursor ; referenced so that this component refreshes when the login-cursor changes
       (if (auth/needs-auth-cookie)
         [auth/login atoms/login-cursor]
-        [:div {:class "flex flex-column items-center"}
-         [header atoms/screen-cursor atoms/video-cursor]
-         (when (= :video-selection (peek @atoms/screen-cursor))
-           [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
-           )
-         (when (= :video (peek @atoms/screen-cursor))
-           [:div
-            [video video-ref-atm (:src @atoms/video-cursor)]
-            [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
-         (when (= :settings (peek @atoms/screen-cursor))
-           [settings/settings atoms/settings-cursor atoms/login-cursor])
-         (when (:show-app-state @atoms/settings-cursor)
-           [:p (str @ratom)])
-         [toaster-oven/toaster-control]
-         ]))))
+        (do
+          (when (not @_auto-loaded-video-listing)
+            (listing/load-video-listing atoms/video-listing-cursor)
+            (reset! _auto-loaded-video-listing true))
+          (when (not @_auto-loaded-settings)
+            (settings/load-settings atoms/settings-cursor)
+            (reset! _auto-loaded-settings true))
+          [:div {:class "flex flex-column items-center"}
+           [header atoms/screen-cursor atoms/video-cursor]
+           (when (= :video-selection (peek @atoms/screen-cursor))
+             [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
+             )
+           (when (= :video (peek @atoms/screen-cursor))
+             [:div
+              [video video-ref-atm (:src @atoms/video-cursor)]
+              [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
+           (when (= :settings (peek @atoms/screen-cursor))
+             [settings/settings atoms/settings-cursor atoms/login-cursor])
+           (when (:show-app-state @atoms/settings-cursor)
+             [:p (str @ratom)])
+           [toaster-oven/toaster-control]
+           ])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App
