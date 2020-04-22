@@ -23,6 +23,14 @@
                   (not (nil? (second %)))) $)
     (empty? $)))
 
+(defn run-cookie-renewer []
+  (js/setTimeout (fn []
+                   (go (let [resp (<! (http/post (db/resolve-endpoint "cookie-check")
+                                                        {:json-params {}
+                                                         :with-credentials true}))]
+                         (run-cookie-renewer))))
+                 (* 25 60 1000)))
+
 (defn login [logged-in-atm]
   (let [user-atm (reagent/atom "alpha")
         pass-atm (reagent/atom "alpha")

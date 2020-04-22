@@ -75,6 +75,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App
 
+(auth/run-cookie-renewer) ;; set up the auto-renewer
+
 (defn dev-setup []
   (when ^boolean js/goog.DEBUG
     (enable-console-print!)
