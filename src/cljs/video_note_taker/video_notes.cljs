@@ -15,6 +15,11 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
+(defn try-set-video-time [video-ref-atm video-cursor time]
+  (swap! video-cursor assoc :requested-time time)
+  (when-let [video @video-ref-atm]
+      (set! (.-currentTime video) time)))
+
 (defn upsert-note! [notes-cursor doc]
   (swap! notes-cursor
          (fn [notes]
@@ -28,10 +33,9 @@
              (vec (sort-by :time new-notes)))))
   )
 
-(defn change-time-scrub [note-cursor notes-cursor video-ref-atm scrub-timer-count-atm change]
+(defn change-time-scrub [note-cursor notes-cursor video-ref-atm video-cursor scrub-timer-count-atm change]
   (let [new-time (+ (:time @note-cursor) change)]
-    (when-let [video @video-ref-atm]
-      (set! (.-currentTime video) new-time))
+    (try-set-video-time video-ref-atm video-cursor new-time)
     (swap! note-cursor assoc :time new-time)
     (swap! scrub-timer-count-atm inc)
     (js/setTimeout (fn []
@@ -71,27 +75,29 @@
 ;;   (is (= "0:12" (format-time-in-seconds  12)))
 ;;   (is (= "1:01" (format-time-in-seconds  61))))
 
-(defn time-scrubber [note-cursor notes-cursor video-ref-atm]
+(defn time-scrubber [note-cursor notes-cursor video-ref-atm video-cursor]
   (let [scrub-timer-count-atm (reagent/atom 0)]
     (fn [note-cursor notes-cursor video-ref-atm]
       [:div {:class "flex items-center"}
        [svg/chevron-left {:class "ma2 dim"
-                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm -0.1)}
+                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-cursor scrub-timer-count-atm -0.1)}
         "gray" "32px"]
        [:div {:class "f3"}
         [:div (format-time (:time @note-cursor))]]
        [svg/chevron-right {:class "ma2 dim"
-                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm scrub-timer-count-atm 0.1)}
+                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-cursor scrub-timer-count-atm 0.1)}
         "gray" "32px"]])))
 
-(defn note [note-cursor notes-cursor video-ref-atm]
+(defn note [note-cursor notes-cursor video-ref-atm video-cursor]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
                                         ;   [:button {}]
    [:div {:class "flex items-center"}
     [svg/media-play {:class "ml1 mr4 dim"
                      :on-click (fn []
-                                 (when-let [video @video-ref-atm]
-                                   (set! (.-currentTime video) (:time @note-cursor))))} "green" "32px"]
+                                 ;; (when-let [video @video-ref-atm]
+                                 ;;   (set! (.-currentTime video) (:time @note-cursor)))
+                                 (try-set-video-time video-ref-atm video-cursor (:time @note-cursor))
+                                 )} "green" "32px"]
     [editable-field (:text @note-cursor)
      (fn [new-val done-fn]
        (db/put-doc (assoc @note-cursor :text new-val)
@@ -100,7 +106,7 @@
                   (upsert-note! notes-cursor new-doc)
                   (done-fn))))]]
    [:div {:class "flex items-center ml3"}
-    [time-scrubber note-cursor notes-cursor video-ref-atm]
+    [time-scrubber note-cursor notes-cursor video-ref-atm video-cursor]
     [svg/trash {:class "dim ml3"
                 :on-click (fn []
                             (toaster-oven/add-toast
@@ -116,7 +122,7 @@
    ]
   )
 
-(defn notes [notes-cursor video-ref-atm video-src]
+(defn notes [notes-cursor video-ref-atm video-src video-cursor]
   [:div {:class "flex flex-column items-center"}
    [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
           :on-click (fn [e] 
@@ -138,8 +144,7 @@
      (map (fn [idx]
             (let [note-cursor (reagent/cursor notes-cursor [idx])]
               ^{:key (get-in @note-cursor [:_id])}
-              [note note-cursor notes-cursor video-ref-atm]
-              ))
+              [note note-cursor notes-cursor video-ref-atm video-cursor]))
           (range 0 (count @notes-cursor))))]
    [:a {:class "b--black-10 ba br3 pa3 dim link"
         :href (str (db/get-server-url) "/get-notes-spreadsheet?video_src=" video-src)}

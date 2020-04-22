@@ -19,12 +19,22 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn video [video-ref-atm video-src]
+(defn video [video-ref-atm video-src video-cursor]
   [:video {:id "main-video"
            :class "mb3"
            :controls true
            :src (str "videos/" video-src)
            :width 620
+           :on-time-update (fn [e]
+                             (let [current-time   (.-currentTime (-> e .-target))
+                                   requested-time (:requested-time @video-cursor)]
+                               (println "Time update event fired: current time"
+                                        current-time requested-time)
+                               (when requested-time
+                                 (if (< (Math/abs (- requested-time current-time)) 1)
+                                   (swap! video-cursor dissoc :requested-time)
+                                   (when-let [video @video-ref-atm]
+                                     (set! (.-currentTime video) requested-time))))))
            :ref (fn [el]
                  (reset! video-ref-atm el))}
    "Video not supported by your browser :("]
@@ -77,8 +87,8 @@
              )
            (when (= :video (peek @atoms/screen-cursor))
              [:div
-              [video video-ref-atm (:src @atoms/video-cursor)]
-              [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
+              [video video-ref-atm (:src @atoms/video-cursor) atoms/video-cursor]
+              [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor) atoms/video-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
              [settings/settings atoms/settings-cursor atoms/login-cursor])
            (when (:show-app-state @atoms/settings-cursor)
