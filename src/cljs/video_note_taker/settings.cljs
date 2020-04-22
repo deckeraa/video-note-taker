@@ -7,7 +7,7 @@
    [video-note-taker.auth :as auth]
    [video-note-taker.video-notes :as video-notes])
   (:require-macros
-   [devcards.core :refer [defcard deftest]]
+   [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn load-settings [settings-cursor]
@@ -46,6 +46,19 @@
         "Check cookie"]
        [:div (str (:body @cookie-check-atm))]])))
 
+(defn highlight-str [full-str search-str]
+  [:div {}
+   (map (fn [piece]
+          [:span (if (= piece search-str)
+                   {:class "bg-light-yellow"}
+                   {:class ""})
+           piece])
+    (interpose search-str (clojure.string/split full-str (re-pattern search-str))))])
+
+(defcard-rg test-string-highlight
+  [:div {}
+   [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
+
 (defn note-finder []
   (let [input-atm   (reagent/atom "")
         results-atm (reagent/atom "")
@@ -65,12 +78,13 @@
        [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
               :on-click search-fn}
         "Run search"]
-                                        ;       [:div (str (:body @results-atm))]
+       ;[:div (str (:body @results-atm))]
        (when (not (empty? @input-atm))
          [:div {:class ""}
           (map (fn [note]
                  [:div {:class "br3 ba b--black-10 pa3 mv2"}
-                  [:div {:class "f2"} (:text note)]
+                  [:div {:class "f2"}
+                   [highlight-str (:text note) @input-atm]]
                   [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
                (get-in @results-atm [:body :docs]))])])))
 
