@@ -66,7 +66,7 @@
                                                                           :pass @pass-atm}
                                                             :with-credentials false} ;; no need to pass cookies while logging in -- the user shouldn't have our cookie at this point
                                                            ))]
-                                   (if (:body resp)
+                                   (if (and (:body resp) (= 200 (:status resp)))
                                      (js/setTimeout #(swap! logged-in-atm inc) 200)
                                      (reset! login-failed-atm true))))
                              (reset! login-failed-atm true)))}

@@ -254,6 +254,37 @@
     (catch Exception e
       (json-response false))))
 
+(defn create-user-handler [req]
+  (try
+    (let [params (get-body req)
+          name (:user params)]
+
+      (if (nil? (re-find #"^\w+$" name)) ; sanitize the name
+        (assoc (json-response :invalid-user-name) :status 400)
+        (let [resp (http/put
+                    (str "http://localhost:5984/_users/org.couchdb.user:" name)
+                    {:as :json
+                     :content-type :json
+                     :form-params {:name     name
+                                   :password (:pass params)
+                                   :roles []
+                                   :type :user}})]
+          (println "create-user resp: " resp)
+          (if (= 201 (:status resp))
+            (do
+              (let [login-resp (http/post "http://localhost:5984/_session" {:as :json
+                                                            :content-type :json
+                                                            :form-params {:name     (:user params)
+                                                                          :password (:pass params)}})]
+                (assoc 
+                 (json-response true)
+                 :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies login-resp)) ;; set the CouchDB cookie on the ring response
+                 )))
+            (assoc (json-response false) :status 400) ;; don't want to leak any info useful to attackers, no keeping this very non-descript
+            ))))
+    (catch Exception e
+      (assoc (json-response false) :status 400))))
+
 (defn logout-handler [req]
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
@@ -297,6 +328,7 @@
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]
+        ["create-user" create-user-handler]
         ["logout" logout-handler]
         ["cookie-check" cookie-check-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
