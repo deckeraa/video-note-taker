@@ -55,6 +55,51 @@
       (json/read-str)
       (keywordize-keys)))
 
+(defn- remove-cookie-attrs-not-supported-by-ring
+  "CouchDB sends back cookie attributes like :version that ring can't handle. This removes those."
+  [cookies]
+  ;; CouchDB sends a cookies map that looks something like
+  ;; {AuthSession {:discard false, :expires #inst "2020-04-21T19:51:08.000-00:00", :path /, :secure false, :value YWxwaGE6NUU5RjQ5RkM6MXHV10hKUXVSuaY8GcMOZ2wFfeA, :version 0}}
+  (apply merge
+         (map (fn [[cookie-name v]]
+                (let [v (select-keys v [:value :domain :path :secure :http-only :max-age :same-site :expires])]
+                  (if (:expires v)
+                    {cookie-name (update v :expires #(.toString %))} ;; the :expires attr also needs changed frmo a java.util.Date to a string
+                    {cookie-name v})))
+              cookies)))
+
+(defn cookie-check
+  "Checks the cookies in a request against CouchDB. Returns [{:name :roles} new_cookie] if it's valid, false otherwise.
+  Note that
+    1) A new cookie being issued does not invalidate old cookies.
+    2) New cookies won't always be issued. It takes about a minute after getting a cookie before
+       CouchDB will give you a new cookie."
+  [cookie-value]
+  (println "checking cookie-value: " cookie-value)
+  (let [
+        resp (http/get "http://localhost:5984/_session" {:as :json
+                                                         :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                                                         :content-type :json
+                                                         })]
+    (println resp)
+    (println "cookies: " (:cookies resp))
+    (println "processed cookies: " (remove-cookie-attrs-not-supported-by-ring (:cookies resp)))
+    (if (nil? (get-in resp [:body :userCtx :name]))
+      false
+      [(get-in resp [:body :userCtx])
+       (remove-cookie-attrs-not-supported-by-ring (:cookies resp))])))
+
+(defn cookie-check-from-req [req]
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (cookie-check cookie-value)))
+
+(defn cookie-check-handler [req]
+  (println "cookie-check-handler: " (get-in req [:cookies "AuthSession" :value]))
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (if-let [[userCtxt new-cookie] (cookie-check cookie-value)]
+      (assoc (json-response userCtxt) :cookies new-cookie)
+      (json-response false))))
+
 (defn put-doc-handler [req]
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
@@ -173,19 +218,6 @@
                     lines))
         (json-response {:didnt-import @failed-imports})))))
 
-(defn- remove-cookie-attrs-not-supported-by-ring
-  "CouchDB sends back cookie attributes like :version that ring can't handle. This removes those."
-  [cookies]
-  ;; CouchDB sends a cookies map that looks something like
-  ;; {AuthSession {:discard false, :expires #inst "2020-04-21T19:51:08.000-00:00", :path /, :secure false, :value YWxwaGE6NUU5RjQ5RkM6MXHV10hKUXVSuaY8GcMOZ2wFfeA, :version 0}}
-  (apply merge
-         (map (fn [[cookie-name v]]
-                (let [v (select-keys v [:value :domain :path :secure :http-only :max-age :same-site :expires])]
-                  (if (:expires v)
-                    {cookie-name (update v :expires #(.toString %))} ;; the :expires attr also needs changed frmo a java.util.Date to a string
-                    {cookie-name v})))
-              cookies)))
-
 (defn get-cookie-handler [req]
   (try
     (let [params (get-body req)
@@ -252,39 +284,6 @@
     ;; (println req)
 
     (json-response {:body (:body resp)})))
-
-(defn cookie-check
-  "Checks the cookies in a request against CouchDB. Returns [{:name :roles} new_cookie] if it's valid, false otherwise.
-  Note that
-    1) A new cookie being issued does not invalidate old cookies.
-    2) New cookies won't always be issued. It takes about a minute after getting a cookie before
-       CouchDB will give you a new cookie."
-  [cookie-value]
-  (println "checking cookie-value: " cookie-value)
-  (let [
-        resp (http/get "http://localhost:5984/_session" {:as :json
-                                                         :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                                                         :content-type :json
-                                                         })]
-    (println resp)
-    (println "cookies: " (:cookies resp))
-    (println "processed cookies: " (remove-cookie-attrs-not-supported-by-ring (:cookies resp)))
-    (if (nil? (get-in resp [:body :userCtx :name]))
-      false
-      [(get-in resp [:body :userCtx])
-       (remove-cookie-attrs-not-supported-by-ring (:cookies resp))])))
-
-(defn cookie-check-from-req [req]
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (cookie-check cookie-value)))
-
-(defn cookie-check-handler [req]
-  (println "cookie-check-handler: " (get-in req [:cookies "AuthSession" :value]))
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (if-let [[userCtxt new-cookie] (cookie-check cookie-value)]
-      (assoc (json-response userCtxt) :cookies new-cookie)
-      (json-response false))))
-
 
 (def api-routes
   ["/" [["hello" hello-handler]
