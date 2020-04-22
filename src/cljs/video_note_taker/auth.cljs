@@ -13,13 +13,6 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-;; (defn needs-auth-cookie []
-;;   (println "Calling needs-auth-cookie with " (.-cookie js/document))
-;;   (as-> js/document $
-;;       (.-cookie $)
-;;       (re-find #"AuthSession" $)
-;;       (nil? $)))
-
 (defn needs-auth-cookie []
   (println "Calling needs-auth-cookie with " (.-cookie js/document))
   (as-> js/document $

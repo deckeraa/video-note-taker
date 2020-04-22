@@ -230,7 +230,33 @@
     ;; (println req)
 
     (json-response {:body (:body resp)})))
-  
+
+(defn cookie-check
+  "Checks the cookies in a request against CouchDB. Returns [is-valid {:name :roles} new_cookie]."
+  [cookie-value]
+  (println "checking cookie-value: " cookie-value)
+  (let [
+        resp (http/get "http://localhost:5984/_session" {:as :json
+                                                         :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                                                         :content-type :json
+                                                         })]
+    (println resp)
+    (println "cookies: " (:cookies resp))
+    (println "processed cookies: " (remove-cookie-attrs-not-supported-by-ring (:cookies resp)))
+    [true
+     (get-in resp [:body :userCtx])
+     (remove-cookie-attrs-not-supported-by-ring (:cookies resp))]))
+
+(defn cookie-check-handler [req]
+  (println "cookie-check-handler: " (get-in req [:cookies "AuthSession" :value]))
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])
+        [is-valid userCtx new-cookie] (cookie-check cookie-value)
+        resp (json-response [is-valid userCtx])]
+    (println "new-cookie: " new-cookie)
+    (if is-valid
+      (assoc resp :cookies new-cookie)
+      resp)))
+
 
 (def api-routes
   ["/" [["hello" hello-handler]
@@ -245,6 +271,7 @@
         ["get-session" get-session-handler]
         ["login" login-handler]
         ["logout" logout-handler]
+        ["cookie-check" cookie-check-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app

@@ -38,7 +38,7 @@
        [:div (str (:body @cookie-atm))]
        [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
               :on-click (fn []
-                          (go (let [resp (<! (http/get (db/resolve-endpoint "get-session")
+                          (go (let [resp (<! (http/post (db/resolve-endpoint "cookie-check")
                                                         {:json-params {}
                                                          :with-credentials true}))]
                                 (reset! cookie-check-atm resp))))}
