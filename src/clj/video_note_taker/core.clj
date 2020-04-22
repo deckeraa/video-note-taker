@@ -232,7 +232,11 @@
     (json-response {:body (:body resp)})))
 
 (defn cookie-check
-  "Checks the cookies in a request against CouchDB. Returns [is-valid {:name :roles} new_cookie]."
+  "Checks the cookies in a request against CouchDB. Returns [is-valid {:name :roles} new_cookie].
+  Note that
+    1) A new cookie being issued does not invalidate old cookies.
+    2) New cookies won't always be issued. It takes about a minute after getting a cookie before
+       CouchDB will give you a new cookie."
   [cookie-value]
   (println "checking cookie-value: " cookie-value)
   (let [
@@ -243,7 +247,7 @@
     (println resp)
     (println "cookies: " (:cookies resp))
     (println "processed cookies: " (remove-cookie-attrs-not-supported-by-ring (:cookies resp)))
-    [true
+    [(not (nil? (get-in resp [:body :userCtx :name])))
      (get-in resp [:body :userCtx])
      (remove-cookie-attrs-not-supported-by-ring (:cookies resp))]))
 
