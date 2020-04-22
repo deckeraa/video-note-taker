@@ -47,7 +47,7 @@
                                 (search-fn)))}]
         [svg/magnifying-glass {:class "dib "
                                :style {:margin "8px"}
-                               :on-click search-fn} "black" "48px"]]
+                               :on-click search-fn} "gray" "48px"]]
        ;[:div (str (:body @results-atm))]
        (when (not (empty? @input-atm))
          [:div {:class ""}
