@@ -51,13 +51,11 @@
   (let [video-ref-atm (clojure.core/atom nil)
         notes-cursor atoms/notes-cursor
         _auto-load-video-listing (listing/load-video-listing atoms/video-listing-cursor)
-        _auto-load-settings (settings/load-settings atoms/settings-cursor)
-        logged-in-atm (reagent/atom 0) ;; used to redraw main page when the auth cookie gets set
-        ]
+        _auto-load-settings (settings/load-settings atoms/settings-cursor)]
     (fn []
       @atoms/login-cursor ; referenced so that this component refreshes when the login-cursor changes
       (if (auth/needs-auth-cookie)
-        [auth/login atoms/login-cursor @atoms/login-cursor]
+        [auth/login atoms/login-cursor]
         [:div {:class "flex flex-column items-center"}
          [header atoms/screen-cursor atoms/video-cursor]
          (when (= :video-selection (peek @atoms/screen-cursor))

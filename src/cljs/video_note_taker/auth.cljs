@@ -30,7 +30,7 @@
                   (not (nil? (second %)))) $)
     (empty? $)))
 
-(defn login [logged-in-atm placeholder]
+(defn login [logged-in-atm]
   (let [user-atm (reagent/atom "alpha")
         pass-atm (reagent/atom "alpha")
         login-failed-atm (reagent/atom false)]
