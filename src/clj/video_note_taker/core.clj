@@ -161,8 +161,9 @@
   (apply merge
          (map (fn [[cookie-name v]]
                 (let [v (select-keys v [:value :domain :path :secure :http-only :max-age :same-site :expires])]
-                  {cookie-name (update v :expires #(.toString %))} ;; the :expires attr also needs changed frmo a java.util.Date to a string
-                  ))
+                  (if (:expires v)
+                    {cookie-name (update v :expires #(.toString %))} ;; the :expires attr also needs changed frmo a java.util.Date to a string
+                    {cookie-name v})))
               cookies)))
 
 (defn get-cookie-handler [req]
@@ -201,6 +202,20 @@
     (catch Exception e
       (json-response false))))
 
+(defn logout-handler [req]
+  (try
+    (println "logout-handler")
+    (let [resp   (http/delete "http://localhost:5984/_session" {:as :json})]
+      (println "resp: " resp)
+      (assoc 
+       (json-response {:logged-out true})
+       :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
+       )
+      )
+    (catch Exception e
+      (println "Logout exception e" e)
+      (json-response {:logged-out false}))))
+
 (defn get-session-handler [req]
   (let [;params (get-body req)
         cookie-value (get-in req [:cookies "AuthSession" :value])
@@ -229,6 +244,7 @@
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]
+        ["logout" logout-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app

@@ -3,7 +3,8 @@
    [reagent.core :as reagent]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!]]
-   [video-note-taker.db :as db])
+   [video-note-taker.db :as db]
+   [video-note-taker.auth :as auth])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -45,11 +46,12 @@
        [:div (str (:body @cookie-check-atm))]])))
 
 
-(defn settings [settings-cursor]
+(defn settings [settings-cursor login-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         import-issues     (reagent/atom [])]
     (fn [settings-cursor]
       [:div {:class "w-100 pa3 flex flex-column items-start"}
+       [auth/manage-identity login-cursor]
        [:h2 "Import & Export"]
        [:form {:id "upload-form" :action (str (db/get-server-url) "/upload-spreadsheet") :method "post" :enctype "multipart/form-data"
                }

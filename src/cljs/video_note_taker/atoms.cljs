@@ -14,7 +14,8 @@
                  :video-listing []
                  :screen-stack [:video-selection]
                  :settings {:_id "settings"}
-                 :toaster {:toasts [] :old-toasts []}}))
+                 :toaster {:toasts [] :old-toasts []}
+                 :login-atm 0}))
 
 (defonce screen-cursor   (reagent/cursor app-state [:screen-stack]))
 (defonce settings-cursor (reagent/cursor app-state [:settings]))
@@ -22,3 +23,4 @@
 (defonce notes-cursor    (reagent/cursor app-state [:notes]))
 (defonce video-cursor    (reagent/cursor app-state [:video]))
 (defonce video-listing-cursor    (reagent/cursor app-state [:video-listing]))
+(defonce login-cursor    (reagent/cursor app-state [:login-atm]))

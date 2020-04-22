@@ -55,8 +55,9 @@
         logged-in-atm (reagent/atom 0) ;; used to redraw main page when the auth cookie gets set
         ]
     (fn []
+      @atoms/login-cursor ; referenced so that this component refreshes when the login-cursor changes
       (if (auth/needs-auth-cookie)
-        [auth/login logged-in-atm @logged-in-atm]
+        [auth/login atoms/login-cursor @atoms/login-cursor]
         [:div {:class "flex flex-column items-center"}
          [header atoms/screen-cursor atoms/video-cursor]
          (when (= :video-selection (peek @atoms/screen-cursor))
@@ -67,7 +68,7 @@
             [video video-ref-atm (:src @atoms/video-cursor)]
             [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor)]])
          (when (= :settings (peek @atoms/screen-cursor))
-           [settings/settings atoms/settings-cursor])
+           [settings/settings atoms/settings-cursor atoms/login-cursor])
          (when (:show-app-state @atoms/settings-cursor)
            [:p (str @ratom)])
          [toaster-oven/toaster-control]

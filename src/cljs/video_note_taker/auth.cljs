@@ -13,12 +13,22 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
+;; (defn needs-auth-cookie []
+;;   (println "Calling needs-auth-cookie with " (.-cookie js/document))
+;;   (as-> js/document $
+;;       (.-cookie $)
+;;       (re-find #"AuthSession" $)
+;;       (nil? $)))
+
 (defn needs-auth-cookie []
   (println "Calling needs-auth-cookie with " (.-cookie js/document))
   (as-> js/document $
-      (.-cookie $)
-      (re-find #"AuthSession" $)
-      (nil? $)))
+    (.-cookie $)
+    (clojure.string/split $ "; ")
+    (map #(clojure.string/split % "=") $)
+    (filter #(and (= (first %) "AuthSession")
+                  (not (nil? (second %)))) $)
+    (empty? $)))
 
 (defn login [logged-in-atm placeholder]
   (let [user-atm (reagent/atom "alpha")
@@ -40,7 +50,8 @@
                            (go (let [resp (<! (http/post (db/resolve-endpoint "login")
                                                          {:json-params {:user @user-atm
                                                                         :pass @pass-atm}
-                                                          :with-credentials false}))]
+                                                          :with-credentials false} ;; no need to pass cookies while logging in -- the user shouldn't have our cookie at this point
+                                                         ))]
                                  (if (:body resp)
                                    (js/setTimeout #(swap! logged-in-atm inc) 200)
                                    (reset! login-failed-atm true)))))}
@@ -48,3 +59,14 @@
         (when @login-failed-atm
           [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
            "Login failed :("])]])))
+
+(defn manage-identity [logged-in-atm]
+  [:div
+   [:h2 "Manage Identity"]
+   [:div {:class "f3 br1 white bg-light-red b tc pa3 ma3 dim"
+          :on-click (fn []
+                      (go (let [resp (<! (http/post (db/resolve-endpoint "logout")
+                                                    {:with-credentials true}))]
+                            (println resp)
+                            (swap! logged-in-atm inc))))}
+    "Log out"]])
