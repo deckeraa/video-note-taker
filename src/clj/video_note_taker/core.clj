@@ -44,6 +44,11 @@
 (defn hello-handler [req]
   (text-type (response/response "hello")))
 
+(defn not-authorized-response []
+  (assoc 
+   (text-type (response/response "Not authorized"))
+   :status 401))
+
 (defn get-body [req]
   (-> req
       (request/body-string)
@@ -52,7 +57,7 @@
 
 (defn put-doc-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (do
       (println req)
       (let [doc (get-body req)]
@@ -63,7 +68,7 @@
 
 (defn get-doc-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (let [doc (get-body req)]
       (json-response (get-doc (:_id doc))))))
 
@@ -80,20 +85,20 @@
 
 (defn get-notes-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (let [doc (get-body req)]
       (json-response (get-notes (:video-key doc))))))
 
 (defn delete-doc-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (let [doc (get-body req)]
       (println "deleting doc: " doc)
       (json-response (couch/delete-document db doc)))))
 
 (defn get-video-listing-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (json-response
      (as-> (shell/with-sh-dir "./resources/public/videos"
              (sh "ls" "-1")) %
@@ -110,7 +115,7 @@
 
 (defn get-notes-spreadsheet-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
           notes     (couch/get-view db "notes" "by_video"
                                     {:key (:video_src query-map) :include_docs true})]
@@ -149,7 +154,7 @@
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
 (defn upload-spreadsheet-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (do
       (println "upload-spreadsheet-handler req: " req)
       (let [id (uuid/to-string (uuid/v4))
@@ -219,7 +224,7 @@
 
 (defn logout-handler [req]
   (if (not (cookie-check-from-req req))
-    (json-response "Not authorized")
+    (not-authorized-response)
     (try
       (println "logout-handler")
       (let [resp   (http/delete "http://localhost:5984/_session" {:as :json})]
