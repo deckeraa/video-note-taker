@@ -38,14 +38,14 @@
     (fn []
       [:div {:class "flex flex-column items-center justify-center"}
        [:div {:class "f1 blue b ma3"} "Video Note Taker"]
-       [:div {:class "flex flex-column justify-center w-80"}
+       [:div {:class "flex flex-column items-center justify-center w-80"}
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Username"]
          [:input {:class "mh2" :type :text :value @user-atm :on-change #(reset! user-atm (-> % .-target .-value))}]]
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Password"]
          [:input {:class "mh2" :type :text :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
-        [:div {:class "f2 br3 white bg-blue pa3 mv2 dim tc"
+        [:div {:class "f2 br3 white bg-blue pa3 mv2 dim tc w5"
                :on-click (fn []
                            (reset! login-failed-atm false)
                            (go (let [resp (<! (http/post (db/resolve-endpoint "login")
