@@ -316,6 +316,21 @@
 
     (json-response {:body (:body resp)})))
 
+(defn search-text-handler [req]
+  (if (not (cookie-check-from-req req))
+    (not-authorized-response)
+    (let [params (get-body req)
+          resp (http/post
+                "http://localhost:5984/video-note-taker/_find"
+                {:as :json
+                 :content-type :json
+                 :form-params
+                 {:selector
+                  {:text
+                   {"$regex" (str ".*" (:text params) ".*")}}}})]
+      (println "search-text resp: " resp)
+      (json-response (:body resp)))))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
@@ -331,6 +346,7 @@
         ["create-user" create-user-handler]
         ["logout" logout-handler]
         ["cookie-check" cookie-check-handler]
+        ["search-text" search-text-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app

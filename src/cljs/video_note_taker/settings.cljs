@@ -45,6 +45,21 @@
         "Check cookie"]
        [:div (str (:body @cookie-check-atm))]])))
 
+(defn note-finder []
+  (let [input-atm   (reagent/atom "")
+        results-atm (reagent/atom "")]
+    (fn []
+      [:div {:class ""}
+       [:input {:type :text :value @input-atm :on-change #(reset! input-atm (-> % .-target .-value))}]
+       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
+              :on-click (fn []
+                          (go (let [resp (<! (http/post (db/resolve-endpoint "search-text")
+                                                        {:json-params {:text @input-atm}
+                                                         :with-credentials true}))]
+                                (reset! results-atm resp))))}
+        "Run search"]
+       [:div (str (:body @results-atm))]])))
+
 
 (defn settings [settings-cursor login-cursor]
   (let [file-input-ref-el (reagent/atom nil)
@@ -81,6 +96,7 @@
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
        [:h2 "Developer settings"]
+       [note-finder]
        [cookie-retriever]
        [:div {:class "flex items-center"}
         [:input {:type :checkbox :class "ma2"
