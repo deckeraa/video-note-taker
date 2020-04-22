@@ -25,6 +25,7 @@
 
 (defn run-cookie-renewer []
   (js/setTimeout (fn []
+                   (println "Running cookie renewer: " (str (new js/Date)))
                    (go (let [resp (<! (http/post (db/resolve-endpoint "cookie-check")
                                                         {:json-params {}
                                                          :with-credentials true}))]
