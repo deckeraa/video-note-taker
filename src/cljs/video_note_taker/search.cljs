@@ -13,11 +13,12 @@
 
 (defn highlight-str [full-str search-str]
   [:div {}
-   (map (fn [piece]
-          [:span (if (= piece search-str)
-                   {:class "bg-light-yellow"}
-                   {:class ""})
-           piece])
+   (map-indexed (fn [idx piece]
+                  ^{:key idx}
+                  [:span (if (= piece search-str)
+                           {:class "bg-light-yellow"}
+                           {:class ""})
+                   piece])
     (interpose search-str (clojure.string/split full-str (re-pattern search-str))))])
 
 (defcard-rg test-string-highlight
@@ -55,15 +56,16 @@
        (when (not (empty? @input-atm))
          [:div {:class ""}
           ;; Search result cards
-          (map (fn [note]
-                 [:div {:class "br3 ba b--black-10 pa3 mv2 bg-animate hover-bg-yellow"
-                        :on-click (fn []
-                                    (reset! video-cursor {:src (:video note) :requested-time (:time note)})
-                                    (swap! screen-cursor conj :video))}
-                  [:div {:class "f2"}
-                   [highlight-str (:text note) @input-atm]]
-                  [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
-               (get-in @results-atm [:body :docs]))
+          (doall (map (fn [note]
+                        ^{:key (:video note)}
+                        [:div {:class "br3 ba b--black-10 pa3 mv2 bg-animate hover-bg-yellow"
+                               :on-click (fn []
+                                           (reset! video-cursor {:src (:video note) :requested-time (:time note)})
+                                           (swap! screen-cursor conj :video))}
+                         [:div {:class "f2"}
+                          [highlight-str (:text note) @input-atm]]
+                         [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
+                      (get-in @results-atm [:body :docs])))
           (when (empty? (get-in @results-atm [:body :docs]))
             [:div {:class "f3 white bg-light-red tc pa3 ma3 br3"}
              [:p {:class "b"} "No results found :("]
