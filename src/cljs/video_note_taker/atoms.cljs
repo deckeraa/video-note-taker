@@ -12,7 +12,7 @@
   (reagent/atom {:notes []
                  :video {}
                  :video-ref nil
-                 :video-listing []
+                 :video-listing nil
                  :screen-stack [:video-selection]
                  :settings {:_id "settings"}
                  :toaster {:toasts [] :old-toasts []}

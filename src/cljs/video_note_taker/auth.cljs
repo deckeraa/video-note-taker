@@ -106,7 +106,7 @@
                             (println resp)
                             ;; clear out the current app state
                             (reset! notes-cursor [])
-                            (reset! video-listing-cursor [])
+                            (reset! video-listing-cursor nil)
                             (reset! video-cursor {})
                             (reset! screen-cursor [:video-selection])
                             ;; redraw core page

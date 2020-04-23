@@ -65,9 +65,7 @@
 (defn page [ratom]
   (let [;video-ref-atm (clojure.core/atom nil)
         notes-cursor atoms/notes-cursor
-        _auto-loaded-video-listing (reagent/atom false)
         _auto-loaded-settings      (reagent/atom false)
-        ;_auto-load-video-listing (listing/load-video-listing atoms/video-listing-cursor)
         ;_auto-load-settings (settings/load-settings atoms/settings-cursor)
         ]
     (fn []
@@ -75,9 +73,8 @@
       (if (auth/needs-auth-cookie)
         [auth/login atoms/login-cursor]
         (do
-          (when (not @_auto-loaded-video-listing)
-            (listing/load-video-listing atoms/video-listing-cursor)
-            (reset! _auto-loaded-video-listing true))
+          (when (compare-and-set! atoms/video-listing-cursor nil [])
+            (listing/load-video-listing atoms/video-listing-cursor))
           (when (not @_auto-loaded-settings)
             (settings/load-settings atoms/settings-cursor)
             (reset! _auto-loaded-settings true))
