@@ -38,7 +38,7 @@
                      ;; update the screen cursor to go to the new screen
                      (swap! atoms/screen-cursor conj :video)
                      )}
-   (str video)]
+   (str (:display-name video))]
   )
 
 (defn upload-card [video-listing-cursor]

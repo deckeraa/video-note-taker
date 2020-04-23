@@ -96,9 +96,7 @@
            (when (= :settings (peek @atoms/screen-cursor))
              [settings/settings atoms/settings-cursor atoms/login-cursor])
            (when (:show-app-state @atoms/settings-cursor)
-             [:div
-              [:p (str @ratom)]
-              [:p (str "Video ref: " @atoms/video-ref-cursor)]])
+             [:p (str @ratom)])
            [toaster-oven/toaster-control]
            ])))))
 
