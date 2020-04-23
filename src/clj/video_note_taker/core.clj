@@ -75,15 +75,11 @@
     2) New cookies won't always be issued. It takes about a minute after getting a cookie before
        CouchDB will give you a new cookie."
   [cookie-value]
-  (println "checking cookie-value: " cookie-value)
   (let [
         resp (http/get "http://localhost:5984/_session" {:as :json
                                                          :headers {"Cookie" (str "AuthSession=" cookie-value)}
                                                          :content-type :json
                                                          })]
-    (println resp)
-    (println "cookies: " (:cookies resp))
-    (println "processed cookies: " (remove-cookie-attrs-not-supported-by-ring (:cookies resp)))
     (if (nil? (get-in resp [:body :userCtx :name]))
       false
       [(get-in resp [:body :userCtx])
@@ -377,9 +373,10 @@
                               {"$elemMatch"
                                {"$eq" "alpha"}}},
                              {"text"
-                              {"$regex" (str ".*" (:text params) ".*")}}]}}
+                              {"$regex" (str ".*" (:text params) ".*")}}]}
+                    "execution_stats" true}
                    })]
-        (println "search-text resp: " resp)
+        (println "stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
         (json-response (:body resp))))))
 
 (def api-routes
