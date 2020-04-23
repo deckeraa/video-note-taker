@@ -391,6 +391,44 @@
           (json-response (assoc (:body resp)
                                 :search-string (:text params))))))))
 
+(defn user-has-access-to-video [username video]
+  (not (empty? (filter #(= username %) (:users video)))))
+
+(defn update-video-permissions-handler [req]
+  (let [cookie-check-val  (cookie-check-from-req req)]
+    (if (not cookie-check-val)
+      (not-authorized-response)
+      (try
+        (let [username (get-in cookie-check-val [0 :name])
+              video (get-body req)
+              current-video (get-doc (:_id video))]
+          ;; make sure that the user is already on the document
+          (println "current-video: " current-video)
+          (if (user-has-access-to-video username current-video)
+            (do
+              (println "new video: " video)
+              ;; update the document
+              (let [updated-video (couch/put-document db video)]
+                (println "updated video: " updated-video)
+                ;; now update the denormalized user permissions stored on the notes
+                (couch/bulk-update
+                 db
+                 (vec (map
+                       (fn [view-result]
+                         (let [v (:doc view-result)]
+                           (println "updating" v)
+                           (assoc v :users (:users video))))
+                       (get-notes (:_id video)))))
+                ;; TODO the bulk update could fail to update certain notes.
+                ;; They will still appear in below the video, but won't show up
+                ;; in the notes search. I should either handle them here or create a search
+                ;; to validate the denormalized 'index' :users field on notes.
+                (json-response updated-video)))
+            (not-authorized-response))
+          )
+        (catch Exception e
+          (println "update-video-permissions-handler e: " e))))))
+
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
@@ -408,6 +446,7 @@
         ["logout" logout-handler]
         ["cookie-check" cookie-check-handler]
         ["search-text" search-text-handler]
+        ["update-video-permissions" update-video-permissions-handler]
         [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
 
 (def app
