@@ -1,5 +1,6 @@
 (ns video-note-taker.core
   (:require
+   [clojure.test :refer [deftest is]]
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
    [ring.util.response :as response :refer [file-response content-type]]
@@ -159,8 +160,7 @@
             (json-response (vec (map :doc videos))))))))
 
 (defn get-notes-spreadsheet [video-src]
-  nil
-  )
+  nil)
 
 (defn escape-csv-field [s]
   (str "\"" (clojure.string/escape s {\" "\"\""}) "\""))
@@ -355,30 +355,41 @@
 
     (json-response {:body (:body resp)})))
 
+(defn construct-search-regex [text]
+  (str ".*["
+       (clojure.string/upper-case (first text))
+       (clojure.string/lower-case (first text))
+       "]"
+       (subs text 1 (count text)) ; drop the first letter
+       ".*"))
+
+;; (deftest test-construct-search-regex
+;;   (is (= (construct-search-regex "bravo") ".*[Bb]ravo")))
+
 (defn search-text-handler [req]
   (let [cookie-check-val  (cookie-check-from-req req)]
     (if (not cookie-check-val)
       (not-authorized-response)
       (let [username (get-in cookie-check-val [0 :name])
-            params (get-body req)
-            resp (http/post
-                  "http://localhost:5984/video-note-taker/_find"
-                  {:as :json
-                   :content-type :json
-                   :form-params
-                   {"selector"
-                    {"$and" [{"type"
-                              {"$eq" "note"}}
-                             {"users"
-                              {"$elemMatch"
-                               {"$eq" username}}},
-                             {"text"
-                              {"$regex" (str ".*" (:text params) ".*")}}]}
-                    "execution_stats" true}
-                   })]
-        (println "stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
-        (json-response (assoc (:body resp)
-                              :search-string (:text params)))))))
+            params (get-body req)]
+        (let [resp (http/post
+                    "http://localhost:5984/video-note-taker/_find"
+                    {:as :json
+                     :content-type :json
+                     :form-params
+                     {"selector"
+                      {"$and" [{"type"
+                                {"$eq" "note"}}
+                               {"users"
+                                {"$elemMatch"
+                                 {"$eq" username}}},
+                               {"text"
+                                {"$regex" (construct-search-regex (:text params))}}]}
+                      "execution_stats" true}
+                     })]
+          (println "stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
+          (json-response (assoc (:body resp)
+                                :search-string (:text params))))))))
 
 (def api-routes
   ["/" [["hello" hello-handler]
