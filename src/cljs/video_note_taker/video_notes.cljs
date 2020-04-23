@@ -12,7 +12,7 @@
    [video-note-taker.editable-field :refer [editable-field]]
    [video-note-taker.auth])
   (:require-macros
-   [devcards.core :refer [defcard deftest]]
+   [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn request-video-time [video-cursor time]
@@ -88,7 +88,6 @@
 ;;   (is (= "1:01" (format-time-in-seconds  61))))
 
 (defn time-scrubber [note-cursor notes-cursor video-ref-atm video-cursor]
-  (println "Re-rendering time-scrubber: " @note-cursor)
   (let [scrub-timer-count-atm (reagent/atom 0)]
     (fn [note-cursor notes-cursor video-ref-atm]
       [:div {:class "flex items-center"}
@@ -101,11 +100,48 @@
                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-cursor scrub-timer-count-atm 0.1)}
         "gray" "32px"]])))
 
-(defn share-dialog [remove-delegate-atm]
-  [:div {}
-   "share dialog"
-   [:button {:on-click (fn [e] (@remove-delegate-atm))}
-    "Cancel"]])
+(defn share-dialog [remove-delegate-atm video-cursor notes-cursor]
+  (let [user-input-atm (reagent/atom "")
+        user-list      (reagent/atom [])
+        ]
+    (fn [remove-delegate-atm video-cursor notes-cursor]
+      (println "rendering share dialog")
+      [:div {:class "flex flex-column"}
+       [:div {} "Share with:"]
+       [:ul
+        (map (fn [user]
+               ^{:key user}
+               [:li {} user])
+             (:users @video-cursor))]
+       [:div {:class "flex br3 ba b--black-10"}
+        [:input {:type :text
+                 :class "bn"
+                 :value @user-input-atm
+                 :on-change (fn [e] (reset! user-input-atm (-> e .-target .-value)))}]
+        [:button {:class "bn white bg-green b f2 br3"} "+"]]
+       [:div {:class "flex"}
+        [:button {:on-click (fn [e] (@remove-delegate-atm))}
+         "Cancel"]
+        [:button {:on-click (fn [e]
+                              (@remove-delegate-atm)
+                              (go (let [resp (<! (http/post
+                                                  (db/resolve-endpoint "update-video-permissions")
+                                                  {:json-params (assoc @video-cursor
+                                                                       :users ["alpha" "bravo"])
+                                                   :with-credentials true}))]
+                                    (println "share " resp)
+                                    (db/toast-server-error-if-needed resp nil)
+                                    (reset! video-cursor (:body resp))
+                                    (load-notes notes-cursor video-cursor)))
+                              )}
+         "Ok"]]])))
+
+(defcard-rg test-share-dialog
+  (let [remove-delegate-atm (reagent/atom (fn [] nil))
+        video-cursor        (reagent/atom {:_id "abc123" :users ["alpha" "bravo" "charlie"]})
+        notes-cursor        (reagent/atom [])]
+    [:div {:class ""}
+     [share-dialog remove-delegate-atm video-cursor notes-cursor]]))
 
 (defn note [note-cursor notes-cursor video-ref-atm video-cursor]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
@@ -166,20 +202,11 @@
                           (let [remove-delegate-atm (reagent/atom (fn []
                                                                     (println "remove-delegate-atm")))]
                             (println "Adding toast!")
-                            (toaster-oven/add-toast (share-dialog remove-delegate-atm) remove-delegate-atm atoms/toaster-cursor)
+                            (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)
                             ;; (str "Server error: " resp doc) svg/x "red"
                             ;; {:ok-fn    (fn [] nil)}
                             
                             )
-                          ;; (go (let [resp (<! (http/post
-                          ;;                     (db/resolve-endpoint "update-video-permissions")
-                          ;;                     {:json-params (assoc @video-cursor
-                          ;;                                          :users ["alpha" "bravo"])
-                          ;;                      :with-credentials true}))]
-                          ;;       (println "share " resp)
-                          ;;       (db/toast-server-error-if-needed resp nil)
-                          ;;       (reset! video-cursor (:body resp))
-                          ;;       (load-notes notes-cursor video-cursor)))
                           )}
      [svg/share-arrow {} "white" "28px"]]]
    [:div {:class "flex flex-column"}
