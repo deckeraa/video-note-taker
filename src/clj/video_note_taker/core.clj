@@ -175,10 +175,9 @@
         (conj $ "video,time in seconds,note text")
         (clojure.string/join "\n" $)
         (response/response $)
-        (content-type $ "text/csv"))
-      ))
+        (content-type $ "text/csv")))))
 
-  (defn import-note-spreadsheet-line [notes-by-video failed-imports video time-in-seconds note-text line]
+(defn import-note-spreadsheet-line [notes-by-video failed-imports video time-in-seconds note-text line]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
     (when (not (get-in @notes-by-video [video])) 
       (as-> (get-notes video) $
@@ -193,7 +192,7 @@
           (swap! notes-by-video #(assoc % video
                                         (conj (get % video) time-in-seconds)))
           (println "Updated2 notes-by-video to: " @notes-by-video))
-      (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."}))))
+      (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."})))
 
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
