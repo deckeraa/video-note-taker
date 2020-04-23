@@ -138,6 +138,7 @@
                                           :type :note
                                           :video (:_id @video-cursor)
                                           :video-display-name (:display-name @video-cursor) ; denormalized for speed while searching. This information is stored in the video's document.
+                                          :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
                                           :time current-time
                                           :text (str "Note at " current-time)}
                                          (fn [doc]
