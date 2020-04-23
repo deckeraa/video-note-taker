@@ -133,15 +133,17 @@
                          (when-let [video @video-ref-atm]
                            (let [current-time (.-currentTime video)
                                  uuid (uuid/uuid-string (uuid/make-random-uuid))]
+                             ;; Create a new note and save it ot CouchDB
                              (db/put-doc {:_id uuid
-                                       :type :note
-                                       :video (:_id @video-cursor) 
-                                       :time current-time
-                                       :text (str "Note at " current-time)}
-                                      (fn [doc]
-                                        (swap! notes-cursor (fn [notes]
-                                                              (vec (concat [doc] notes))
-                                                              )))))))}
+                                          :type :note
+                                          :video (:_id @video-cursor)
+                                          :video-display-name (:display-name @video-cursor) ; denormalized for speed while searching. This information is stored in the video's document.
+                                          :time current-time
+                                          :text (str "Note at " current-time)}
+                                         (fn [doc]
+                                           (swap! notes-cursor (fn [notes]
+                                                                 (vec (concat [doc] notes))
+                                                                 )))))))}
     [:div {:class "f2 b white"} "Add note"]]
    [:div {:class "flex flex-column"}
     (doall
