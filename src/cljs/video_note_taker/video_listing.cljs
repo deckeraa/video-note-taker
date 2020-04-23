@@ -24,21 +24,21 @@
         (db/toast-server-error-if-needed resp nil)
         (reset! video-listing-cursor (:body resp)))))
 
-(defn single-video-listing [video-src video-cursor notes-cursor screen-cursor]
+(defn single-video-listing [video video-cursor notes-cursor screen-cursor]
   [:div {:class "br3 shadow-4 pa3 dim"
          :on-click (fn []
                      ;; clear out the notes cursor if a different video was selected than before
-                     (when (not (= (:src @video-cursor) video-src))
+                     (when (not (= (:_id @video-cursor) (:_id video)))
                        (reset! notes-cursor []))
-                     ;; update the video cursor and 
-                     (reset! video-cursor {:src video-src})
-                     ;; auto-load notes if needed
+                     ;; update the video cursor and ...
+                     (reset! video-cursor video)
+                     ;; ... auto-load notes if needed
                      (when (empty? @notes-cursor)
-                       (notes/load-notes notes-cursor (:src @video-cursor)))
+                       (notes/load-notes notes-cursor (:src @video-cursor))) ;; TODO update with the new src from the video
                      ;; update the screen cursor to go to the new screen
                      (swap! atoms/screen-cursor conj :video)
                      )}
-   (str video-src)]
+   (str video)]
   )
 
 (defn upload-card [video-listing-cursor]
@@ -74,8 +74,8 @@
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
   [:div
-   (map (fn [video-src]
-          ^{:key video-src}
-          [single-video-listing video-src video-cursor notes-cursor screen-cursor])
+   (map (fn [video]
+          ^{:key (:_id video)}
+          [single-video-listing video video-cursor notes-cursor screen-cursor])
         @video-listing-cursor)
    [upload-card video-listing-cursor]])

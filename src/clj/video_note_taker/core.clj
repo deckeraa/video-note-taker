@@ -153,16 +153,6 @@
 ;; }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (defn get-video-listing-handler [req]
-;;   (if (not (cookie-check-from-req req))
-;;     (not-authorized-response)
-;;     (json-response
-;;      (as-> (shell/with-sh-dir "./resources/public/videos"
-;;              (sh "ls" "-1")) %
-;;        (:out %)
-;;        (clojure.string/split % #"\n")
-;;        ))))
-
 (defn get-video-listing-handler [req]
   (let [cookie-check-val (cookie-check-from-req req)]
     (if (not cookie-check-val)
@@ -170,7 +160,7 @@
       (do (let [username (get-in cookie-check-val [0 :name])
                 videos   (couch/get-view db "videos" "by_user"
                                          {:key username :include_docs true})]
-            (json-response videos))))))
+            (json-response (vec (map :doc videos))))))))
 
 (defn get-notes-spreadsheet [video-src]
   nil
@@ -250,17 +240,19 @@
               user     (get-in cookie-check-val [0 :name])
               filename (get-in req [:params "file" :filename])
               file-ext (last (clojure.string/split filename #"\."))
-              tempfile (get-in req [:params "file" :tempfile])]
+              tempfile (get-in req [:params "file" :tempfile])
+              new-short-filename (str id "." file-ext)]
           (println "filename: " filename)
           (println "cookie-check-val: " cookie-check-val)
           (println "user " user)
           ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
           (io/copy (get-in req [:params "file" :tempfile])
-                   (io/file (str "./resources/public/videos/" id "." file-ext)))
+                   (io/file (str "./resources/public/videos/" new-short-filename)))
           ;; put some video metadata into Couch
           (let [video-doc (couch/put-document db {:_id id
                                                   :type "video"
                                                   :display-name filename
+                                                  :file-name new-short-filename
                                                   :users [user]
                                                   :uploaded-by user
                                                   :uploaded-datetime (.toString (new java.util.Date))})]

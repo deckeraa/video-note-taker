@@ -19,11 +19,11 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn video [video-ref-atm video-src video-cursor]
+(defn video [video-ref-atm video-cursor]
   [:video {:id "main-video"
            :class "mb3"
            :controls true
-           :src (str "videos/" video-src)
+           :src (str "videos/" (:file-name @video-cursor))
            :width 620
            :on-time-update (fn [e]
                              (let [current-time   (.-currentTime (-> e .-target))
@@ -52,7 +52,7 @@
     ;; (when (= :video (peek @screen-cursor))
     ;;   )
     (when (= :video (peek @screen-cursor))
-      [:div {:class ""} (:src @video-cursor)])
+      [:div {:class ""} (:display-name @video-cursor)])
     (when (= :settings (peek @screen-cursor))
       [:div {:class "b ma2"} "Settings"])]
    [svg/cog {:class "ma2 dim"
@@ -89,7 +89,7 @@
              )
            (when (= :video (peek @atoms/screen-cursor))
              [:div
-              [video video-ref-atm (:src @atoms/video-cursor) atoms/video-cursor]
+              [video video-ref-atm atoms/video-cursor]
               [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor) atoms/video-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
              [settings/settings atoms/settings-cursor atoms/login-cursor])
