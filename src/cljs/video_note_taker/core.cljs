@@ -36,6 +36,7 @@
                                    (when-let [video @video-ref-atm]
                                      (set! (.-currentTime video) requested-time))))))
            :ref (fn [el]
+                  (println "Resetting video-ref-atm: " el)
                   (reset! video-ref-atm el)
                   (when-let [requested-time (:requested-time @video-cursor)]
                     (set! (.-currentTime el) requested-time)))}
@@ -90,11 +91,13 @@
            (when (= :video (peek @atoms/screen-cursor))
              [:div
               [video video-ref-atm atoms/video-cursor]
-              [notes/notes notes-cursor video-ref-atm (:src @atoms/video-cursor) atoms/video-cursor]])
+              [notes/notes notes-cursor video-ref-atm atoms/video-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
              [settings/settings atoms/settings-cursor atoms/login-cursor])
            (when (:show-app-state @atoms/settings-cursor)
-             [:p (str @ratom)])
+             [:div
+              [:p (str @ratom)]
+              [:p (str (nil? @video-ref-atm))]])
            [toaster-oven/toaster-control]
            ])))))
 

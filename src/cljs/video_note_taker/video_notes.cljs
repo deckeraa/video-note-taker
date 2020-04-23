@@ -19,6 +19,7 @@
   (swap! video-cursor assoc :requested-time time))
 
 (defn try-set-video-time [video-ref-atm video-cursor time]
+  (println "video-ref-atm is " (str @video-ref-atm))
   (request-video-time video-cursor time)
   (when-let [video @video-ref-atm]
       (set! (.-currentTime video) time)))
@@ -125,7 +126,7 @@
    ]
   )
 
-(defn notes [notes-cursor video-ref-atm video-src video-cursor]
+(defn notes [notes-cursor video-ref-atm video-cursor]
   [:div {:class "flex flex-column items-center"}
    [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
           :on-click (fn [e] 
@@ -134,7 +135,7 @@
                                  uuid (uuid/uuid-string (uuid/make-random-uuid))]
                              (db/put-doc {:_id uuid
                                        :type :note
-                                       :video video-src
+                                       :video (:_id @video-cursor) 
                                        :time current-time
                                        :text (str "Note at " current-time)}
                                       (fn [doc]
@@ -150,14 +151,14 @@
               [note note-cursor notes-cursor video-ref-atm video-cursor]))
           (range 0 (count @notes-cursor))))]
    [:a {:class "b--black-10 ba br3 pa3 dim link"
-        :href (str (db/get-server-url) "/get-notes-spreadsheet?video_src=" video-src)}
+        :href (str (db/get-server-url) "/get-notes-spreadsheet?video_id=" (:_id @video-cursor))}
     "Download notes as spreadsheet"]
    ])
 
-(defn load-notes [notes-cursor video-key]
-  (println "calling load-notes with video-key: " video-key)
+(defn load-notes [notes-cursor video-cursor]
+  (println "calling load-notes with video-key: " (:_id @video-cursor))
   (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
-                                {:json-params {:video-key video-key}
+                                {:json-params {:video-key (:_id @video-cursor)}
                                  :with-credentials false}
                                 ))]
         (db/toast-server-error-if-needed resp nil)

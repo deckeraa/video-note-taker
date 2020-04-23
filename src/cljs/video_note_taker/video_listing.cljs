@@ -34,7 +34,7 @@
                      (reset! video-cursor video)
                      ;; ... auto-load notes if needed
                      (when (empty? @notes-cursor)
-                       (notes/load-notes notes-cursor (:src @video-cursor))) ;; TODO update with the new src from the video
+                       (notes/load-notes notes-cursor video-cursor)) ;; TODO update with the new src from the video
                      ;; update the screen cursor to go to the new screen
                      (swap! atoms/screen-cursor conj :video)
                      )}
