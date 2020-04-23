@@ -63,4 +63,8 @@
                   [:div {:class "f2"}
                    [highlight-str (:text note) @input-atm]]
                   [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
-               (get-in @results-atm [:body :docs]))])])))
+               (get-in @results-atm [:body :docs]))
+          (when (empty? (get-in @results-atm [:body :docs]))
+            [:div {:class "f3 white bg-light-red tc pa3 ma3 br3"}
+             [:p {:class "b"} "No results found :("]
+             [:p {:class "f4"} "The search looks for exact matches."]])])])))
