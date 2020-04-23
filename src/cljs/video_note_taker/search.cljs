@@ -27,12 +27,14 @@
 (defn search [video-cursor screen-cursor]
   (let [input-atm   (reagent/atom "")
         results-atm (reagent/atom "")
+        search-locked (reagent/atom false)
+        search-as-you-type true
         search-fn (fn []
                           (go (let [resp (<! (http/post (db/resolve-endpoint "search-text")
                                                         {:json-params {:text @input-atm}
                                                          :with-credentials true}))]
-                                (reset! results-atm resp))))
-        search-as-you-type true]
+                                (reset! results-atm resp)
+                                (reset! search-locked false))))]
     (fn []
       [:div {:class "flex flex-column items-center mv2 mh4"}
        [:div {:class "flex justify-center ba br3 b--black-20"}
@@ -43,7 +45,8 @@
                  :on-change (fn [e]
                               (reset! input-atm (-> e .-target .-value))
                               (when (and search-as-you-type
-                                         (not (empty? @input-atm)))
+                                         (not (empty? @input-atm))
+                                         (not (compare-and-set! search-locked false true)))
                                 (search-fn)))}]
         [svg/magnifying-glass {:class "dib "
                                :style {:margin "8px"}
