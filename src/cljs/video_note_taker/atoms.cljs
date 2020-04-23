@@ -11,16 +11,18 @@
 (defonce app-state
   (reagent/atom {:notes []
                  :video {}
+                 :video-ref nil
                  :video-listing []
                  :screen-stack [:video-selection]
                  :settings {:_id "settings"}
                  :toaster {:toasts [] :old-toasts []}
                  :login-atm 0}))
 
-(defonce screen-cursor   (reagent/cursor app-state [:screen-stack]))
-(defonce settings-cursor (reagent/cursor app-state [:settings]))
-(defonce toaster-cursor  (reagent/cursor app-state [:toaster]))
-(defonce notes-cursor    (reagent/cursor app-state [:notes]))
-(defonce video-cursor    (reagent/cursor app-state [:video]))
+(defonce screen-cursor    (reagent/cursor app-state [:screen-stack]))
+(defonce settings-cursor  (reagent/cursor app-state [:settings]))
+(defonce toaster-cursor   (reagent/cursor app-state [:toaster]))
+(defonce notes-cursor     (reagent/cursor app-state [:notes]))
+(defonce video-cursor     (reagent/cursor app-state [:video]))
+(defonce video-ref-cursor (reagent/cursor app-state [:video-ref]))
 (defonce video-listing-cursor    (reagent/cursor app-state [:video-listing]))
 (defonce login-cursor    (reagent/cursor app-state [:login-atm]))

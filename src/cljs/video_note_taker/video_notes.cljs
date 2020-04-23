@@ -80,6 +80,7 @@
 ;;   (is (= "1:01" (format-time-in-seconds  61))))
 
 (defn time-scrubber [note-cursor notes-cursor video-ref-atm video-cursor]
+  (println "Re-rendering time-scrubber: " @note-cursor)
   (let [scrub-timer-count-atm (reagent/atom 0)]
     (fn [note-cursor notes-cursor video-ref-atm]
       [:div {:class "flex items-center"}
@@ -106,7 +107,6 @@
      (fn [new-val done-fn]
        (db/put-doc (assoc @note-cursor :text new-val)
                 (fn [new-doc]
-                  (println "new-doc" new-doc)
                   (upsert-note! notes-cursor new-doc)
                   (done-fn))))]]
    [:div {:class "flex items-center ml3"}
@@ -156,7 +156,6 @@
    ])
 
 (defn load-notes [notes-cursor video-cursor]
-  (println "calling load-notes with video-key: " (:_id @video-cursor))
   (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
                                 {:json-params {:video-key (:_id @video-cursor)}
                                  :with-credentials false}

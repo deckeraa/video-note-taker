@@ -36,10 +36,11 @@
                                    (when-let [video @video-ref-atm]
                                      (set! (.-currentTime video) requested-time))))))
            :ref (fn [el]
-                  (println "Resetting video-ref-atm: " el)
-                  (reset! video-ref-atm el)
-                  (when-let [requested-time (:requested-time @video-cursor)]
-                    (set! (.-currentTime el) requested-time)))}
+                  (when el
+                    (do
+                      (reset! video-ref-atm el)
+                      (when-let [requested-time (:requested-time @video-cursor)]
+                        (set! (.-currentTime el) requested-time)))))}
    "Video not supported by your browser :("]
   )
 
@@ -62,7 +63,7 @@
 
 
 (defn page [ratom]
-  (let [video-ref-atm (clojure.core/atom nil)
+  (let [;video-ref-atm (clojure.core/atom nil)
         notes-cursor atoms/notes-cursor
         _auto-loaded-video-listing (reagent/atom false)
         _auto-loaded-settings      (reagent/atom false)
@@ -90,14 +91,14 @@
              )
            (when (= :video (peek @atoms/screen-cursor))
              [:div
-              [video video-ref-atm atoms/video-cursor]
-              [notes/notes notes-cursor video-ref-atm atoms/video-cursor]])
+              [video atoms/video-ref-cursor atoms/video-cursor]
+              [notes/notes notes-cursor atoms/video-ref-cursor atoms/video-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
              [settings/settings atoms/settings-cursor atoms/login-cursor])
            (when (:show-app-state @atoms/settings-cursor)
              [:div
               [:p (str @ratom)]
-              [:p (str (nil? @video-ref-atm))]])
+              [:p (str "Video ref: " @atoms/video-ref-cursor)]])
            [toaster-oven/toaster-control]
            ])))))
 

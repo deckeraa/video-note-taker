@@ -14,7 +14,6 @@
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn needs-auth-cookie []
-  (println "Calling needs-auth-cookie with " (.-cookie js/document))
   (as-> js/document $
     (.-cookie $)
     (clojure.string/split $ "; ")
