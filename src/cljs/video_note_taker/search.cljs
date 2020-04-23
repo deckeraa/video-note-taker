@@ -25,17 +25,26 @@
   [:div {}
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
 
+(defn search-fn [search-locked input-atm results-atm search-text]
+  (when (compare-and-set! search-locked false true)
+    (go (let [resp (<! (http/post (db/resolve-endpoint "search-text")
+                                  {:json-params {:text search-text}
+                                   :with-credentials true}))]
+          (reset! results-atm resp)
+          (reset! search-locked false)
+          (let [cur-text @input-atm]
+            (when (not (= search-text cur-text))
+              (do
+                (search-fn search-locked input-atm results-atm cur-text)))))))
+  )
+
 (defn search [video-cursor screen-cursor]
   (let [input-atm   (reagent/atom "")
         results-atm (reagent/atom "")
         search-locked (reagent/atom false)
         search-as-you-type true
-        search-fn (fn []
-                          (go (let [resp (<! (http/post (db/resolve-endpoint "search-text")
-                                                        {:json-params {:text @input-atm}
-                                                         :with-credentials true}))]
-                                (reset! results-atm resp)
-                                (reset! search-locked false))))]
+        search-fn (partial search-fn search-locked input-atm results-atm)
+        ]
     (fn []
       [:div {:class "flex flex-column items-center mv2 mh4"}
        [:div {:class "flex justify-center ba br3 b--black-20"}
@@ -46,12 +55,12 @@
                  :on-change (fn [e]
                               (reset! input-atm (-> e .-target .-value))
                               (when (and search-as-you-type
-                                         (not (empty? @input-atm))
-                                         (not (compare-and-set! search-locked false true)))
-                                (search-fn)))}]
+                                         (not (empty? @input-atm)))
+                                (search-fn @input-atm)
+))}]
         [svg/magnifying-glass {:class "dib "
                                :style {:margin "8px"}
-                               :on-click search-fn} "gray" "48px"]]
+                               :on-click #(search-fn @input-atm)} "gray" "48px"]]
        ;[:div (str (:body @results-atm))]
        (when (not (empty? @input-atm))
          [:div {:class ""}

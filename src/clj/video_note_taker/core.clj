@@ -377,7 +377,8 @@
                     "execution_stats" true}
                    })]
         (println "stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
-        (json-response (:body resp))))))
+        (json-response (assoc (:body resp)
+                              :search-string (:text params)))))))
 
 (def api-routes
   ["/" [["hello" hello-handler]
