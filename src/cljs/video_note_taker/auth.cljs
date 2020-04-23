@@ -96,7 +96,7 @@
              "Couldn't create new user :("
              "Login failed :(")])]])))
 
-(defn manage-identity [logged-in-atm]
+(defn manage-identity [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
   [:div
    [:h2 "Manage Identity"]
    [:div {:class "f3 br1 white bg-light-red b tc pa3 ma3 dim"
@@ -104,5 +104,11 @@
                       (go (let [resp (<! (http/post (db/resolve-endpoint "logout")
                                                     {:with-credentials true}))]
                             (println resp)
+                            ;; clear out the current app state
+                            (reset! notes-cursor [])
+                            (reset! video-listing-cursor [])
+                            (reset! video-cursor {})
+                            (reset! screen-cursor [:video-selection])
+                            ;; redraw core page
                             (swap! logged-in-atm inc))))}
     "Log out"]])

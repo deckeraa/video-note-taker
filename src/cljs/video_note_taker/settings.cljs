@@ -89,12 +89,12 @@
                (get-in @results-atm [:body :docs]))])])))
 
 
-(defn settings [settings-cursor login-cursor]
+(defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         import-issues     (reagent/atom [])]
     (fn [settings-cursor]
       [:div {:class "w-100 pa3 flex flex-column items-start"}
-       [auth/manage-identity login-cursor]
+       [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
        [:h2 "Import & Export"]
        [:form {:id "upload-form" :action (str (db/get-server-url) "/upload-spreadsheet") :method "post" :enctype "multipart/form-data"
                }
