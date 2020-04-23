@@ -57,7 +57,7 @@
           [:div {:class "f5 red"}
            "Passwords do not match."])
         (if @creating-new-user?
-          [:div {:class "f2 br3 white bg-blue pa3 mv2 dim tc w5"
+          [:button {:class "f2 br3 white bg-blue bn pa3 mv2 dim tc w5"
                :on-click (fn []
                            (reset! login-failed-atm false)
                            (if (= @pass-atm @pass-rpt-atm)
@@ -71,7 +71,7 @@
                                      (reset! login-failed-atm true))))
                              (reset! login-failed-atm true)))}
          "Create user"]
-          [:div {:class "f2 br3 white bg-blue pa3 mv2 dim tc w5"
+          [:button {:class "f2 br3 white bg-blue bn pa3 mv2 dim tc w5"
                  :on-click (fn []
                              (reset! login-failed-atm false)
                              (go (let [resp (<! (http/post (db/resolve-endpoint "login")
