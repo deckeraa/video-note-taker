@@ -41,17 +41,36 @@
    (str video-src)]
   )
 
-(defn upload-card []
-  [:div {:class "br3 shadow-4 dim mt3 flex"
-         :style {:position :relative}}
-;   [svg/cloud-upload {:class "relative"} "white" "32px"]
-   [:label {:for "file-upload"
-            :class "f2 bg-green white b br3 dib pa2 w-100 tc"}
-    "Upload video"]
-   [:input {:id "file-upload"
-            :type :file
-            :class "dn"
-            }]])
+(defn upload-card [video-listing-cursor]
+  (let [file-input-ref-el (reagent/atom nil)
+        import-results    (reagent/atom nil)]
+    (fn [video-listing-cursor]
+      [:div {:class "br3 shadow-4 dim mt3 flex"
+             :style {:position :relative}}
+                                        ;   [svg/cloud-upload {:class "relative"} "white" "32px"]
+       [:label {:for "file-upload"
+                :class "f2 bg-green white b br3 dib pa2 w-100 tc"}
+        "Upload video"]
+       [:input {:id "file-upload"
+                :name "file"
+                :type "file"
+                :multiple false
+                :class "dn"
+                :ref (fn [el]
+                       (reset! file-input-ref-el el))
+                :on-change (fn [e]
+                             ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
+                             (println "file-upload event: " e)
+                             (when-let [file-input @file-input-ref-el]
+                               (go (let [resp (<! (http/post
+                                                   (db/resolve-endpoint "upload-video")
+                                                   {:multipart-params
+                                                    [["file" (aget (.-files file-input) 0)]]
+                                                    }))]
+                                     (reset! import-results resp)
+                                     (when (= 200 (:status resp))
+                                       (load-video-listing video-listing-cursor))
+                                     ))))}]])))
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
   [:div
@@ -59,4 +78,4 @@
           ^{:key video-src}
           [single-video-listing video-src video-cursor notes-cursor screen-cursor])
         @video-listing-cursor)
-   [upload-card]])
+   [upload-card video-listing-cursor]])

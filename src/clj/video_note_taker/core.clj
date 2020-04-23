@@ -218,6 +218,35 @@
                     lines))
         (json-response {:didnt-import @failed-imports})))))
 
+;; to test this via cURL, do something like:
+;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
+(defn upload-video-handler [req]
+  (let [cookie-check-val (cookie-check-from-req req)]
+    (if (not cookie-check-val)
+      (not-authorized-response)
+      (do
+        (println (get-in req [:params]))
+        (let [id (uuid/to-string (uuid/v4))
+              user     (get-in cookie-check-val [0 :name])
+              filename (get-in req [:params "file" :filename])
+              file-ext (last (clojure.string/split filename #"\."))
+              tempfile (get-in req [:params "file" :tempfile])]
+          (println "filename: " filename)
+          (println "cookie-check-val: " cookie-check-val)
+          (println "user " user)
+          ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
+          (io/copy (get-in req [:params "file" :tempfile])
+                   (io/file (str "./resources/public/videos/" id "." file-ext)))
+          ;; put some video metadata into Couch
+          (let [video-doc (couch/put-document db {:_id id
+                                                  :type "video"
+                                                  :display-name filename
+                                                  :users [user]
+                                                  :uploaded-by user
+                                                  :uploaded-datetime (.toString (new java.util.Date))})]
+            (json-response video-doc))
+          )))))
+
 (defn get-cookie-handler [req]
   (try
     (let [params (get-body req)
@@ -340,6 +369,7 @@
         ["get-video-listing" get-video-listing-handler]
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" upload-spreadsheet-handler]
+        ["upload-video" upload-video-handler]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]
