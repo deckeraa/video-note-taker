@@ -22,7 +22,15 @@
   (println "video-ref-atm is " (str @video-ref-atm))
   (request-video-time video-cursor time)
   (when-let [video @video-ref-atm]
-      (set! (.-currentTime video) time)))
+    (set! (.-currentTime video) time)))
+
+(defn load-notes [notes-cursor video-cursor]
+  (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
+                                {:json-params {:video-key (:_id @video-cursor)}
+                                 :with-credentials false}
+                                ))]
+        (db/toast-server-error-if-needed resp nil)
+        (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
 
 (defn upsert-note! [notes-cursor doc]
   (swap! notes-cursor
@@ -93,6 +101,12 @@
                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-cursor scrub-timer-count-atm 0.1)}
         "gray" "32px"]])))
 
+(defn share-dialog [remove-delegate-atm]
+  [:div {}
+   "share dialog"
+   [:button {:on-click (fn [e] (@remove-delegate-atm))}
+    "Cancel"]])
+
 (defn note [note-cursor notes-cursor video-ref-atm video-cursor]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
                                         ;   [:button {}]
@@ -128,24 +142,46 @@
 
 (defn notes [notes-cursor video-ref-atm video-cursor]
   [:div {:class "flex flex-column items-center"}
-   [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
-          :on-click (fn [e] 
-                         (when-let [video @video-ref-atm]
-                           (let [current-time (.-currentTime video)
-                                 uuid (uuid/uuid-string (uuid/make-random-uuid))]
-                             ;; Create a new note and save it ot CouchDB
-                             (db/put-doc {:_id uuid
-                                          :type :note
-                                          :video (:_id @video-cursor)
-                                          :video-display-name (:display-name @video-cursor) ; denormalized for speed while searching. This information is stored in the video's document.
-                                          :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
-                                          :time current-time
-                                          :text (str "Note at " current-time)}
-                                         (fn [doc]
-                                           (swap! notes-cursor (fn [notes]
-                                                                 (vec (concat [doc] notes))
-                                                                 )))))))}
-    [:div {:class "f2 b white"} "Add note"]]
+   [:div {:class "flex justify-between w-80"}
+    [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
+           :on-click (fn [e] 
+                       (when-let [video @video-ref-atm]
+                         (let [current-time (.-currentTime video)
+                               uuid (uuid/uuid-string (uuid/make-random-uuid))]
+                           ;; Create a new note and save it ot CouchDB
+                           (db/put-doc {:_id uuid
+                                        :type :note
+                                        :video (:_id @video-cursor)
+                                        :video-display-name (:display-name @video-cursor) ; denormalized for speed while searching. This information is stored in the video's document.
+                                        :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
+                                        :time current-time
+                                        :text (str "Note at " current-time)}
+                                       (fn [doc]
+                                         (swap! notes-cursor (fn [notes]
+                                                               (vec (concat [doc] notes))
+                                                               )))))))}
+     [:div {:class "f2 b white"} "Add note"]]
+    [:button {:class "bn pa3 br3 dim bg-gray"
+              :on-click (fn [e]
+                          (let [remove-delegate-atm (reagent/atom (fn []
+                                                                    (println "remove-delegate-atm")))]
+                            (println "Adding toast!")
+                            (toaster-oven/add-toast (share-dialog remove-delegate-atm) remove-delegate-atm atoms/toaster-cursor)
+                            ;; (str "Server error: " resp doc) svg/x "red"
+                            ;; {:ok-fn    (fn [] nil)}
+                            
+                            )
+                          ;; (go (let [resp (<! (http/post
+                          ;;                     (db/resolve-endpoint "update-video-permissions")
+                          ;;                     {:json-params (assoc @video-cursor
+                          ;;                                          :users ["alpha" "bravo"])
+                          ;;                      :with-credentials true}))]
+                          ;;       (println "share " resp)
+                          ;;       (db/toast-server-error-if-needed resp nil)
+                          ;;       (reset! video-cursor (:body resp))
+                          ;;       (load-notes notes-cursor video-cursor)))
+                          )}
+     [svg/share-arrow {} "white" "28px"]]]
    [:div {:class "flex flex-column"}
     (doall
      (map (fn [idx]
@@ -158,10 +194,4 @@
     "Download notes as spreadsheet"]
    ])
 
-(defn load-notes [notes-cursor video-cursor]
-  (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
-                                {:json-params {:video-key (:_id @video-cursor)}
-                                 :with-credentials false}
-                                ))]
-        (db/toast-server-error-if-needed resp nil)
-        (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
+
