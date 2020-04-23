@@ -151,7 +151,7 @@
               [note note-cursor notes-cursor video-ref-atm video-cursor]))
           (range 0 (count @notes-cursor))))]
    [:a {:class "b--black-10 ba br3 pa3 dim link"
-        :href (str (db/get-server-url) "/get-notes-spreadsheet?video_id=" (:_id @video-cursor))}
+        :href (str (db/get-server-url) "/get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
     "Download notes as spreadsheet"]
    ])
 
