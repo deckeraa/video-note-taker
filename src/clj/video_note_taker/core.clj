@@ -371,7 +371,7 @@
                               {"$eq" "note"}}
                              {"users"
                               {"$elemMatch"
-                               {"$eq" "alpha"}}},
+                               {"$eq" username}}},
                              {"text"
                               {"$regex" (str ".*" (:text params) ".*")}}]}
                     "execution_stats" true}
