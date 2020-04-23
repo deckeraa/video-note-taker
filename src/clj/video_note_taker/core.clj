@@ -141,15 +141,36 @@
       (println "deleting doc: " doc)
       (json-response (couch/delete-document db doc)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; _design/videos/_view/by_user
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; function (doc) {
+;;   if(doc.type === "video") {
+;;     for(var idx in doc.users) {
+;;             emit(doc.users[idx], doc._id);
+;;         }
+;;   }
+;; }
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (defn get-video-listing-handler [req]
+;;   (if (not (cookie-check-from-req req))
+;;     (not-authorized-response)
+;;     (json-response
+;;      (as-> (shell/with-sh-dir "./resources/public/videos"
+;;              (sh "ls" "-1")) %
+;;        (:out %)
+;;        (clojure.string/split % #"\n")
+;;        ))))
+
 (defn get-video-listing-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (json-response
-     (as-> (shell/with-sh-dir "./resources/public/videos"
-             (sh "ls" "-1")) %
-       (:out %)
-       (clojure.string/split % #"\n")
-       ))))
+  (let [cookie-check-val (cookie-check-from-req req)]
+    (if (not cookie-check-val)
+      (not-authorized-response)
+      (do (let [username (get-in cookie-check-val [0 :name])
+                videos   (couch/get-view db "videos" "by_user"
+                                         {:key username :include_docs true})]
+            (json-response videos))))))
 
 (defn get-notes-spreadsheet [video-src]
   nil
