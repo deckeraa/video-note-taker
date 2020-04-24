@@ -88,7 +88,7 @@
               [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor]] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
              )
            (when (= :video (peek @atoms/screen-cursor))
-             [:div
+             [:div {:class "flex flex-column items-center"}
               [video atoms/video-ref-cursor atoms/video-cursor atoms/video-options-cursor]
               [notes/notes notes-cursor atoms/video-ref-cursor atoms/video-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
