@@ -32,8 +32,8 @@
                  (* 25 60 1000)))
 
 (defn login [logged-in-atm]
-  (let [user-atm (reagent/atom "alpha")
-        pass-atm (reagent/atom "alpha")
+  (let [user-atm (reagent/atom "")
+        pass-atm (reagent/atom "")
         pass-rpt-atm (reagent/atom "")
         login-failed-atm (reagent/atom false)
         creating-new-user? (reagent/atom false)]
