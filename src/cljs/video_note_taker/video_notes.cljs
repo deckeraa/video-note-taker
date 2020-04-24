@@ -117,16 +117,16 @@
       [:div {:class "flex flex-column"}
        [:div {} "Share with:"]
        [:ul
-        (map (fn [user]
-               ^{:key user}
-               [:li {:class "flex items-center justify-center"}
-                user
-                (when (not (= user (:uploaded-by @video-cursor)))
-                    [svg/x {:class "ma2 dim"
-                            :on-click (fn []
-                                        (swap! selected-users-atm disj user))}
-                     "red" "12px"])])
-             @selected-users-atm)]
+        (doall (map (fn [user]
+                      ^{:key user}
+                      [:li {:class "flex items-center justify-center"}
+                       user
+                       (when (not (= user (:uploaded-by @video-cursor)))
+                         [svg/x {:class "ma2 dim"
+                                 :on-click (fn []
+                                             (swap! selected-users-atm disj user))}
+                          "red" "12px"])])
+                    @selected-users-atm))]
        [:div {:class "flex br3"}
         [:select {:type :text
                   :class "bn"
@@ -134,9 +134,10 @@
                   :on-change (fn [e]
                                (println (-> e .-target .-value))
                                (reset! user-input-atm (-> e .-target .-value)))}
-         (map (fn [name]
-                ^{:key name} [:option {:value name} name])
-              (conj (clojure.set/difference @user-list-atm @selected-users-atm) ""))]
+         (doall (map (fn [name]
+                       ^{:key name}
+                       [:option {:value name} (if (= name "") "- Select user -" name)])
+                     (conj (clojure.set/difference @user-list-atm @selected-users-atm) "")))]
         [:button {:class "bn white bg-green b f2 br3 ma2"
                   :on-click (fn []
                               (swap! selected-users-atm conj @user-input-atm)
