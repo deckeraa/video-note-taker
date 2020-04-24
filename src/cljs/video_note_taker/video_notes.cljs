@@ -224,6 +224,7 @@
                                                                )))))))}
      [:div {:class "f2 b white"} "Add note"]]
     [:button {:class "bn pa3 br3 dim bg-gray"
+              :title "Share"
               :on-click (fn [e]
                           (let [remove-delegate-atm (reagent/atom (fn []
                                                                     (println "remove-delegate-atm")))]
