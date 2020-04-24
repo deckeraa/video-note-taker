@@ -66,7 +66,7 @@
          [:div {:class ""}
           ;; Search result cards
           (doall (map (fn [note]
-                        ^{:key (:video note)}
+                        ^{:key (:_id note)}
                         [:div {:class "br3 ba b--black-10 pa3 mv2 bg-animate hover-bg-yellow"
                                :on-click (fn []
                                            (reset! video-cursor {:src (:video note) :requested-time (:time note)})
