@@ -116,17 +116,17 @@
       (println "rendering share dialog")
       [:div {:class "flex flex-column"}
        [:div {} "Share with:"]
-       ;; [:p (str @user-input-atm)]
-       ;; [:p (str @selected-users-atm)]
-       ;; [:p (str (clojure.set/difference @user-list-atm @selected-users-atm))]
-       ;; [:p (str (vec (remove (fn [user] (contains? (:users @video-cursor) user))
-       ;;                       @user-list-atm)))]
        [:ul
         (map (fn [user]
                ^{:key user}
-               [:li {} user])
+               [:li {:class "flex items-center justify-center"}
+                user
+                [svg/x {:class "ma2 dim"
+                        :on-click (fn []
+                                    (swap! selected-users-atm disj user))}
+                 "red" "12px"]])
              @selected-users-atm)]
-       [:div {:class "flex br3 ba b--black-10"}
+       [:div {:class "flex br3"}
         [:select {:type :text
                   :class "bn"
                   :value @user-input-atm
@@ -136,14 +136,16 @@
          (map (fn [name]
                 ^{:key name} [:option {:value name} name])
               (conj (clojure.set/difference @user-list-atm @selected-users-atm) ""))]
-        [:button {:class "bn white bg-green b f2 br3"
+        [:button {:class "bn white bg-green b f2 br3 ma2"
                   :on-click (fn []
                               (swap! selected-users-atm conj @user-input-atm)
                               (reset! user-input-atm ""))} "+"]]
-       [:div {:class "flex"}
-        [:button {:on-click (fn [e] (@remove-delegate-atm))}
+       [:div {:class "flex mt2 mh2"}
+        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                  :on-click (fn [e] (@remove-delegate-atm))}
          "Cancel"]
-        [:button {:on-click (fn [e]
+        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                  :on-click (fn [e]
                               (println "updating permissions: " (vec @selected-users-atm))
                               (@remove-delegate-atm)
                               (go (let [resp (<! (http/post
@@ -154,6 +156,7 @@
                                     (println "share " resp)
                                     (db/toast-server-error-if-needed resp nil)
                                     (reset! video-cursor (:body resp))
+                                    (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
                                     (load-notes notes-cursor video-cursor)))
                               )}
          "Ok"]]])))
