@@ -121,10 +121,11 @@
                ^{:key user}
                [:li {:class "flex items-center justify-center"}
                 user
-                [svg/x {:class "ma2 dim"
-                        :on-click (fn []
-                                    (swap! selected-users-atm disj user))}
-                 "red" "12px"]])
+                (when (not (= user (:uploaded-by @video-cursor)))
+                    [svg/x {:class "ma2 dim"
+                            :on-click (fn []
+                                        (swap! selected-users-atm disj user))}
+                     "red" "12px"])])
              @selected-users-atm)]
        [:div {:class "flex br3"}
         [:select {:type :text
