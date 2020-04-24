@@ -18,34 +18,6 @@
                 (println "Got settings: " doc))
               nil))
 
-(defn cookie-retriever []
-  (let [user-atm (reagent/atom "alpha")
-        pass-atm (reagent/atom "alpha")
-        cookie-atm (reagent/atom {})
-        cookie-check-atm (reagent/atom {})]
-    (fn []
-      [:div
-       [:h2 "Cookie Retriever"]
-       [:input {:type :text :value @user-atm :on-change #(reset! user-atm (-> % .-target .-value))}]
-       [:input {:type :text :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]
-       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
-              :on-click (fn []
-                          (go (let [resp (<! (http/post (db/resolve-endpoint "get-cookie")
-                                                        {:json-params {:user @user-atm
-                                                                       :pass @pass-atm}
-                                                         :with-credentials false}))]
-                                (reset! cookie-atm resp))))}
-        "Retrieve Cookie"]
-       [:div (str (:body @cookie-atm))]
-       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
-              :on-click (fn []
-                          (go (let [resp (<! (http/post (db/resolve-endpoint "cookie-check")
-                                                        {:json-params {}
-                                                         :with-credentials true}))]
-                                (reset! cookie-check-atm resp))))}
-        "Check cookie"]
-       [:div (str (:body @cookie-check-atm))]])))
-
 (defn highlight-str [full-str search-str]
   [:div {}
    (map (fn [piece]
@@ -58,36 +30,6 @@
 (defcard-rg test-string-highlight
   [:div {}
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
-
-(defn note-finder []
-  (let [input-atm   (reagent/atom "")
-        results-atm (reagent/atom "")
-        search-fn (fn []
-                          (go (let [resp (<! (http/post (db/resolve-endpoint "search-text")
-                                                        {:json-params {:text @input-atm}
-                                                         :with-credentials true}))]
-                                (reset! results-atm resp))))
-        search-as-you-type true]
-    (fn []
-      [:div {:class ""}
-       [:input {:type :text :value @input-atm :on-change (fn [e]
-                                                           (reset! input-atm (-> e .-target .-value))
-                                                           (when (and search-as-you-type
-                                                                      (not (empty? @input-atm)))
-                                                             (search-fn)))}]
-       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
-              :on-click search-fn}
-        "Run search"]
-       ;[:div (str (:body @results-atm))]
-       (when (not (empty? @input-atm))
-         [:div {:class ""}
-          (map (fn [note]
-                 [:div {:class "br3 ba b--black-10 pa3 mv2"}
-                  [:div {:class "f2"}
-                   [highlight-str (:text note) @input-atm]]
-                  [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
-               (get-in @results-atm [:body :docs]))])])))
-
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
   (let [file-input-ref-el (reagent/atom nil)
@@ -124,8 +66,6 @@
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
        [:h2 "Developer settings"]
-       [note-finder]
-       [cookie-retriever]
        [:div {:class "flex items-center"}
         [:input {:type :checkbox :class "ma2"
                  :checked (:show-app-state @settings-cursor)
