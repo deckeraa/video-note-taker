@@ -6,6 +6,7 @@
    [video-note-taker.db :as db]
    [video-note-taker.svg :as svg]
    [video-note-taker.auth :as auth]
+   [video-note-taker.atoms :as atoms]
    [video-note-taker.video-notes :as video-notes])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
@@ -69,7 +70,14 @@
                         ^{:key (:_id note)}
                         [:div {:class "br3 ba b--black-10 pa3 mv2 bg-animate hover-bg-yellow"
                                :on-click (fn []
-                                           (reset! video-cursor {:src (:video note) :requested-time (:time note)})
+                                           (reset! atoms/video-options-cursor {:src (:video note) :requested-time (:time note)})
+
+                                           (db/get-doc
+                                            (:video note)
+                                            (fn [doc]
+                                              (reset! video-cursor doc)
+                                              (video-notes/load-notes atoms/notes-cursor video-cursor)) nil)
+                                           
                                            (swap! screen-cursor conj :video))}
                          [:div {:class "f2"}
                           [highlight-str (:text note) @input-atm]]

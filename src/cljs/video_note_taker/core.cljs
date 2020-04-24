@@ -19,7 +19,7 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn video [video-ref-atm video-cursor]
+(defn video [video-ref-atm video-cursor video-options-cursor]
   [:video {:id "main-video"
            :class "mb3"
            :controls true
@@ -27,19 +27,20 @@
            :width 620
            :on-time-update (fn [e]
                              (let [current-time   (.-currentTime (-> e .-target))
-                                   requested-time (:requested-time @video-cursor)]
-                               (println "Time update event fired: current time"
+                                   requested-time (:requested-time @video-options-cursor)]
+                               (println (:display-name @video-cursor)
+                                        " Time update event fired: current time"
                                         current-time requested-time)
                                (when requested-time
                                  (if (< (Math/abs (- requested-time current-time)) 1)
-                                   (swap! video-cursor dissoc :requested-time)
+                                   (swap! video-options-cursor dissoc :requested-time)
                                    (when-let [video @video-ref-atm]
                                      (set! (.-currentTime video) requested-time))))))
            :ref (fn [el]
                   (when el
                     (do
                       (reset! video-ref-atm el)
-                      (when-let [requested-time (:requested-time @video-cursor)]
+                      (when-let [requested-time (:requested-time @video-options-cursor)]
                         (set! (.-currentTime el) requested-time)))))}
    "Video not supported by your browser :("]
   )
@@ -88,7 +89,7 @@
              )
            (when (= :video (peek @atoms/screen-cursor))
              [:div
-              [video atoms/video-ref-cursor atoms/video-cursor]
+              [video atoms/video-ref-cursor atoms/video-cursor atoms/video-options-cursor]
               [notes/notes notes-cursor atoms/video-ref-cursor atoms/video-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
              [settings/settings atoms/settings-cursor atoms/login-cursor atoms/notes-cursor atoms/video-listing-cursor atoms/video-cursor atoms/screen-cursor])

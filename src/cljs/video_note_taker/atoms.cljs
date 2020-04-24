@@ -11,6 +11,7 @@
 (defonce app-state
   (reagent/atom {:notes []
                  :video {}
+                 :video-options {}
                  :video-ref nil
                  :video-listing nil
                  :screen-stack [:video-selection]
@@ -25,4 +26,5 @@
 (defonce video-cursor     (reagent/cursor app-state [:video]))
 (defonce video-ref-cursor (reagent/cursor app-state [:video-ref]))
 (defonce video-listing-cursor    (reagent/cursor app-state [:video-listing]))
-(defonce login-cursor    (reagent/cursor app-state [:login-atm]))
+(defonce video-options-cursor    (reagent/cursor app-state [:video-options]))
+(defonce login-cursor     (reagent/cursor app-state [:login-atm]))
