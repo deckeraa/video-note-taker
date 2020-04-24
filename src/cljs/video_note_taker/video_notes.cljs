@@ -100,34 +100,56 @@
                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-cursor scrub-timer-count-atm 0.1)}
         "gray" "32px"]])))
 
+(defn load-connected-users [user-list-atm]
+  (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
+                               {}))]
+        (reset! user-list-atm (set (:body resp)))
+        (println "load-connected-users:" resp))))
+
 (defn share-dialog [remove-delegate-atm video-cursor notes-cursor]
-  (let [user-input-atm (reagent/atom "")
-        user-list      (reagent/atom [])
+  (let [selected-users-atm (reagent/atom (set (:users @video-cursor)))
+        user-input-atm (reagent/atom "")
+        user-list-atm  (reagent/atom #{})
+        _ (load-connected-users user-list-atm)
         ]
     (fn [remove-delegate-atm video-cursor notes-cursor]
       (println "rendering share dialog")
       [:div {:class "flex flex-column"}
        [:div {} "Share with:"]
+       ;; [:p (str @user-input-atm)]
+       ;; [:p (str @selected-users-atm)]
+       ;; [:p (str (clojure.set/difference @user-list-atm @selected-users-atm))]
+       ;; [:p (str (vec (remove (fn [user] (contains? (:users @video-cursor) user))
+       ;;                       @user-list-atm)))]
        [:ul
         (map (fn [user]
                ^{:key user}
                [:li {} user])
-             (:users @video-cursor))]
+             @selected-users-atm)]
        [:div {:class "flex br3 ba b--black-10"}
-        [:input {:type :text
-                 :class "bn"
-                 :value @user-input-atm
-                 :on-change (fn [e] (reset! user-input-atm (-> e .-target .-value)))}]
-        [:button {:class "bn white bg-green b f2 br3"} "+"]]
+        [:select {:type :text
+                  :class "bn"
+                  :value @user-input-atm
+                  :on-change (fn [e]
+                               (println (-> e .-target .-value))
+                               (reset! user-input-atm (-> e .-target .-value)))}
+         (map (fn [name]
+                ^{:key name} [:option {:value name} name])
+              (conj (clojure.set/difference @user-list-atm @selected-users-atm) ""))]
+        [:button {:class "bn white bg-green b f2 br3"
+                  :on-click (fn []
+                              (swap! selected-users-atm conj @user-input-atm)
+                              (reset! user-input-atm ""))} "+"]]
        [:div {:class "flex"}
         [:button {:on-click (fn [e] (@remove-delegate-atm))}
          "Cancel"]
         [:button {:on-click (fn [e]
+                              (println "updating permissions: " (vec @selected-users-atm))
                               (@remove-delegate-atm)
                               (go (let [resp (<! (http/post
                                                   (db/resolve-endpoint "update-video-permissions")
                                                   {:json-params (assoc @video-cursor
-                                                                       :users ["alpha" "bravo"])
+                                                                       :users (vec @selected-users-atm))
                                                    :with-credentials true}))]
                                     (println "share " resp)
                                     (db/toast-server-error-if-needed resp nil)
