@@ -62,7 +62,6 @@
         [svg/magnifying-glass {:class "dib "
                                :style {:margin "8px"}
                                :on-click #(search-fn @input-atm)} "gray" "48px"]]
-       ;[:div (str (:body @results-atm))]
        (when (not (empty? @input-atm))
          [:div {:class ""}
           ;; Search result cards
@@ -81,7 +80,7 @@
                                            (swap! screen-cursor conj :video))}
                          [:div {:class "f2"}
                           [highlight-str (:text note) @input-atm]]
-                         [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (:video note) )]])
+                         [:div {:class "f3"} (str (video-notes/format-time (:time note)) "  " (or (:video-display-name note) (:video note)) )]])
                       (get-in @results-atm [:body :docs])))
           (when (empty? (get-in @results-atm [:body :docs]))
             [:div {:class "f3 white bg-light-red tc pa3 ma3 br3"}
