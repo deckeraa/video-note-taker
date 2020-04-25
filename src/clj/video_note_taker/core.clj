@@ -91,7 +91,6 @@
     (cookie-check cookie-value)))
 
 (defn cookie-check-handler [req]
-  (println "cookie-check-handler: " (get-in req [:cookies "AuthSession" :value]))
   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
     (if-let [[userCtxt new-cookie] (cookie-check cookie-value)]
       (assoc (json-response userCtxt) :cookies new-cookie)
@@ -324,6 +323,40 @@
     (catch Exception e
       (assoc (json-response false) :status 400))))
 
+(defn change-password-handler [req]
+  (let [cookie-check-val (cookie-check-from-req req)]
+    (if (not cookie-check-val)
+      (not-authorized-response)
+      (try
+        (let [params (get-body req)
+              username (get-in cookie-check-val [0 :name])
+              cookie-value (get-in req [:cookies "AuthSession" :value])]
+          (let [old-user
+                (:body (http/get (str "http://localhost:5984/_users/org.couchdb.user:" username)
+                                 {:as :json
+                                  :headers {"Cookie" (str "AuthSession=" cookie-value)}}))
+                new-user (as-> old-user $
+                           (assoc $ :password (:pass params)))]
+            ;; change the password and then re-authenticate since the old cookie is no longer considered valid by CouchDB
+            (let [change-resp
+                  (http/put (str "http://localhost:5984/_users/org.couchdb.user:" username)
+                            {:as :json
+                             :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                             :content-type :json
+                             :form-params new-user})
+                  new-login (http/post "http://localhost:5984/_session"
+                                       {:as :json
+                                        :content-type :json
+                                        :form-params {:name     username
+                                                      :password (:pass params)}})]
+              (assoc 
+               (json-response true)
+               :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies new-login)) ;; set the CouchDB cookie on the ring response
+               ))
+            ))
+        (catch Exception e
+          (json-response false))))))
+
 (defn logout-handler [req]
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
@@ -456,6 +489,7 @@
         ["get-session" get-session-handler]
         ["login" login-handler]
         ["create-user" create-user-handler]
+        ["change-password" change-password-handler]
         ["logout" logout-handler]
         ["cookie-check" cookie-check-handler]
         ["search-text" search-text-handler]

@@ -96,9 +96,43 @@
              "Couldn't create new user :("
              "Login failed :(")])]])))
 
+(defn password-changer []
+  (let [pass-atm     (reagent/atom "")
+        pass-rpt-atm (reagent/atom "")]
+    (fn []
+      [:div {:class ""}
+       [:h3 "Change password"]
+       [:div {:class "flex items-center justify-between"}
+        [:label "Password: "]
+        [:input {:class "mh2" :type :text :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
+       [:div {:class "flex items-center justify-between"}
+        [:label "Repeat: "]
+        [:input {:class "mh2" :type :text :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]]
+       ;; (when (and (not (= @pass-atm @pass-rpt-atm))
+       ;;            (not (empty? @pass-atm))
+       ;;            (not (empty? @pass-rpt-atm)))
+       ;;   [:p {:class "red"} "passwords do not match"])
+       [:button {:class (str "bn br3 white pa2 ma2 "
+                             (if (and (= @pass-atm @pass-rpt-atm)
+                                      (not (empty? @pass-atm)))
+                               "bg-green dim" "bg-light-green"))
+                 :on-click (fn []
+                             (go (let [resp (<! (http/post (db/resolve-endpoint "change-password")
+                                                           {:json-params {:pass @pass-atm}
+                                                            :with-credentials true}))]
+                                        ; check the result here
+                                   (println "resp: " resp)
+                                   (println "the body: " (get-in resp [:body]))
+                                   (if (true? (get-in resp [:body]))
+                                     (toaster-oven/add-toast "Password changed." svg/check "green" nil)
+                                     (toaster-oven/add-toast (str "Couldn't update password :(") svg/x "red" nil))
+                                   )))}
+        "Change password"]])))
+
 (defn manage-identity [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
   [:div
    [:h2 "Manage Identity"]
+   [:h3 "Log out"]
    [:div {:class "f3 br1 white bg-light-red b tc pa3 ma3 dim"
           :on-click (fn []
                       (go (let [resp (<! (http/post (db/resolve-endpoint "logout")
@@ -111,4 +145,5 @@
                             (reset! screen-cursor [:video-selection])
                             ;; redraw core page
                             (swap! logged-in-atm inc))))}
-    "Log out"]])
+    "Log out"]
+   [password-changer]])
