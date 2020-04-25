@@ -100,7 +100,6 @@
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
     (do
-      (println req)
       (let [doc (get-body req)]
         (json-response (couch/put-document db doc))))))
 
@@ -134,7 +133,6 @@
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
     (let [doc (get-body req)]
-      (println "deleting doc: " doc)
       (json-response (couch/delete-document db doc)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -285,6 +283,8 @@
                                                             :content-type :json
                                                             :form-params {:name     (:user params)
                                                                           :password (:pass params)}})]
+      (println "Login params: " params)
+      (println "Login resp: " resp)
       (assoc 
        (json-response true)
        :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response

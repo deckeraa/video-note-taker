@@ -62,7 +62,7 @@
 (defn delete-doc [doc handler-fn]
   (go (let [resp (<! (http/post (resolve-endpoint "delete-doc")
                                 {:json-params doc
-                                 :with-credentials false}
+                                 :with-credentials true}
                                 ))]
         (toast-server-error-if-needed resp doc)
         (println resp)
