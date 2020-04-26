@@ -405,11 +405,13 @@
     (if (not cookie-check-val)
       (not-authorized-response)
       (let [username (get-in cookie-check-val [0 :name])
-            params (get-body req)]
+            params (get-body req)
+            cookie-value (get-in req [:cookies "AuthSession" :value])]
         (let [resp (http/post
                     "http://localhost:5984/video-note-taker/_find"
                     {:as :json
                      :content-type :json
+                     :headers {"Cookie" (str "AuthSession=" cookie-value)}
                      :form-params
                      {"selector"
                       {"$and" [{"type"
