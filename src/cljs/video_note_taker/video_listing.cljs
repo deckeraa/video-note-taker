@@ -61,6 +61,7 @@
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
                              (println "file-upload event: " e)
+                             (toaster-oven/add-toast "Uploading video..." nil nil nil)
                              (when-let [file-input @file-input-ref-el]
                                (go (let [resp (<! (http/post
                                                    (db/resolve-endpoint "upload-video")
@@ -68,8 +69,12 @@
                                                     [["file" (aget (.-files file-input) 0)]]
                                                     }))]
                                      (reset! import-results resp)
-                                     (when (= 200 (:status resp))
-                                       (load-video-listing video-listing-cursor))
+
+                                     (if (= 200 (:status resp))
+                                       (do
+                                         (toaster-oven/add-toast "Video uploaded" svg/check "green" nil)
+                                         (load-video-listing video-listing-cursor))
+                                       (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" nil))
                                      ))))}]])))
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
