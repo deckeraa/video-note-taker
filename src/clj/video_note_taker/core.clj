@@ -302,6 +302,7 @@
         (let [resp (http/put
                     (str "http://localhost:5984/_users/org.couchdb.user:" name)
                     {:as :json
+                     :basic-auth [(:username db) (:password db)]
                      :content-type :json
                      :form-params {:name     name
                                    :password (:pass params)
