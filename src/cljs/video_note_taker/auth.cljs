@@ -46,11 +46,11 @@
          [:input {:class "mh2" :type :text :value @user-atm :on-change #(reset! user-atm (-> % .-target .-value))}]]
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Password"]
-         [:input {:class "mh2" :type :text :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
+         [:input {:class "mh2" :type :password :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
         (when @creating-new-user?
           [:div {:class "flex items-center flex-wrap ma1"}
            [:div {:class ""} "Repeat password"]
-           [:input {:class "mh2" :type :text :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]])
+           [:input {:class "mh2" :type :password :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]])
         (when (and @creating-new-user?
 ;                   (not (empty? @pass-rpt-atm))
                    (not (= @pass-atm @pass-rpt-atm)))
@@ -104,10 +104,10 @@
        [:h3 "Change password"]
        [:div {:class "flex items-center justify-between"}
         [:label "Password: "]
-        [:input {:class "mh2" :type :text :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
+        [:input {:class "mh2" :type :password :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
        [:div {:class "flex items-center justify-between"}
         [:label "Repeat: "]
-        [:input {:class "mh2" :type :text :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]]
+        [:input {:class "mh2" :type :password :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]]
        ;; (when (and (not (= @pass-atm @pass-rpt-atm))
        ;;            (not (empty? @pass-atm))
        ;;            (not (empty? @pass-rpt-atm)))
