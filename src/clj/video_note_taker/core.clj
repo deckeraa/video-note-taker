@@ -296,7 +296,7 @@
   (try
     (let [params (get-body req)
           name (:user params)]
-
+      (println "create-user-handler: " params)
       (if (nil? (re-find #"^\w+$" name)) ; sanitize the name
         (assoc (json-response :invalid-user-name) :status 400)
         (let [resp (http/put
@@ -321,6 +321,7 @@
             (assoc (json-response false) :status 400) ;; don't want to leak any info useful to attackers, no keeping this very non-descript
             ))))
     (catch Exception e
+      (println "create-user-handler exception: " e)
       (assoc (json-response false) :status 400))))
 
 (defn change-password-handler [req]
