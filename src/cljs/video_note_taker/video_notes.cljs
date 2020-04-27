@@ -132,16 +132,20 @@
                   :class "bn"
                   :value @user-input-atm
                   :on-change (fn [e]
-                               (println (-> e .-target .-value))
-                               (reset! user-input-atm (-> e .-target .-value)))}
+;                               (println (-> e .-target .-value))
+                                        ;                               (reset! user-input-atm (-> e .-target .-value))
+                               (swap! selected-users-atm conj (-> e .-target .-value))
+                               (reset! user-input-atm "")
+                               )}
          (doall (map (fn [name]
                        ^{:key name}
                        [:option {:value name} (if (= name "") "- Select user -" name)])
                      (conj (clojure.set/difference @user-list-atm @selected-users-atm) "")))]
-        [:button {:class "bn white bg-green b f2 br3 ma2"
-                  :on-click (fn []
-                              (swap! selected-users-atm conj @user-input-atm)
-                              (reset! user-input-atm ""))} "+"]]
+        ;; [:button {:class "bn white bg-green b f2 br3 ma2"
+        ;;           :on-click (fn []
+        ;;                       (swap! selected-users-atm conj @user-input-atm)
+        ;;                       (reset! user-input-atm ""))} "+"]
+        ]
        [:div {:class "flex mt2 mh2"}
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))}
