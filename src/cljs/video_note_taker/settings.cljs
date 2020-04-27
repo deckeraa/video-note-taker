@@ -38,11 +38,9 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
        [:h2 "Import & Export"]
-       [:form {:id "upload-form" :action (str (db/get-server-url) "/upload-spreadsheet") :method "post" :enctype "multipart/form-data"
-               }
-        [:input {:name "file" :type "file" :size "20" :multiple false
-                 :ref (fn [el]
-                      (reset! file-input-ref-el el))}]]
+       [:input {:name "file" :type "file" :size "20" :multiple false
+                :ref (fn [el]
+                       (reset! file-input-ref-el el))}]
        [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
               :on-click (fn []
                           (when-let [file-input @file-input-ref-el]
