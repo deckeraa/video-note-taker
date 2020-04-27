@@ -254,6 +254,31 @@
             (json-response video-doc))
           )))))
 
+(defn delete-video-handler [req]
+  (let [cookie-check-val (cookie-check-from-req req)]
+    (if (not cookie-check-val)
+      (not-authorized-response)
+      (let [username (get-in cookie-check-val [0 :name])
+            doc (get-body req)
+            video-id (get-in doc [:_id])
+            video (get-doc video-id)]
+        (if (not (= username (:uploaded-by video)))
+          (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
+                 :status 403)
+          (do
+            ;; delete all notes related to the video
+            (couch/bulk-update
+             db
+             (vec (map
+                   (fn [view-result]
+                     (let [v (:doc view-result)]
+                       (assoc v :_deleted true)))
+                   (get-notes (:_id video)))))
+            ;; TODO handle document conflicts
+            ;; delete the video
+            (couch/delete-document db video)
+            (json-response {:success true})))))))
+
 (defn get-cookie-handler [req]
   (try
     (let [params (get-body req)
@@ -489,6 +514,7 @@
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" upload-spreadsheet-handler]
         ["upload-video" upload-video-handler]
+        ["delete-video" delete-video-handler]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]

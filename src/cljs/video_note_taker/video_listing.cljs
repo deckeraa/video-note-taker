@@ -24,21 +24,46 @@
         (db/toast-server-error-if-needed resp nil)
         (reset! video-listing-cursor (:body resp)))))
 
-(defn single-video-listing [video video-cursor notes-cursor screen-cursor]
-  [:div {:class "br3 shadow-4 pa3 dim"
-         :on-click (fn []
-                     ;; clear out the notes cursor if a different video was selected than before
-                     (when (not (= (:_id @video-cursor) (:_id video)))
-                       (reset! notes-cursor []))
-                     ;; update the video cursor and ...
-                     (reset! video-cursor video)
-                     ;; ... auto-load notes if needed
-                     (when (empty? @notes-cursor)
-                       (notes/load-notes notes-cursor video-cursor)) ;; TODO update with the new src from the video
-                     ;; update the screen cursor to go to the new screen
-                     (swap! atoms/screen-cursor conj :video)
-                     )}
-   (str (:display-name video))]
+(defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
+  (let [hover-atm (reagent/atom false)]
+    (fn [video video-cursor notes-cursor screen-cursor video-listing-cursor]
+      [:div {:class "br3 shadow-4 pa2 flex justify-between items-center"
+             :on-click (fn []
+                         ;; clear out the notes cursor if a different video was selected than before
+                         (when (not (= (:_id @video-cursor) (:_id video)))
+                           (reset! notes-cursor []))
+                         ;; update the video cursor and ...
+                         (reset! video-cursor video)
+                         ;; ... auto-load notes if needed
+                         (when (empty? @notes-cursor)
+                           (notes/load-notes notes-cursor video-cursor)) ;; TODO update with the new src from the video
+                         ;; update the screen cursor to go to the new screen
+                         (swap! atoms/screen-cursor conj :video)
+                         )
+             :on-mouse-over (fn [e] (reset! hover-atm true))
+             :on-mouse-out  (fn [e] (reset! hover-atm false))}
+       [:p (when @hover-atm {:class "b"}) (str (:display-name video))]
+       (when @hover-atm
+         [svg/trash {:on-click
+                     (fn [e]
+                       (.stopPropagation e) ;; prevent this click from registing as a click on the video
+                       (toaster-oven/add-toast
+                        "Delete video permanently?" nil nil
+                        {:cancel-fn (fn [] nil)
+                         :ok-fn (fn []
+                                  (go (let [resp (<! (http/post (db/resolve-endpoint "delete-video")
+                                                                {:json-params video
+                                                                 :with-credentials true}))]
+                                        (println "Delete resp: " resp)
+                                        (if (= 200 (:status resp))
+                                          (do
+                                            (toaster-oven/add-toast "Video deleted" svg/check "green" nil)
+                                            (load-video-listing video-listing-cursor))
+                                          (toaster-oven/add-toast (str "Couldn't delete video. " (get-in resp [:body :reason])) svg/x "red" nil)
+                                          ))))}))}
+          "gray" "24px"]
+         )
+       ]))
   )
 
 (defn upload-card [video-listing-cursor]
@@ -81,6 +106,6 @@
   [:div
    (map (fn [video]
           ^{:key (:_id video)}
-          [single-video-listing video video-cursor notes-cursor screen-cursor])
+          [single-video-listing video video-cursor notes-cursor screen-cursor video-listing-cursor])
         @video-listing-cursor)
    [upload-card video-listing-cursor]])
