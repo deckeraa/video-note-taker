@@ -553,15 +553,21 @@
 (defn wrap-videos-handler [handler]
   (fn [req]
     (let [resp (handler req)]
-      (if resp ; todo check cookies
+      (if resp
         resp
         (let [matches (re-matches #"/videos/(.*)\..*" (:uri req))
               video-id (second matches)
               video    (get-doc video-id)
               filename (:file-name video)]
           (println "video: " video)
-          (if matches
-            (file-response filename {:root "resources/private/"})
+          (if matches ; we know that a video has been requested, so check the cookies
+            (let [cookie-check-val  (cookie-check-from-req req)]
+              (if (not cookie-check-val)
+                (not-authorized-response)
+                (let [username (get-in cookie-check-val [0 :name])]
+                  (if (contains? (set (:users video)) username)
+                    (file-response filename {:root "resources/private/"})
+                    (not-authorized-response)))))
             nil))))))
 
 (def app
