@@ -525,11 +525,39 @@
         ["search-text" search-text-handler]
         ["update-video-permissions" update-video-permissions-handler]
         ["get-connected-users" get-connected-users-handler]
-        [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]]])
+;        [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]
+        ]])
+
+(defn wrap-index [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (if resp
+        resp
+        (if (= (:uri req) "/")
+                                        ;          (content-type (response/response "<h1>Index Page!!!!</h1>" ) "text/html")
+          (content-type (file-response "index.html" {:root "resources/public"}) "text/html")
+          (response/not-found "Not found"))))))
+
+(defn wrap-println [handler caption]
+  (fn [req]
+    (let [resp (handler req)]
+      (println caption resp)
+      resp)))
+
+(defn wrap-print-req [handler caption]
+  (fn [req]
+    (let [resp (handler req)]
+      (println caption req)
+      resp)))
 
 (def app
   (-> (make-handler api-routes)
-      (wrap-file "resources/public")
+      ;; (wrap-print-req "0) ")
+      ;; (wrap-println "1) ")
+      (wrap-index)
+      ;; (wrap-println "2) ")
+      (wrap-file "resources/public" {:prefer-handler? true})
+      ;; (wrap-println "3) ")
       (wrap-content-type)
       (wrap-params)
       (wrap-multipart-params)
