@@ -242,7 +242,7 @@
           (println "user " user)
           ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
           (io/copy (get-in req [:params "file" :tempfile])
-                   (io/file (str "./resources/public/videos/" new-short-filename)))
+                   (io/file (str "./resources/private/" new-short-filename)))
           ;; put some video metadata into Couch
           (let [video-doc (couch/put-document db {:_id id
                                                   :type "video"
@@ -550,8 +550,23 @@
       (println caption req)
       resp)))
 
+(defn wrap-videos-handler [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (if resp ; todo check cookies
+        resp
+        (let [matches (re-matches #"/videos/(.*)\..*" (:uri req))
+              video-id (second matches)
+              video    (get-doc video-id)
+              filename (:file-name video)]
+          (println "video: " video)
+          (if matches
+            (file-response filename {:root "resources/private/"})
+            nil))))))
+
 (def app
   (-> (make-handler api-routes)
+      (wrap-videos-handler)
       ;; (wrap-print-req "0) ")
       ;; (wrap-println "1) ")
       (wrap-index)
