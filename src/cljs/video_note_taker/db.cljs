@@ -12,18 +12,24 @@
 
 (defn get-server-url
   ([]
-   (get-server-url (str "https://" (.. js/window -location -host))))
+   (get-server-url (str (.-location js/window))))
   ([url]
-   (if (re-matches #".*:3450" url)
-     "http://localhost:3000"
+   (if (re-matches #".*:3450.*" url)
+     "http://localhost:3000/"
      url)))
 
 (defn resolve-endpoint [endpoint]
-  (str (get-server-url) "/" endpoint))
+  (str (get-server-url) endpoint))
 
 (deftest get-server-url-test
   (is (= (get-server-url "http://localhost:3450") "http://localhost:3000"))
-  (is (= (get-server-url "http://localhost:3002") "https://localhost:3002")))
+  (is (= (get-server-url "https://localhost:3002") "https://localhost:3002")))
+
+(defcard show-server-url
+  (get-server-url))
+
+(defcard show-resolve-endpoint
+  (resolve-endpoint "foo"))
 
 (defn toast-server-error-if-needed [resp doc]
   (when (not (= 200 (:status resp)))
