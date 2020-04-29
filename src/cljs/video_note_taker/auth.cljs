@@ -36,7 +36,8 @@
         pass-atm (reagent/atom "")
         pass-rpt-atm (reagent/atom "")
         login-failed-atm (reagent/atom false)
-        creating-new-user? (reagent/atom false)]
+        creating-new-user? (reagent/atom false)
+        allow-new-user-creation? false]
     (fn []
       [:div {:class "flex flex-column items-center justify-center"}
        [:div {:class "f1 blue b ma3"} "Video Note Taker"]
@@ -47,16 +48,16 @@
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Password"]
          [:input {:class "mh2" :type :password :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
-        (when @creating-new-user?
+        (when (and @creating-new-user? allow-new-user-creation?)
           [:div {:class "flex items-center flex-wrap ma1"}
            [:div {:class ""} "Repeat password"]
            [:input {:class "mh2" :type :password :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]])
-        (when (and @creating-new-user?
+        (when (and (and @creating-new-user? allow-new-user-creation?)
 ;                   (not (empty? @pass-rpt-atm))
                    (not (= @pass-atm @pass-rpt-atm)))
           [:div {:class "f5 red"}
            "Passwords do not match."])
-        (if @creating-new-user?
+        (if (and @creating-new-user? allow-new-user-creation?)
           [:button {:class "f2 br3 white bg-blue bn pa3 mv2 dim tc w5"
                :on-click (fn []
                            (reset! login-failed-atm false)
@@ -83,13 +84,14 @@
                                      (js/setTimeout #(swap! logged-in-atm inc) 200)
                                      (reset! login-failed-atm true)))))}
            "Login"])
-        (if @creating-new-user?
-          [:div {:class "f4 br3 ba b--black-10 pa3 mv4 dim tc w5"
-                 :on-click (fn [] (reset! creating-new-user? false))}
-           "... or use existing user"]
-          [:div {:class "f4 br3 ba b--black-10 pa3 mv4 dim tc w5"
-                 :on-click (fn [] (reset! creating-new-user? true))}
-           "... or create a new user"])
+        (when allow-new-user-creation?
+          (if @creating-new-user? 
+            [:div {:class "f4 br3 ba b--black-10 pa3 mv4 dim tc w5"
+                   :on-click (fn [] (reset! creating-new-user? false))}
+             "... or use existing user"]
+            [:div {:class "f4 br3 ba b--black-10 pa3 mv4 dim tc w5"
+                   :on-click (fn [] (reset! creating-new-user? true))}
+             "... or create a new user"]))
         (when @login-failed-atm
           [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
            (if @creating-new-user?
