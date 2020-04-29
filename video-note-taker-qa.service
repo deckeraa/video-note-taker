@@ -9,7 +9,7 @@ Type=simple
 Restart=always
 RestartSec=1
 WorkingDirectory=/home/pi/code/video-note-taker
-User=pi
+Environment="VNT_DB_PASSWORD=REPLACE_THIS_WITH_THE_PASSWORD_WHEN_YOU_COPY_THIS_TO_ETC"
 ExecStart=/usr/bin/java -jar /home/pi/code/video-note-taker/target/video-note-taker-0.1.0-SNAPSHOT-standalone.jar 3001
 
 [Install]
