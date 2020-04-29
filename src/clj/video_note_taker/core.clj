@@ -35,7 +35,7 @@
   (let [password (System/getenv "VNT_DB_PASSWORD")]
     (assoc (cemerick.url/url "http://localhost:5984/video-note-taker")
            :username "admin"
-           :password password
+           :password (or password "test")
            )))
 
 (defn text-type [v]
