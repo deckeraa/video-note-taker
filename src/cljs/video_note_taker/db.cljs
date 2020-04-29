@@ -12,7 +12,7 @@
 
 (defn get-server-url
   ([]
-   (get-server-url (str "http://" (.. js/window -location -host))))
+   (get-server-url (str "https://" (.. js/window -location -host))))
   ([url]
    (if (re-matches #".*:3450" url)
      "http://localhost:3000"
@@ -23,7 +23,7 @@
 
 (deftest get-server-url-test
   (is (= (get-server-url "http://localhost:3450") "http://localhost:3000"))
-  (is (= (get-server-url "http://localhost:3002") "http://localhost:3002")))
+  (is (= (get-server-url "http://localhost:3002") "https://localhost:3002")))
 
 (defn toast-server-error-if-needed [resp doc]
   (when (not (= 200 (:status resp)))
