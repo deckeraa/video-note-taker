@@ -590,8 +590,15 @@
        :access-control-allow-headers ["X-Requested-With","Content-Type","Cache-Control"])))
 
 (defn -main [& args]
-  (let [port (try (Integer/parseInt (first args))
-                  (catch Exception ex
-                    3000))]
-    (println port)
-    (run-jetty app {:port port})))
+  (let [http-port (try (Integer/parseInt (first args))
+                       (catch Exception ex
+                         80))
+        https-port (try (Integer/parseInt (second args))
+                       (catch Exception ex
+                         443))]
+    (println http-port " " https-port)
+    (run-jetty app {:port http-port
+                    :ssl? true
+                    :ssl-port https-port
+                    :keystore "./keystore"
+                    :key-password (or (System/getenv "VNT_KEYSTORE_PASSWORD") "storep")})))
