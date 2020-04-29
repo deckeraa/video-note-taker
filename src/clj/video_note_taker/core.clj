@@ -555,6 +555,7 @@
 (defn wrap-videos-handler [handler]
   (fn [req]
     (let [resp (handler req)]
+      (println "wrap-videos-handler pre resp: " resp)
       (if resp
         resp
         (let [matches (re-matches #"/videos/(.*)\..*" (:uri req))
@@ -597,10 +598,17 @@
                          80))
         https-port (try (Integer/parseInt (second args))
                        (catch Exception ex
-                         443))]
+                         443))
+        use-ssl? (.exists (io/file "./keystore"))]
     (println http-port " " https-port)
-    (run-jetty app {:port http-port
-                    :ssl? true
-                    :ssl-port https-port
-                    :keystore "./keystore"
-                    :key-password (or (System/getenv "VNT_KEYSTORE_PASSWORD") "storep")})))
+    (println "use-ssl? " use-ssl?)
+    (run-jetty
+     app
+     (merge {:port http-port
+             }
+            (if use-ssl?
+              {:ssl? true
+               :ssl-port https-port
+               :keystore "./keystore"
+               :key-password (or (System/getenv "VNT_KEYSTORE_PASSWORD") "storep")}
+              {})))))
