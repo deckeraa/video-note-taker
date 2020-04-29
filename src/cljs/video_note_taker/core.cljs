@@ -23,7 +23,7 @@
   [:video {:id "main-video"
            :class "mb3"
            :controls true
-           :src (str "videos/" (:file-name @video-cursor))
+           :src  (db/resolve-endpoint (str "videos/" (:file-name @video-cursor)))
            :width 620
            :on-time-update (fn [e]
                              (let [current-time   (.-currentTime (-> e .-target))
