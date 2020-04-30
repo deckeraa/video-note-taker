@@ -132,6 +132,16 @@
     (let [doc (get-body req)]
       (json-response (get-notes (:video-key doc))))))
 
+(defn create-note-handler [req]
+  (let [cookie-check-val (cookie-check-from-req req)]
+    (if (not cookie-check-from-req)
+      (not-authorized-response)
+      (do (let [username (get-in cookie-check-val [0 :name])
+                doc (get-body req)
+                video (get-doc (:video doc))]
+            ;; TODO check user access and validate that the ID isn't already taken
+            (json-response (couch/put-document db (merge doc {:created-by username}))))))))
+
 (defn delete-doc-handler [req]
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
@@ -512,6 +522,7 @@
         ["get-doc" get-doc-handler]
         ["put-doc" put-doc-handler]
         ["get-notes" get-notes-handler]
+        ["create-note" create-note-handler]
         ["delete-doc" delete-doc-handler]
         ["get-video-listing" get-video-listing-handler]
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]

@@ -214,17 +214,28 @@
                          (let [current-time (.-currentTime video)
                                uuid (uuid/uuid-string (uuid/make-random-uuid))]
                            ;; Create a new note and save it ot CouchDB
-                           (db/put-doc {:_id uuid
-                                        :type :note
-                                        :video (:_id @video-cursor)
-                                        :video-display-name (:display-name @video-cursor) ; denormalized for speed while searching. This information is stored in the video's document.
-                                        :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
-                                        :time current-time
-                                        :text (str "Note at " current-time)}
-                                       (fn [doc]
-                                         (swap! notes-cursor (fn [notes]
-                                                               (vec (concat [doc] notes))
-                                                               )))))))}
+                           (go (let [resp (<! (http/post
+                                               (db/resolve-endpoint "create-note")
+                                               {:json-params
+                                                {:_id uuid
+                                                 :type :note
+                                                 :video (:_id @video-cursor)
+                                                 :time current-time
+                                                 :text (str "Note at " current-time)
+                                                 :video-display-name (:display-name @video-cursor) ; denormalized for speed while searching. This information is stored in the video's document.
+                                                 :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
+                                                 }
+                                                :with-credentials true}))]
+                                 (println "resp: " resp)
+                                 (swap! notes-cursor
+                                        (fn [notes]
+                                          (vec (concat [(:body resp)] notes))))))
+                           ;; (db/put-doc 
+                           ;;             (fn [doc]
+                           ;;               (swap! notes-cursor (fn [notes]
+                           ;;                                     (vec (concat [doc] notes))
+                           ;;                                     ))))
+                           )))}
      [:div {:class "f2 b white"} "Add note"]]
     [:button {:class "bn pa3 br3 dim bg-gray"
               :title "Share"
