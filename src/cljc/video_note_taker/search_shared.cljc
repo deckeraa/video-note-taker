@@ -5,16 +5,19 @@
             [cljs.test :refer [testing is]])))
 
 (defn construct-search-regex [text]
-  (str ".*["
-       (clojure.string/upper-case (first text))
-       (clojure.string/lower-case (first text))
-       "]"
-       (subs text 1 (count text)) ; drop the first letter
-       ".*"))
+  (if (empty? text)
+    ""
+    (str ".*["
+         (clojure.string/upper-case (first text))
+         (clojure.string/lower-case (first text))
+         "]"
+         (subs text 1 (count text)) ; drop the first letter
+         ".*")))
 
 #?(:cljs
    (deftest test-construct-search-regex
-     (is (= (construct-search-regex "bravo") ".*[Bb]ravo.*"))))
+     (is (= (construct-search-regex "bravo") ".*[Bb]ravo.*"))
+     (is (= (construct-search-regex "") ""))))
 
 (defn highlight-str [full-str search-str]
   [:div {}
