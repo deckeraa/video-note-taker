@@ -7,7 +7,8 @@
    [video-note-taker.svg :as svg]
    [video-note-taker.auth :as auth]
    [video-note-taker.atoms :as atoms]
-   [video-note-taker.video-notes :as video-notes])
+   [video-note-taker.video-notes :as video-notes]
+   [video-note-taker.search-shared :as search-shared])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))

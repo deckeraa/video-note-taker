@@ -25,7 +25,7 @@
 
   :min-lein-version "2.5.3"
 
-  :source-paths ["src/clj"]
+  :source-paths ["src/clj" "src/cljc"]
 
   :plugins [[lein-cljsbuild "1.1.4"]
             [lein-ring "0.12.5"]]
@@ -59,7 +59,7 @@
   :cljsbuild
   {:builds
    [{:id           "dev"
-     :source-paths ["src/cljs"]
+     :source-paths ["src/cljs" "src/cljc"]
      :figwheel     {:on-jsload "video-note-taker.core/reload"}
      :compiler     {:main                 video-note-taker.core
                     :optimizations        :none
@@ -75,7 +75,7 @@
                       :print-config-overrides true}}}}
 
     {:id           "devcards"
-     :source-paths ["src/devcards" "src/cljs"]
+     :source-paths ["src/devcards" "src/cljs" "src/cljc"]
      :figwheel     {:devcards true}
      :compiler     {:main                 "video-note-taker.core-card"
                     :optimizations        :none

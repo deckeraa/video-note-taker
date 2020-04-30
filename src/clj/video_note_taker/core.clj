@@ -28,7 +28,8 @@
    [clojure.java.io :as io]
    [clj-uuid :as uuid]
    [clj-time.format :as format]
-   [clojure.data.csv :refer [read-csv write-csv]])
+   [clojure.data.csv :refer [read-csv write-csv]]
+   [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]])
   (:gen-class))
 
 (def db
@@ -417,13 +418,13 @@
 
     (json-response {:body (:body resp)})))
 
-(defn construct-search-regex [text]
-  (str ".*["
-       (clojure.string/upper-case (first text))
-       (clojure.string/lower-case (first text))
-       "]"
-       (subs text 1 (count text)) ; drop the first letter
-       ".*"))
+;; (defn construct-search-regex [text]
+;;   (str ".*["
+;;        (clojure.string/upper-case (first text))
+;;        (clojure.string/lower-case (first text))
+;;        "]"
+;;        (subs text 1 (count text)) ; drop the first letter
+;;        ".*"))
 
 ;; (deftest test-construct-search-regex
 ;;   (is (= (construct-search-regex "bravo") ".*[Bb]ravo")))
