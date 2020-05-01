@@ -33,6 +33,7 @@
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
   (let [file-input-ref-el (reagent/atom nil)
+        success-import-counter (reagent/atom nil)
         import-issues     (reagent/atom [])]
     (fn [settings-cursor]
       [:div {:class "w-100 pa3 flex flex-column items-start"}
@@ -57,8 +58,12 @@
                                                    (db/resolve-endpoint "upload-spreadsheet")
                                                    {:multipart-params
                                                     [["file" (aget (.-files file-input) 0)]]}))]
+                                     (video-notes/load-notes notes-cursor video-cursor) ; reload notes
                                      (reset! import-issues (get-in resp [:body :didnt-import]))
-                                     ))))}]
+                                     (reset! success-import-counter (get-in resp [:body :successfully-imported]))))))}]
+       (when @success-import-counter
+         [:div {:class "ma2"}
+          (str "Successfully imported " @success-import-counter " notes.")])
        (when (not (empty? @import-issues))
          [:div {:class "ma2"}
           "The following lines were not imported: "
