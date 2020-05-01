@@ -213,6 +213,33 @@
           (println "Updated2 notes-by-video to: " @notes-by-video))
       (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."})))
 
+(defn wrap-cookie-auth [handler]
+  (fn [req]
+    (println "wrap-cookie-auth")
+    (let [cookie-check-val (cookie-check-from-req req)]
+      (if (not cookie-check-val)
+        (not-authorized-response)
+        (let [username (get-in cookie-check-val [0 :name])]
+          (handler req username))))))
+
+(defn download-starter-spreadsheet [req username]
+  (println "download-starter-spreadsheet" username)
+  (let [videos (couch/get-view db "videos" "by_user"
+                               {:key username :include_docs true})]
+    (as-> videos $
+      (map :doc $) ; pull out the docs from the view response
+      (sort-by :display-name $) ; sort
+      (map (fn [video]
+             (str (escape-csv-field (:_id video)) ","
+                  (escape-csv-field (:display-name video)) ","
+                  ","))
+           $)
+      (conj $ "video key,video display name,time in seconds,note text")
+      (clojure.string/join "\n" $)
+      (response/response $)
+      (content-type $ "text/csv"))
+    ))
+
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
 (defn upload-spreadsheet-handler [req]
@@ -525,6 +552,7 @@
         ["create-note" create-note-handler]
         ["delete-doc" delete-doc-handler]
         ["get-video-listing" get-video-listing-handler]
+        ["download-starter-spreadsheet" (wrap-cookie-auth download-starter-spreadsheet)]
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" upload-spreadsheet-handler]
         ["upload-video" upload-video-handler]

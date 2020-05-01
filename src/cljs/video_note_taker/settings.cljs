@@ -41,6 +41,9 @@
        [:input {:name "file" :type "file" :size "20" :multiple false
                 :ref (fn [el]
                        (reset! file-input-ref-el el))}]
+       [:a {:class "b--black-10 ba br3 pa3 dim link"
+        :href (str (db/get-server-url) "download-starter-spreadsheet")}
+    "Download starter spreadsheet"]
        [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
               :on-click (fn []
                           (when-let [file-input @file-input-ref-el]
