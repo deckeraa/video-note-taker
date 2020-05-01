@@ -196,22 +196,31 @@
         (response/response $)
         (content-type $ "text/csv")))))
 
-(defn import-note-spreadsheet-line [notes-by-video failed-imports video time-in-seconds note-text line]
+(defn import-note-spreadsheet-line [notes-by-video failed-imports video-key video-display-name time-in-seconds note-text line]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
-    (when (not (get-in @notes-by-video [video])) 
-      (as-> (get-notes video) $
-        (map (fn [{{time :time} :doc}]
-               time) ; grab the time associated with the note returned by the view
-             $)
-        (swap! notes-by-video assoc video $)
-        (println "Updated notes-by-video to: " @notes-by-video)))
-    (if (empty? (filter #(< (Math/abs (- time-in-seconds %)) 1)
-                        (get-in @notes-by-video [video])))
-      (do (couch/put-document db {:type "note" :video video :time time-in-seconds :text note-text})
-          (swap! notes-by-video #(assoc % video
-                                        (conj (get % video) time-in-seconds)))
-          (println "Updated2 notes-by-video to: " @notes-by-video))
-      (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."})))
+  (when (not (get-in @notes-by-video [video-key])) 
+    (as-> (get-notes video-key) $
+      (map (fn [{{time :time} :doc}]
+             time) ; grab the time associated with the note returned by the view
+           $)
+      (swap! notes-by-video assoc video-key $)
+      (println "Updated notes-by-video to: " @notes-by-video)))
+  (println "Video lookup: " video-key " " (get-in @notes-by-video [video-key]))
+  (if (not (= (:display-name (get-doc video-key))
+              video-display-name))
+    (swap! failed-imports conj {:line line :reason (str "The video display name " video-display-name " does not match with video key: " video-key ". Use the 'Download starter spreadsheet' button to download a spreadsheet with the mapping of video key to video display name.")})
+    ; Check that the passed-in video-key matches an actual video. If the lookup failed in the previous step, then the video does not exist in the db.
+    (if (empty? (get-in @notes-by-video [video-key]))
+      (swap! failed-imports conj {:line line :reason (str "A video with the id: " video-key " is not in the database.")})
+      ; Next, validate that there isn't another note already close to the timestamp
+      ; This will prevent duplicate notes in case a spreadsheet is uploaded multiple times
+      (if (empty? (filter #(< (Math/abs (- time-in-seconds %)) 0.25)
+                          (get-in @notes-by-video [video-key])))
+        (do (couch/put-document db {:type "note" :video video-key :time time-in-seconds :text note-text})
+            (swap! notes-by-video #(assoc % video-key
+                                          (conj (get % video-key) time-in-seconds)))
+            (println "Updated2 notes-by-video to: " @notes-by-video))
+        (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."})))))
 
 (defn wrap-cookie-auth [handler]
   (fn [req]
@@ -243,22 +252,19 @@
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
 (defn upload-spreadsheet-handler [req]
+  (println "upload-spreadsheet-handler")
   (if (not (cookie-check-from-req req))
     (not-authorized-response)
     (do
       (println "upload-spreadsheet-handler req: " req)
-      (let [id (uuid/to-string (uuid/v4))
-            notes-by-video (atom {})
+      (let [notes-by-video (atom {})
             failed-imports (atom [])
             lines (read-csv (io/reader (get-in req [:params "file" :tempfile])))]
         (println "lines: " (type lines) (count lines) lines)
-        ;; (io/copy (get-in req [:params "file" :tempfile])
-        ;;          (io/file (str "./uploads/" id)))
-        (doall (map (fn [[video time-in-seconds note-text :as line]]
+        (doall (map (fn [[video-key video-display-name time-in-seconds note-text :as line]]
                       (let [time-in-seconds (edn/read-string time-in-seconds)]
-                                        ;                    (println "type: " time-in-seconds (type time-in-seconds))
                         (if (number? time-in-seconds) ; filter out the title row, if present
-                          (import-note-spreadsheet-line notes-by-video failed-imports video time-in-seconds note-text line)
+                          (import-note-spreadsheet-line notes-by-video failed-imports video-key video-display-name time-in-seconds note-text line)
                           (swap! failed-imports conj {:line line :reason "time-in-seconds not a number"}))))
                     lines))
         (json-response {:didnt-import @failed-imports})))))
