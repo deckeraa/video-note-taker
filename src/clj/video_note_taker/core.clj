@@ -455,17 +455,6 @@
 
     (json-response {:body (:body resp)})))
 
-;; (defn construct-search-regex [text]
-;;   (str ".*["
-;;        (clojure.string/upper-case (first text))
-;;        (clojure.string/lower-case (first text))
-;;        "]"
-;;        (subs text 1 (count text)) ; drop the first letter
-;;        ".*"))
-
-;; (deftest test-construct-search-regex
-;;   (is (= (construct-search-regex "bravo") ".*[Bb]ravo")))
-
 (defn search-text-handler [req]
   (let [cookie-check-val  (cookie-check-from-req req)]
     (if (not cookie-check-val)
@@ -486,7 +475,7 @@
                                 {"$elemMatch"
                                  {"$eq" username}}},
                                {"text"
-                                {"$regex" (construct-search-regex (:text params))}}]}
+                                {"$regex" (construct-search-regex (:text params) true)}}]}
                       "execution_stats" true}
                      })]
           (println "stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
