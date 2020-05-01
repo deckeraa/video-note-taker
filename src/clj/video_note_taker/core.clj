@@ -13,7 +13,9 @@
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [ring.middleware.file :refer [wrap-file]]
-   [ring.middleware.cookies :refer [wrap-cookies]]
+   [ring.middleware.cookies :refer [cookies-request wrap-cookies]]
+   [ring.middleware.session.store :refer [read-session write-session]]
+   [ring.middleware.session.memory]
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
    [clojure.edn :as edn]
@@ -299,6 +301,18 @@
             (json-response video-doc))
           )))))
 
+(defonce file-upload-progress-atom (atom {}))
+
+(defn upload-progress-fn [req bytes-read content-length item-count]
+  (let [req (cookies-request req)
+        cookie-value (get-in req [:cookies "AuthSession" :value])]
+    ;; TODO this isn't quite correct since we're using cookie-value as a session key, but the cookie-value gets refreshed mid-session on a regular basis.
+    (swap! file-upload-progress-atom assoc cookie-value {:bytes-read bytes-read :content-length content-length})))
+
+(defn get-upload-progress [req username]
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (json-response (get @file-upload-progress-atom cookie-value))))
+
 (defn delete-video-handler [req]
   (let [cookie-check-val (cookie-check-from-req req)]
     (if (not cookie-check-val)
@@ -550,6 +564,7 @@
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" (wrap-cookie-auth upload-spreadsheet-handler)]
         ["upload-video" upload-video-handler]
+        ["get-upload-progress" (wrap-cookie-auth get-upload-progress)]
         ["delete-video" delete-video-handler]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
@@ -618,8 +633,8 @@
       ;; (wrap-println "3) ")
       (wrap-content-type)
       (wrap-params)
-      (wrap-multipart-params)
       (wrap-cookies)
+      (wrap-multipart-params {:progress-fn upload-progress-fn})
       (wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]

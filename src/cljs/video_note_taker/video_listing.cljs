@@ -66,6 +66,44 @@
        ]))
   )
 
+(defn upload-progress-updater [progress-atm]
+  (go (let [resp (<! (http/get (db/resolve-endpoint "get-upload-progress")))
+            progress (:body resp)]
+        (reset! progress-atm progress)
+        (when (and progress
+                   (< (:bytes-read progress)
+                      (:content-length progress)))
+          (js/setTimeout (partial upload-progress-updater progress-atm) 1500)
+          ))))
+
+(defn upload-toast [remove-delegate-atm]
+  (let [upload-progress-atom (reagent/atom {})
+        _timer (upload-progress-updater upload-progress-atom)]
+    (fn [remove-delegate-atm]
+      (println @upload-progress-atom)
+      [:div {}
+       (str "Uploading: "
+            (let [percent
+                  (Math/round (*
+                               (/ (:bytes-read @upload-progress-atom)
+                                  (:content-length @upload-progress-atom))
+                               100))]
+              (if (number? percent)
+                percent
+                0))
+            "%"
+            (when (and (:bytes-read @upload-progress-atom)
+                       (:content-length @upload-progress-atom))
+              (str
+               " ( "
+               (Math/round (/ (:bytes-read @upload-progress-atom) 1000000))
+               " MB of "
+               (Math/round (/ (:content-length @upload-progress-atom) 1000000))
+               " MB)")))
+       [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                  :on-click (fn [e] (@remove-delegate-atm))}
+        "Ok"]])))
+
 (defn upload-card [video-listing-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         import-results    (reagent/atom nil)]
@@ -86,7 +124,12 @@
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
                              (println "file-upload event: " e)
-                             (toaster-oven/add-toast "Uploading video..." nil nil nil)
+                                        ;                             (toaster-oven/add-toast "Uploading video..." nil nil nil)
+                             (let [remove-delegate-atm (reagent/atom (fn [] nil))]
+                               (toaster-oven/add-toast
+                                [upload-toast remove-delegate-atm]
+                                remove-delegate-atm
+                                atoms/toaster-cursor))
                              (when-let [file-input @file-input-ref-el]
                                (go (let [resp (<! (http/post
                                                    (db/resolve-endpoint "upload-video")
