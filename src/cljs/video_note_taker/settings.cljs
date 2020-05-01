@@ -38,23 +38,27 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
        [:h2 "Import & Export"]
-       [:input {:name "file" :type "file" :size "20" :multiple false
-                :ref (fn [el]
-                       (reset! file-input-ref-el el))}]
-       [:a {:class "b--black-10 ba br3 pa3 dim link"
+       [:a {:class "b--black-10 ba br3 pa3 dim link ma1"
         :href (str (db/get-server-url) "download-starter-spreadsheet")}
-    "Download starter spreadsheet"]
-       [:div {:class "br3 ba b--black-10 pa3 mv2 dim"
-              :on-click (fn []
-                          (when-let [file-input @file-input-ref-el]
-                            (go (let [resp (<! (http/post
-                                                (db/resolve-endpoint "upload-spreadsheet")
-                                                {:multipart-params
-                                                 [["file" (aget (.-files file-input) 0)]]}))]
-                                  (reset! import-issues (get-in resp [:body :didnt-import]))
-                                  ))
-                              ))}
-        "Import spreadsheet"]
+        "Download starter spreadsheet"]
+       [:label {:for "spreadsheet-upload"
+                :class "b--black-10 ba br3 pa3 ma1"}
+        "Import spreadsheet "]
+       [:input {:id "spreadsheet-upload"
+                :name "file"
+                :type "file"
+                :multiple false
+                :class "dn"
+                :ref (fn [el]
+                       (reset! file-input-ref-el el))
+                :on-change (fn [e]
+                             (when-let [file-input @file-input-ref-el]
+                               (go (let [resp (<! (http/post
+                                                   (db/resolve-endpoint "upload-spreadsheet")
+                                                   {:multipart-params
+                                                    [["file" (aget (.-files file-input) 0)]]}))]
+                                     (reset! import-issues (get-in resp [:body :didnt-import]))
+                                     ))))}]
        (when (not (empty? @import-issues))
          [:div {:class "ma2"}
           "The following lines were not imported: "
