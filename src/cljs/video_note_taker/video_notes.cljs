@@ -198,8 +198,8 @@
   )
 
 (defn notes [notes-cursor video-ref-atm video-cursor video-options-cursor]
-  [:div {:class "flex flex-column items-center"}
-   [:div {:class "flex justify-between w-80"}
+  [:div {:class "flex flex-column items-center w-100"}
+   [:div {:class "flex justify-between w-100"}
     [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
            :on-click (fn [e] 
                        (when-let [video @video-ref-atm]
@@ -249,7 +249,7 @@
               ^{:key (get-in @note-cursor [:_id])}
               [note note-cursor notes-cursor video-ref-atm video-options-cursor]))
           (range 0 (count @notes-cursor))))]
-   [:a {:class "b--black-10 ba br3 pa3 dim link"
+   [:a {:class "b--black-10 ba br3 ma2 pa3 dim link"
         :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
     "Download notes as spreadsheet"]])
 
