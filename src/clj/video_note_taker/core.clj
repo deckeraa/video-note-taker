@@ -1,6 +1,6 @@
 (ns video-note-taker.core
   (:require
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is run-tests]]
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
    [ring.util.response :as response :refer [file-response content-type]]
@@ -73,6 +73,27 @@
                     {cookie-name (update v :expires #(.toString %))} ;; the :expires attr also needs changed frmo a java.util.Date to a string
                     {cookie-name v})))
               cookies)))
+
+(defn- set-cookies-flag [cookies flag flag-value]
+  (apply merge
+         (map (fn [[cookie-name v]]
+                {cookie-name (assoc v flag flag-value)})
+              cookies)))
+
+(deftest test-set-cookies-flag
+  (is (= (set-cookies-flag {"AuthSession"
+                                   {:value "YWxwaGE6NUVBQ0E1OUM6PNpD6s2El_yHqe2MNL-eOTGvkMQ"
+                                    :path "/"
+                                    :secure false
+                                    :expires "Fri May 01 18:41:32 CDT 2020"}}
+                                  :secure
+                                  true)
+         {"AuthSession"
+                                   {:value "YWxwaGE6NUVBQ0E1OUM6PNpD6s2El_yHqe2MNL-eOTGvkMQ"
+                                    :path "/"
+                                    :secure true
+                                    :expires "Fri May 01 18:41:32 CDT 2020"}}
+         )))
 
 (defn cookie-check
   "Checks the cookies in a request against CouchDB. Returns [{:name :roles} new_cookie] if it's valid, false otherwise.
@@ -371,8 +392,12 @@
       (println "Login resp: " resp)
       (assoc 
        (json-response true)
-       :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
-       ))
+       :cookies (as-> (:cookies resp) $
+                  (remove-cookie-attrs-not-supported-by-ring $)
+                  ;; (set-cookies-flag $ :secure true)
+                  ;; (set-cookies-flag $ :same-site :strict)
+                  (do (println $) $)
+                 )))
     (catch Exception e
       (json-response false))))
 

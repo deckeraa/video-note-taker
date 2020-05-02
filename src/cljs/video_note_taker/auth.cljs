@@ -80,6 +80,8 @@
                                                                           :pass @pass-atm}
                                                             :with-credentials false} ;; no need to pass cookies while creating a user -- the user shouldn't have our cookie at this point
                                                            ))]
+                                   (println "login response: " resp)
+                                   (swap! logged-in-atm inc)
                                    (if (:body resp)
                                      (js/setTimeout #(swap! logged-in-atm inc) 200)
                                      (reset! login-failed-atm true)))))}
