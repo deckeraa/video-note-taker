@@ -10,7 +10,8 @@
   (swap! video-options-cursor assoc :requested-time time))
 
 (defn try-set-video-time [video-ref-atm video-options-cursor time]
-  ;; This will not work in Chrome if the server doesn't implement partial content requests:
+  ;; This will work in Chrome by virtue of the server implementing partial content requests:
+  ;; https://github.com/remvee/ring-partial-content
   ;; https://stackoverflow.com/questions/8088364/html5-video-will-not-loop
   (println "video-ref-atm is " (str @video-ref-atm))
   (request-video-time video-options-cursor time)

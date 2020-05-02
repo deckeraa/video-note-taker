@@ -16,6 +16,7 @@
    [ring.middleware.cookies :refer [cookies-request wrap-cookies]]
    [ring.middleware.session.store :refer [read-session write-session]]
    [ring.middleware.session.memory]
+   [ring.middleware.partial-content :refer [wrap-partial-content]]
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
    [clojure.edn :as edn]
@@ -659,6 +660,7 @@
       (wrap-content-type)
       (wrap-params)
       (wrap-cookies)
+      (wrap-partial-content)
       (wrap-multipart-params {:progress-fn upload-progress-fn})
       (wrap-cors
        :access-control-allow-origin [#".*"]

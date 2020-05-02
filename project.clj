@@ -21,6 +21,7 @@
                  [org.clojure/data.csv "1.0.0"]
                  [org.clojure/core.incubator "0.1.4"] ; workaround https://github.com/clojure-clutch/clutch/issues/86
                  [clj-time "0.15.2"]
+                 [ring-partial-content "1.0.0"]
                  ]
 
   :min-lein-version "2.5.3"
