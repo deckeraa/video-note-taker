@@ -6,6 +6,17 @@
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
+(defn request-video-time [video-options-cursor time]
+  (swap! video-options-cursor assoc :requested-time time))
+
+(defn try-set-video-time [video-ref-atm video-options-cursor time]
+  ;; This will not work in Chrome if the server doesn't implement partial content requests:
+  ;; https://stackoverflow.com/questions/8088364/html5-video-will-not-loop
+  (println "video-ref-atm is " (str @video-ref-atm))
+  (request-video-time video-options-cursor time)
+  (when-let [video @video-ref-atm]
+    (set! (.-currentTime video) time)))
+
 (defn video
   ([video-ref-atm video-cursor video-options-cursor]
    [video video-ref-atm video-cursor video-options-cursor {}])
@@ -42,8 +53,21 @@
 (defcard-rg video-card
   (let [video-ref-atm (reagent/atom nil)
         ; TODO check the test video into source
-        video-cursor  (reagent/atom {})
+        video-cursor  (reagent/atom {:file-name "foo.mp4"})
         video-options-cursor (reagent/atom nil)
         options {:src-override "A Tale of Two Kitties (1942).mp4"}]
-    [video video-ref-atm video-cursor video-options-cursor options]
+    [:div
+     [video video-ref-atm video-cursor video-options-cursor options]
+     [:button {:on-click (fn [] (when-let [video @video-ref-atm]
+                                  (set! (.-currentTime video) (* 1 60))))}
+      "Quick 1m"]
+     [:button {:on-click (fn [] (when-let [video @video-ref-atm]
+                                  (set! (.-currentTime video) (* 5 60))))}
+      "Quick 5m"]
+     [:button {:on-click (fn []
+                           (try-set-video-time video-ref-atm video-options-cursor (* 5 60)))}
+      "Jump to 5 minutes."]
+     [:button {:on-click (fn []
+                           (try-set-video-time video-ref-atm video-options-cursor (* 1 60)))}
+      "Jump to 1 minutes."]]
     ))

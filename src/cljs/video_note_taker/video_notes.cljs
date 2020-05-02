@@ -8,21 +8,13 @@
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
+   [video-note-taker.video :as video :refer [request-video-time try-set-video-time]]
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.editable-field :refer [editable-field]]
    [video-note-taker.auth])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
-
-(defn request-video-time [video-options-cursor time]
-  (swap! video-options-cursor assoc :requested-time time))
-
-(defn try-set-video-time [video-ref-atm video-options-cursor time]
-  (println "video-ref-atm is " (str @video-ref-atm))
-  (request-video-time video-options-cursor time)
-  (when-let [video @video-ref-atm]
-    (set! (.-currentTime video) time)))
 
 (defn load-notes [notes-cursor video-cursor]
   (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
