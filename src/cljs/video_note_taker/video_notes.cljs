@@ -199,7 +199,7 @@
 
 (defn notes [notes-cursor video-ref-atm video-cursor video-options-cursor]
   [:div {:class "flex flex-column items-center w-100"}
-   [:div {:class "flex justify-between w-100"}
+   [:div {:class "flex justify-between w-100 pa2"}
     [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
            :on-click (fn [e] 
                        (when-let [video @video-ref-atm]
