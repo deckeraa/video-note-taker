@@ -1,6 +1,7 @@
 (ns video-note-taker.video
   (:require
    [reagent.core :as reagent]
+   [cljs.test :include-macros true :refer-macros [testing is]]
    [video-note-taker.db :as db])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
@@ -18,6 +19,15 @@
   (when-let [video @video-ref-atm]
     (set! (.-currentTime video) time)))
 
+(defn get-file-extension [filename]
+  (if (not (string? filename))
+    ""
+    (second (re-matches #".*\.(.*)" filename))))
+
+(deftest test-get-file-extension
+  (is (= (get-file-extension "foo.mp3") "mp3"))
+  (is (= (get-file-extension "foo.mp3.mp4") "mp4")))
+
 (defn video
   ([video-ref-atm video-cursor video-options-cursor]
    [video video-ref-atm video-cursor video-options-cursor {}])
@@ -31,8 +41,7 @@
     options: overrides used for testing
        :src-override - overrides the filename in the video-cursor"
    (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
-     (let [file-ext (second (re-matches #".*\.(.*)" filename))
-           src (if (:src-override options)
+     (let [src (if (:src-override options)
                  (db/resolve-endpoint filename)
                  (db/resolve-endpoint (str "videos/" filename)))]
        [:video {:id "main-video"
@@ -40,7 +49,7 @@
                 :controls true
                 :src  src
                 :width 620
-                :type (str "video/" file-ext)
+                :type (str "video/" (get-file-extension filename))
                 :on-time-update (fn [e]
                                   ;; when the time updates, check to see if we made it to the requested time
                                   (let [current-time   (.-currentTime (-> e .-target))
