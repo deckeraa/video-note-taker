@@ -12,7 +12,7 @@
    [video-note-taker.video-notes :as notes]
    [video-note-taker.editable-field :refer [editable-field]])
   (:require-macros
-   [devcards.core :refer [defcard deftest]]
+   [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn load-video-listing [video-listing-cursor]
@@ -76,33 +76,42 @@
           (js/setTimeout (partial upload-progress-updater progress-atm) 1500)
           ))))
 
-(defn upload-toast [remove-delegate-atm]
-  (let [upload-progress-atom (reagent/atom {})
-        _timer (upload-progress-updater upload-progress-atom)]
-    (fn [remove-delegate-atm]
-      (println @upload-progress-atom)
-      [:div {}
-       (str "Uploading: "
-            (let [percent
-                  (Math/round (*
-                               (/ (:bytes-read @upload-progress-atom)
-                                  (:content-length @upload-progress-atom))
-                               100))]
-              (if (number? percent)
-                percent
-                0))
-            "%"
-            (when (and (:bytes-read @upload-progress-atom)
-                       (:content-length @upload-progress-atom))
-              (str
-               " ( "
-               (Math/round (/ (:bytes-read @upload-progress-atom) 1000000))
-               " MB of "
-               (Math/round (/ (:content-length @upload-progress-atom) 1000000))
-               " MB)")))
-       [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+(defn upload-toast
+  ([remote-delegate-atom upload-progress]
+   (fn [remove-delegate-atm]
+       [:div {}
+        (str "Uploading: "
+             (let [percent
+                   (Math/round (*
+                                (/ (:bytes-read upload-progress)
+                                   (:content-length upload-progress))
+                                100))]
+               (if (number? percent)
+                 percent
+                 0))
+             "%"
+             (when (and (:bytes-read upload-progress)
+                        (:content-length upload-progress))
+               (str
+                " ( "
+                (Math/round (/ (:bytes-read upload-progress) 1000000))
+                " MB of "
+                (Math/round (/ (:content-length upload-progress) 1000000))
+                " MB)")))
+        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))}
-        "Ok"]])))
+         "Ok"]]))
+  ([remove-delegate-atm]
+   (let [upload-progress-atom (reagent/atom {})
+         _timer (upload-progress-updater upload-progress-atom)]
+     [upload-toast remove-delegate-atm @upload-progress-atom]
+     )))
+
+(defcard-rg upload-toast-card
+  [:div
+   [upload-toast (fn [] nil) {}]
+   [upload-toast (fn [] nil) {:bytes-read 1000 :content-length 2000}]
+   [upload-toast (fn [] nil) {:bytes-read 1000000 :content-length 3000000}]])
 
 (defn upload-card [video-listing-cursor]
   (let [file-input-ref-el (reagent/atom nil)
