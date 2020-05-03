@@ -340,9 +340,6 @@
         video-id (get-in doc [:_id])
         video (get-doc video-id)]
     (cond
-      ;; check that the video exists
-      (nil? video)
-      (assoc (json-response {:success false :reason "Video with id " video-id " not found."}))
       ;; check that the user has access to the video
       (not (= username (:uploaded-by video)))
       (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
