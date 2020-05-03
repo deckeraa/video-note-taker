@@ -22,11 +22,19 @@
   ([video-ref-atm video-cursor video-options-cursor]
    [video video-ref-atm video-cursor video-options-cursor {}])
   ([video-ref-atm video-cursor video-options-cursor options]
-   (when (:file-name @video-cursor)
-     (let [file-ext (second (re-matches #".*\.(.*)" (:file-name @video-cursor)))
+   "Reagent component that displays a video.
+    video-ref-atm: Contains a reference to the <video> element. May be nil.
+    video-cursor: Contains the video document from CouchDB.
+       :file-name - filename in the ~/resources/private/ folder
+    video-options-cursor: Contains additional options for the video
+       :requested-time - time in seconds of where the video should seek to upon instantiation
+    options: overrides used for testing
+       :src-override - overrides the filename in the video-cursor"
+   (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
+     (let [file-ext (second (re-matches #".*\.(.*)" filename))
            src (if (:src-override options)
-                 (db/resolve-endpoint (:src-override options))
-                 (db/resolve-endpoint (str "videos/" (:file-name @video-cursor))))]
+                 (db/resolve-endpoint filename)
+                 (db/resolve-endpoint (str "videos/" filename)))]
        [:video {:id "main-video"
                 :class "mb3"
                 :controls true
@@ -56,7 +64,7 @@
 
 (defcard-rg video-card
   (let [video-ref-atm (reagent/atom nil)
-        video-cursor  (reagent/atom {:file-name "foo.mp4"})
+        video-cursor  (reagent/atom {})
         video-options-cursor (reagent/atom nil)
         options {:src-override "A Tale of Two Kitties (1942).mp4"}]
     [:div
@@ -82,7 +90,7 @@
    The expected behavior is that the video will open and immediately seek to the correct playback time."
   (let [is-video-showing? (reagent/atom false)
         video-ref-atm (reagent/atom nil)
-        video-cursor  (reagent/atom {:file-name "foo.mp4"})
+        video-cursor  (reagent/atom {})
         video-options-cursor (reagent/atom nil)
         options {:src-override "A Tale of Two Kitties (1942).mp4"}
         ]
@@ -96,9 +104,7 @@
          [:div
           [:button {:on-click (fn []
                                 (try-set-video-time video-ref-atm video-options-cursor (* 1 60))
-                                (js/setTimeout (fn []
-                                                 (reset! is-video-showing? true)
-                                                 (println "Reset: " @is-video-showing?)) 1000))}
+                                (js/setTimeout #(reset! is-video-showing? true) 1000))}
            "try-set-video-time to 1 minutes and show video after 1 seconds."]
           [:button {:on-click (fn []
                                 (try-set-video-time video-ref-atm video-options-cursor (* 5 60))
