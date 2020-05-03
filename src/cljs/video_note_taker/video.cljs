@@ -56,7 +56,6 @@
 
 (defcard-rg video-card
   (let [video-ref-atm (reagent/atom nil)
-        ; TODO check the test video into source
         video-cursor  (reagent/atom {:file-name "foo.mp4"})
         video-options-cursor (reagent/atom nil)
         options {:src-override "A Tale of Two Kitties (1942).mp4"}]
@@ -73,5 +72,37 @@
       "try-set-video-time to 1 minutes."]
      [:button {:on-click (fn []
                            (try-set-video-time video-ref-atm video-options-cursor (* 5 60)))}
-      "try-set-video-time to 5 minutes."]]
+      "try-set-video-time to 5 minutes."]
+     [:p "If the video doesn't show up, make sure you have a video named \"A Tale of Two Kitties (1942).mp4\" in ~/resources/public/."]]
     ))
+
+(defcard-rg delayed-time-set-card
+  "This card tests the behavior of setting a playback time via try-set-video-time when the video
+   element does not yet exist. 
+   The expected behavior is that the video will open and immediately seek to the correct playback time."
+  (let [is-video-showing? (reagent/atom false)
+        video-ref-atm (reagent/atom nil)
+        video-cursor  (reagent/atom {:file-name "foo.mp4"})
+        video-options-cursor (reagent/atom nil)
+        options {:src-override "A Tale of Two Kitties (1942).mp4"}
+        ]
+    (fn []
+      [:div
+       (when @is-video-showing?
+         [video video-ref-atm video-cursor video-options-cursor options])
+       (if @is-video-showing?
+         [:button {:on-click (fn [] (reset! is-video-showing? false))}
+          "Hide video."]
+         [:div
+          [:button {:on-click (fn []
+                                (try-set-video-time video-ref-atm video-options-cursor (* 1 60))
+                                (js/setTimeout (fn []
+                                                 (reset! is-video-showing? true)
+                                                 (println "Reset: " @is-video-showing?)) 1000))}
+           "try-set-video-time to 1 minutes and show video after 1 seconds."]
+          [:button {:on-click (fn []
+                                (try-set-video-time video-ref-atm video-options-cursor (* 5 60))
+                                (js/setTimeout #(reset! is-video-showing? true) 1000))}
+           "try-set-video-time to 5 minutes and show video after 1 seconds."]]
+         )
+       ])))
