@@ -76,10 +76,22 @@
           (js/setTimeout (partial upload-progress-updater progress-atm) 1500)
           ))))
 
+(defn- display-in-megabytes [bytes]
+  (if (>= bytes 1000000)
+    (str (Math/round (/ bytes 1000000)) " MB")
+    "<1 MB"))
+
+(deftest test-display-in-megabytes
+  (is (= (display-in-megabytes 50) "<1 MB"))
+  (is (= (display-in-megabytes 1000000) "1 MB"))
+  (is (= (display-in-megabytes 1500000) "2 MB")))
+
 (defn upload-toast
   ([remote-delegate-atom upload-progress]
    (fn [remove-delegate-atm]
-       [:div {}
+     [:div {}
+      (if (and (:bytes-read upload-progress)
+               (:content-length upload-progress))
         (str "Uploading: "
              (let [percent
                    (Math/round (*
@@ -90,14 +102,13 @@
                  percent
                  0))
              "%"
-             (when (and (:bytes-read upload-progress)
-                        (:content-length upload-progress))
-               (str
-                " ( "
-                (Math/round (/ (:bytes-read upload-progress) 1000000))
-                " MB of "
-                (Math/round (/ (:content-length upload-progress) 1000000))
-                " MB)")))
+             (str
+              " ("
+              (display-in-megabytes (:bytes-read upload-progress))
+              " of "
+              (display-in-megabytes (:content-length upload-progress))
+              ")"))
+        (str "Uploading..."))
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))}
          "Ok"]]))
