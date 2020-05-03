@@ -66,16 +66,28 @@
        ]))
   )
 
-(defn upload-progress-updater [progress-atm]
-  (go (let [resp (<! (http/get (db/resolve-endpoint "get-upload-progress")))
-            progress (:body resp)]
-;        (println "upload-progress-updater: " resp progress (:bytes-read progress) (:content-length progress))
-        (reset! progress-atm progress)
-        (when (and progress
-                   (<= (:bytes-read progress)
-                      (:content-length progress)))
-          (js/setTimeout (partial upload-progress-updater progress-atm) 750)
-          ))))
+(defn upload-progress-updater
+  "Gets the current status of the file upload from the server. Uses a timeout to keep
+  updating itself until the load is complete if 'repeat?' is true."
+  ([progress-atm]
+   (upload-progress-updater progress-atm true))
+  ([progress-atm repeat?]
+   (go (let [resp (<! (http/get (db/resolve-endpoint "get-upload-progress")))
+             progress (:body resp)]
+         (reset! progress-atm progress)
+         (when (and progress
+                    repeat?
+                    (<= (:bytes-read progress)
+                        (:content-length progress)))
+           (js/setTimeout (partial upload-progress-updater progress-atm true) 750))))))
+
+(defcard-rg test-upload-progress-updater
+  "Tests /get-upload-progress. You will need a cookie associate with a file upload for this to return anything."
+  (let [progress-atom (reagent/atom {})]
+    (fn []
+      [:div
+       [:p "Progress atom: " @progress-atom]
+       [:button {:on-click #(upload-progress-updater progress-atom false)} "Update once"]])))
 
 (defn- display-in-megabytes [bytes]
   (if (>= bytes 1000000)
@@ -92,7 +104,6 @@
   When called with 1-arity, initializes an updater that gets status updates from the server."
   ([remote-delegate-atom upload-progress]
    (fn [remove-delegate-atm upload-progress]
-     (println "upload-toast: " upload-progress)
      [:div {}
       (let [bytes-read     (:bytes-read upload-progress)
             content-length (:content-length upload-progress)]
