@@ -6,15 +6,15 @@
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn request-video-time [video-options-cursor time]
-  (swap! video-options-cursor assoc :requested-time time))
-
-(defn try-set-video-time [video-ref-atm video-options-cursor time]
+(defn try-set-video-time
+  "Sets the video's current playbock time, if the video exists.
+  Otherwise it saves off the time into video-options-cursor and seeks to that time when the
+  video becomes non-nil."
+  [video-ref-atm video-options-cursor time]
   ;; This will work in Chrome by virtue of the server implementing partial content requests:
   ;; https://github.com/remvee/ring-partial-content
   ;; https://stackoverflow.com/questions/8088364/html5-video-will-not-loop
-  (println "video-ref-atm is " (str @video-ref-atm))
-  (request-video-time video-options-cursor time)
+  (swap! video-options-cursor assoc :requested-time time)
   (when-let [video @video-ref-atm]
     (set! (.-currentTime video) time)))
 
@@ -34,20 +34,22 @@
                 :width 620
                 :type (str "video/" file-ext)
                 :on-time-update (fn [e]
+                                  ;; when the time updates, check to see if we made it to the requested time
                                   (let [current-time   (.-currentTime (-> e .-target))
                                         requested-time (:requested-time @video-options-cursor)]
-                                    (println (:display-name @video-cursor)
-                                             " Time update event fired: current time"
-                                             current-time requested-time)
                                     (when requested-time
                                       (if (< (Math/abs (- requested-time current-time)) 1)
-                                        (swap! video-options-cursor dissoc :requested-time)
-                                        (when-let [video @video-ref-atm]
-                                          (set! (.-currentTime video) requested-time))))))
+                                        ;; If so, dissoc the :requested-time
+                                        ;; Previously, this contained logic to continue making
+                                        ;; calls to set currentTime until it reached the requested time.
+                                        ;; However, after implementing partial content requests (using wrap-partial-content), all tested browsers appear to be seeking directly to the requested time in a single set.
+                                        (swap! video-options-cursor dissoc :requested-time)))))
                 :ref (fn [el]
                        (when el
                          (do
+                           ;; Save off the video reference
                            (reset! video-ref-atm el)
+                           ;; If we have a requested time in the video, seek to that time.
                            (when-let [requested-time (:requested-time @video-options-cursor)]
                              (set! (.-currentTime el) requested-time)))))}
         "Video not supported by your browser :("]))))
@@ -62,14 +64,14 @@
      [video video-ref-atm video-cursor video-options-cursor options]
      [:button {:on-click (fn [] (when-let [video @video-ref-atm]
                                   (set! (.-currentTime video) (* 1 60))))}
-      "Quick 1m"]
+      "Set video.currentTime 1m"]
      [:button {:on-click (fn [] (when-let [video @video-ref-atm]
                                   (set! (.-currentTime video) (* 5 60))))}
-      "Quick 5m"]
-     [:button {:on-click (fn []
-                           (try-set-video-time video-ref-atm video-options-cursor (* 5 60)))}
-      "Jump to 5 minutes."]
+      "Set video.currentTime 5m"]
      [:button {:on-click (fn []
                            (try-set-video-time video-ref-atm video-options-cursor (* 1 60)))}
-      "Jump to 1 minutes."]]
+      "try-set-video-time to 1 minutes."]
+     [:button {:on-click (fn []
+                           (try-set-video-time video-ref-atm video-options-cursor (* 5 60)))}
+      "try-set-video-time to 5 minutes."]]
     ))

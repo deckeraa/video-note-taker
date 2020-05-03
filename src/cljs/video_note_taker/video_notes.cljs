@@ -8,7 +8,7 @@
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
-   [video-note-taker.video :as video :refer [request-video-time try-set-video-time]]
+   [video-note-taker.video :as video :refer [try-set-video-time]]
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.editable-field :refer [editable-field]]
    [video-note-taker.auth])
