@@ -335,30 +335,41 @@
   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
     (json-response (get @file-upload-progress-atom cookie-value))))
 
-(defn delete-video-handler [req]
-  (let [cookie-check-val (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      (let [username (get-in cookie-check-val [0 :name])
-            doc (get-body req)
-            video-id (get-in doc [:_id])
-            video (get-doc video-id)]
-        (if (not (= username (:uploaded-by video)))
-          (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
-                 :status 403)
-          (do
-            ;; delete all notes related to the video
-            (couch/bulk-update
-             db
-             (vec (map
-                   (fn [view-result]
-                     (let [v (:doc view-result)]
-                       (assoc v :_deleted true)))
-                   (get-notes (:_id video)))))
-            ;; TODO handle document conflicts
-            ;; delete the video
-            (couch/delete-document db video)
-            (json-response {:success true})))))))
+(defn delete-video-handler [req username]
+  (let [doc (get-body req) ; the doc should be a video CouchDB document
+        video-id (get-in doc [:_id])
+        video (get-doc video-id)]
+    (cond
+      ;; check that the video exists
+      (nil? video)
+      (assoc (json-response {:success false :reason "Video with id " video-id " not found."}))
+      ;; check that the user has access to the video
+      (not (= username (:uploaded-by video)))
+      (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
+             :status 403)
+      ;; otherwise, do the delete
+      :else
+      (do
+        ;; delete all notes related to the video
+        (couch/bulk-update
+         db
+         (vec (map
+               (fn [view-result]
+                 (let [v (:doc view-result)]
+                   (assoc v :_deleted true)))
+               (get-notes (:_id video)))))
+        ;; Currently this doesn't handle bulk update conflicts.
+        ;; Notes not deleted because of a conflict will be rare and  won't cause a problem,
+        ;; but they will be left sitting around, so either we need to do something here
+        ;; or make a view that can clean up orphaned notes periodically.
+        
+        ;; delete the video document
+        (couch/delete-document db video)
+        ;; delete the actual video file
+        (io/delete-file (str "./resources/private/" (:file-name video)))
+        ;; return the response
+        (json-response {:success true})))
+    ))
 
 (defn get-cookie-handler [req]
   (try
@@ -591,7 +602,7 @@
         ["upload-spreadsheet" (wrap-cookie-auth upload-spreadsheet-handler)]
         ["upload-video" upload-video-handler]
         ["get-upload-progress" (wrap-cookie-auth get-upload-progress)]
-        ["delete-video" delete-video-handler]
+        ["delete-video" (wrap-cookie-auth delete-video-handler)]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]
