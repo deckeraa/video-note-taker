@@ -69,11 +69,12 @@
 (defn upload-progress-updater [progress-atm]
   (go (let [resp (<! (http/get (db/resolve-endpoint "get-upload-progress")))
             progress (:body resp)]
+;        (println "upload-progress-updater: " resp progress (:bytes-read progress) (:content-length progress))
         (reset! progress-atm progress)
         (when (and progress
-                   (< (:bytes-read progress)
+                   (<= (:bytes-read progress)
                       (:content-length progress)))
-          (js/setTimeout (partial upload-progress-updater progress-atm) 1500)
+          (js/setTimeout (partial upload-progress-updater progress-atm) 750)
           ))))
 
 (defn- display-in-megabytes [bytes]
@@ -87,35 +88,35 @@
   (is (= (display-in-megabytes 1500000) "2 MB")))
 
 (defn upload-toast
+  "Toast message that displays the current upload progress.
+  When called with 1-arity, initializes an updater that gets status updates from the server."
   ([remote-delegate-atom upload-progress]
-   (fn [remove-delegate-atm]
+   (fn [remove-delegate-atm upload-progress]
+     (println "upload-toast: " upload-progress)
      [:div {}
-      (if (and (:bytes-read upload-progress)
-               (:content-length upload-progress))
-        (str "Uploading: "
-             (let [percent
-                   (Math/round (*
-                                (/ (:bytes-read upload-progress)
-                                   (:content-length upload-progress))
-                                100))]
-               (if (number? percent)
-                 percent
-                 0))
-             "%"
-             (str
-              " ("
-              (display-in-megabytes (:bytes-read upload-progress))
-              " of "
-              (display-in-megabytes (:content-length upload-progress))
-              ")"))
-        (str "Uploading..."))
+      (let [bytes-read     (:bytes-read upload-progress)
+            content-length (:content-length upload-progress)]
+        (if (and bytes-read content-length)
+          (str "Uploading: "
+               (let [percent
+                     (Math/round (* (/ bytes-read content-length) 100))]
+                 (if (number? percent) percent 0))
+               "%"
+               (str
+                " ("
+                (display-in-megabytes bytes-read)
+                " of "
+                (display-in-megabytes content-length)
+                ")"))
+          (str "Uploading...")))
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))}
          "Ok"]]))
   ([remove-delegate-atm]
    (let [upload-progress-atom (reagent/atom {})
          _timer (upload-progress-updater upload-progress-atom)]
-     [upload-toast remove-delegate-atm @upload-progress-atom]
+     (fn []
+       [upload-toast remove-delegate-atm @upload-progress-atom])
      )))
 
 (defcard-rg upload-toast-card
