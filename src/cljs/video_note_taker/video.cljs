@@ -1,4 +1,5 @@
 (ns video-note-taker.video
+  "Reagent component for video display that allows seeking to a given time position."
   (:require
    [reagent.core :as reagent]
    [cljs.test :include-macros true :refer-macros [testing is]]
