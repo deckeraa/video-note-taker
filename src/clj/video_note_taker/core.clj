@@ -604,7 +604,7 @@
   (let [cookie-check-val  (cookie-check-from-req req)]
     (if (not cookie-check-val)
       (not-authorized-response)
-      ;; TODO actually filter -- right now this just loads all suers
+      ;; TODO actually filter -- right now this just loads all users
       (let [username (get-in cookie-check-val [0 :name])]
         (let [resp (couchdb-request :get (url/url db "/_users/_all_docs"))]
           (println "get-connected-users: " resp)
@@ -613,8 +613,17 @@
                (remove nil?)
                (json-response)))))))
 
+(defn videos-handler [req username]
+  (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
+        video (get-doc video-id)
+        filename (:file-name video)]
+    (if (contains? (set (:users video)) username)
+      (file-response filename {:root "resources/private/"})
+      (not-authorized-response))))
+
 (def api-routes
   ["/" [["hello" hello-handler]
+        [["videos/" :id]  (wrap-cookie-auth videos-handler)]
         ["get-doc" get-doc-handler]
         ["put-doc" (wrap-cookie-auth put-doc-handler)]
         ["get-notes" get-notes-handler]
@@ -637,61 +646,39 @@
         ["search-text" search-text-handler]
         ["update-video-permissions" update-video-permissions-handler]
         ["get-connected-users" get-connected-users-handler]
-;        [true (fn [req] (content-type (response/response "<h1>Default Page</h1>") "text/html"))]
         ]])
 
-(defn wrap-index [handler]
+(defn wrap-index
+  "Serves up index.html for the '/' route."
+  [handler]
   (fn [req]
     (let [resp (handler req)]
       (if resp
         resp
         (if (= (:uri req) "/")
-                                        ;          (content-type (response/response "<h1>Index Page!!!!</h1>" ) "text/html")
           (content-type (file-response "index.html" {:root "resources/public"}) "text/html")
           (response/not-found "Not found"))))))
 
-(defn wrap-println [handler caption]
+(defn wrap-println
+  "Middleware that prints the response being built."
+  [handler caption]
   (fn [req]
     (let [resp (handler req)]
       (println caption resp)
       resp)))
 
-(defn wrap-print-req [handler caption]
+(defn wrap-print-req
+  "Middleware that prints the ring request."
+  [handler caption]
   (fn [req]
     (let [resp (handler req)]
       (println caption req)
       resp)))
 
-(defn wrap-videos-handler [handler]
-  (fn [req]
-    (let [resp (handler req)]
-      (println "wrap-videos-handler pre resp: " resp)
-      (if resp
-        resp
-        (let [matches (re-matches #"/videos/(.*)\..*" (:uri req))
-              video-id (second matches)
-              video    (get-doc video-id)
-              filename (:file-name video)]
-          (println "video: " video)
-          (if matches ; we know that a video has been requested, so check the cookies
-            (let [cookie-check-val  (cookie-check-from-req req)]
-              (if (not cookie-check-val)
-                (not-authorized-response)
-                (let [username (get-in cookie-check-val [0 :name])]
-                  (if (contains? (set (:users video)) username)
-                    (file-response filename {:root "resources/private/"})
-                    (not-authorized-response)))))
-            nil))))))
-
 (def app
   (-> (make-handler api-routes)
-      (wrap-videos-handler)
-      ;; (wrap-print-req "0) ")
-      ;; (wrap-println "1) ")
       (wrap-index)
-      ;; (wrap-println "2) ")
       (wrap-file "resources/public" {:prefer-handler? true})
-      ;; (wrap-println "3) ")
       (wrap-content-type)
       (wrap-params)
       (wrap-cookies)
