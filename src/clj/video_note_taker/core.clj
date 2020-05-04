@@ -600,18 +600,13 @@
         (catch Exception e
           (println "update-video-permissions-handler e: " e))))))
 
-(defn get-connected-users-handler [req]
-  (let [cookie-check-val  (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      ;; TODO actually filter -- right now this just loads all users
-      (let [username (get-in cookie-check-val [0 :name])]
-        (let [resp (couchdb-request :get (url/url db "/_users/_all_docs"))]
-          (println "get-connected-users: " resp)
-          (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
-                    (:rows resp))
-               (remove nil?)
-               (json-response)))))))
+(defn get-connected-users-handler [req username]
+  ;; TODO implement an actual connected-users concept -- right now this returns all users.
+  (let [resp (couchdb-request :get (url/url db "/_users/_all_docs"))]
+    (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
+              (:rows resp))
+         (remove nil?)
+         (json-response))))
 
 (defn videos-handler [req username]
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
@@ -645,7 +640,7 @@
         ["cookie-check" cookie-check-handler]
         ["search-text" search-text-handler]
         ["update-video-permissions" update-video-permissions-handler]
-        ["get-connected-users" get-connected-users-handler]
+        ["get-connected-users" (wrap-cookie-auth get-connected-users-handler)]
         ]])
 
 (defn wrap-index
