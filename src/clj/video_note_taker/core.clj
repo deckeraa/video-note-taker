@@ -30,7 +30,7 @@
    [clojure.walk :refer [keywordize-keys]]
    [clojure.java.io :as io]
    [clj-uuid :as uuid]
-   [clj-time.format :as format]
+   [cljc.java-time.zoned-date-time :as zd]
    [clojure.data.csv :refer [read-csv write-csv]]
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]])
   (:gen-class))
@@ -165,7 +165,8 @@
                 video (get-doc (:video doc))]
             ;; TODO check user access and validate that the ID isn't already taken
             (json-response (couch/put-document db (merge doc {:created-by username
-                                                              :last-edit (.toString (new java.util.Date))}))))))))
+                                                              :last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)
+                                                              }))))))))
 
 (defn delete-doc-handler [req]
   (if (not (cookie-check-from-req req))

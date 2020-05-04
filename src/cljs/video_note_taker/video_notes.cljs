@@ -5,6 +5,9 @@
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
    [cljs.test :include-macros true :refer-macros [testing is]]
    [cljs-uuid-utils.core :as uuid]
+   [cljc.java-time.zoned-date-time :as zd]
+   [cljc.java-time.format.date-time-formatter :as dtf]
+   [cljc.java-time.duration :as dur]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
@@ -165,6 +168,26 @@
     [:div {:class ""}
      [share-dialog remove-delegate-atm video-cursor notes-cursor]]))
 
+(defn format-date-for-note-display
+  ([date-obj]
+   (format-date-for-note-display date-obj (zd/now)))
+  ([date-obj now]
+   (if (dur/is-negative (dur/minus-days (dur/between date-obj now) 2))
+     (zd/format (zd/to-local-date-time date-obj) (dtf/of-pattern "MM/dd/yy HH:mm"))
+     (zd/format (zd/to-local-date-time date-obj) (dtf/of-pattern "MM/dd/yy")) ;; I18N TODO. I18N note in scope for current gig.
+
+     )))
+
+(deftest test-format-date-for-note-display
+  (is (= (format-date-for-note-display
+          (zd/parse "2020-05-04T14:38:29.40871-05:00")
+          (zd/parse "2020-05-04T14:40:29.40871-05:00"))
+         "05/04/20 14:38"))
+  (is (= (format-date-for-note-display
+          (zd/parse "2020-05-04T14:38:29.40871-05:00")
+          (zd/parse "2020-05-14T14:40:29.40871-05:00"))
+         "05/04/20")))
+
 (defn note [note-cursor notes-cursor video-ref-atm video-options-cursor]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
    [:div {:class "flex items-center"}
@@ -181,7 +204,8 @@
                       (done-fn))))]
      [:div {:class "i mid-gray"} (str "By " (:created-by @note-cursor)
                                       (when-let [last-edit (:last-edit @note-cursor)]
-                                        (str " on " last-edit)))]]]
+                                        (str " on " (format-date-for-note-display
+                                                     (zd/parse last-edit)))))]]]
    [:div {:class "flex items-center ml3"}
     [time-scrubber note-cursor notes-cursor video-ref-atm video-options-cursor]
     [svg/trash {:class "dim ml3"
@@ -201,7 +225,9 @@
   "Controls not hooked up."
   [note
    (reagent/atom {:time 123.4
-                  :text "Sample note text <em>here</em>. <blink>HTML tags</blink> should be properly escaped.<script>alert(document.cookie)</script>"})])
+                  :text "Sample note text <em>here</em>. <blink>HTML tags</blink> should be properly escaped.<script>alert(document.cookie)</script>"
+                  :created-by "John Doe"
+                  :last-edit  "2020-05-04T14:38:29.40871-05:00"})])
 
 (defn notes [notes-cursor video-ref-atm video-cursor video-options-cursor]
   [:div {:class "flex flex-column items-center w-100"}
