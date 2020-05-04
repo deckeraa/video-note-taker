@@ -90,21 +90,30 @@
                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm 0.1)}
         "gray" "32px"]])))
 
-(defn load-connected-users [user-list-atm]
+(defcard-rg time-scrubber-card
+  "Controls not hooked up, time should read 12:45.2"
+  [time-scrubber (reagent/atom {:time 765.2})])
+
+(defn load-connected-users
+  "Loads the list of connects users. Used to populate the list of options for the share dialog.
+  At present, each user is connected to each other user in the Alpha Deploy.
+  This will change in the future when a user connection workflow is implemented."
+  [user-list-atm]
   (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
                                {}))]
-        (reset! user-list-atm (set (:body resp)))
-        (println "load-connected-users:" resp))))
+        (reset! user-list-atm (set (:body resp))))))
 
-(defn share-dialog [remove-delegate-atm video-cursor notes-cursor]
+(defn share-dialog
+  "Dialog that allows a user to share the video with other users."
+  [remove-delegate-atm video-cursor notes-cursor]
   (let [selected-users-atm (reagent/atom (set (:users @video-cursor)))
         user-input-atm (reagent/atom "")
         user-list-atm  (reagent/atom #{})
         _ (load-connected-users user-list-atm)
         ]
     (fn [remove-delegate-atm video-cursor notes-cursor]
-      (println "rendering share dialog")
       [:div {:class "flex flex-column"}
+       ;; List out the current usres who selected to be on the video
        [:div {} "Share with:"]
        [:ul
         (doall (map (fn [user]
@@ -117,44 +126,36 @@
                                              (swap! selected-users-atm disj user))}
                           "red" "12px"])])
                     @selected-users-atm))]
+       ;; A selection box for adding new users
        [:div {:class "flex br3"}
         [:select {:type :text
                   :class "bn"
                   :value @user-input-atm
                   :on-change (fn [e]
-;                               (println (-> e .-target .-value))
-                                        ;                               (reset! user-input-atm (-> e .-target .-value))
                                (swap! selected-users-atm conj (-> e .-target .-value))
                                (reset! user-input-atm "")
                                )}
          (doall (map (fn [name]
                        ^{:key name}
                        [:option {:value name} (if (= name "") "- Select user -" name)])
-                     (conj (clojure.set/difference @user-list-atm @selected-users-atm) "")))]
-        ;; [:button {:class "bn white bg-green b f2 br3 ma2"
-        ;;           :on-click (fn []
-        ;;                       (swap! selected-users-atm conj @user-input-atm)
-        ;;                       (reset! user-input-atm ""))} "+"]
-        ]
+                     (conj (clojure.set/difference @user-list-atm @selected-users-atm) "")))]]
+       ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e] (@remove-delegate-atm))}
+                  :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
          "Cancel"]
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e]
-                              (println "updating permissions: " (vec @selected-users-atm))
-                              (@remove-delegate-atm)
+                              (@remove-delegate-atm) ; closes the dialog
                               (go (let [resp (<! (http/post
                                                   (db/resolve-endpoint "update-video-permissions")
                                                   {:json-params (assoc @video-cursor
                                                                        :users (vec @selected-users-atm))
                                                    :with-credentials true}))]
-                                    (println "share " resp)
                                     (db/toast-server-error-if-needed resp nil)
                                     (reset! video-cursor (:body resp))
                                     (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
-                                    (load-notes notes-cursor video-cursor)))
-                              )}
+                                    (load-notes notes-cursor video-cursor))))}
          "Ok"]]])))
 
 (defcard-rg test-share-dialog
@@ -166,7 +167,6 @@
 
 (defn note [note-cursor notes-cursor video-ref-atm video-options-cursor]
   [:div {:class "br3 ba b--black-10 pa2 ma2 flex justify-between items-center"}
-                                        ;   [:button {}]
    [:div {:class "flex items-center"}
     [svg/media-play {:class "ml1 mr4 dim"
                      :on-click (fn []
@@ -191,13 +191,18 @@
                                                      (swap! notes-cursor (fn [notes]
                                                                            (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
                                                                                                                notes)))))))}))}
-     "gray" "32px"]]
-   ]
-  )
+     "gray" "32px"]]])
+
+(defcard-rg note-card
+  "Controls not hooked up."
+  [note
+   (reagent/atom {:time 123.4
+                  :text "Sample note text <em>here</em>. <blink>HTML tags</blink> should be properly escaped.<script>alert(document.cookie)</script>"})])
 
 (defn notes [notes-cursor video-ref-atm video-cursor video-options-cursor]
   [:div {:class "flex flex-column items-center w-100"}
    [:div {:class "flex justify-between w-100 pa2"}
+    ;; The Add Note button
     [:div {:class "b--black-10 ba br3 pa2 ph4 flex items-center justify-center bg-green dim"
            :on-click (fn [e] 
                        (when-let [video @video-ref-atm]
@@ -216,30 +221,20 @@
                                                  :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
                                                  }
                                                 :with-credentials true}))]
-                                 (println "resp: " resp)
+                                 ;; we don't call upsert-note here since that sorts, and we want a newly created card to appear at the top
+                                 ;; TODO you could still use upsert-doc here. Add a sort? parameter to upsert-note.
                                  (swap! notes-cursor
                                         (fn [notes]
-                                          (vec (concat [(:body resp)] notes))))))
-                           ;; (db/put-doc 
-                           ;;             (fn [doc]
-                           ;;               (swap! notes-cursor (fn [notes]
-                           ;;                                     (vec (concat [doc] notes))
-                           ;;                                     ))))
-                           )))}
+                                          (vec (concat [(:body resp)] notes)))))))))}
      [:div {:class "f2 b white"} "Add note"]]
+    ;; The "Share" button
     [:button {:class "bn pa3 br3 dim bg-gray"
               :title "Share"
               :on-click (fn [e]
-                          (let [remove-delegate-atm (reagent/atom (fn []
-                                                                    (println "remove-delegate-atm")))]
-                            (println "Adding toast!")
-                            (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)
-                            ;; (str "Server error: " resp doc) svg/x "red"
-                            ;; {:ok-fn    (fn [] nil)}
-                            
-                            )
-                          )}
+                          (let [remove-delegate-atm (reagent/atom (fn [] nil))]
+                            (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
      [svg/share-arrow {} "white" "28px"]]]
+   ;; List out the notes
    [:div {:class "flex flex-column"}
     (doall
      (map (fn [idx]
@@ -247,6 +242,7 @@
               ^{:key (get-in @note-cursor [:_id])}
               [note note-cursor notes-cursor video-ref-atm video-options-cursor]))
           (range 0 (count @notes-cursor))))]
+   ;; Link to download notes as a spreadsheet
    [:a {:class "b--black-10 ba br3 ma2 pa3 dim link"
         :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
     "Download notes as spreadsheet"]])
