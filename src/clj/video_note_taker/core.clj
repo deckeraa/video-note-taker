@@ -254,9 +254,7 @@
       (map (fn [{{time :time} :doc}]
              time) ; grab the time associated with the note returned by the view
            $)
-      (swap! notes-by-video assoc video-key $)
-      (println "Updated notes-by-video to: " @notes-by-video)))
-  (println "Video lookup: " video-key " " (get-in @notes-by-video [video-key]))
+      (swap! notes-by-video assoc video-key $)))
   (let [video (get-doc video-key)]
     (if (not (= (:display-name video)
                 video-display-name))
@@ -272,7 +270,7 @@
               (swap! notes-by-video #(assoc % video-key
                                             (conj (get % video-key) time-in-seconds)))
               (swap! success-imports-counter inc)
-              (println "Updated2 notes-by-video to: " @notes-by-video))
+)
           (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."}))))))
 
 (defn wrap-cookie-auth [handler]
@@ -305,12 +303,10 @@
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
 (defn upload-spreadsheet-handler [req username]
-  (println "upload-spreadsheet-handler req: " req)
   (let [notes-by-video (atom {})
         success-imports-counter (atom 0)
         failed-imports (atom [])
         lines (read-csv (io/reader (get-in req [:params "file" :tempfile])))]
-    (println "lines: " (type lines) (count lines) lines)
     (doall (map (fn [[video-key video-display-name time-in-seconds note-text :as line]]
                   (let [time-in-seconds (edn/read-string time-in-seconds)]
                     (if (number? time-in-seconds) ; filter out the title row, if present
@@ -321,34 +317,29 @@
 
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
-(defn upload-video-handler [req]
-  (let [cookie-check-val (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      (do
-        (println (get-in req [:params]))
-        (let [id (uuid/to-string (uuid/v4))
-              user     (get-in cookie-check-val [0 :name])
-              filename (get-in req [:params "file" :filename])
-              file-ext (last (clojure.string/split filename #"\."))
-              tempfile (get-in req [:params "file" :tempfile])
-              new-short-filename (str id "." file-ext)]
-          (println "filename: " filename)
-          (println "cookie-check-val: " cookie-check-val)
-          (println "user " user)
-          ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
-          (io/copy (get-in req [:params "file" :tempfile])
-                   (io/file (str "./resources/private/" new-short-filename)))
-          ;; put some video metadata into Couch
-          (let [video-doc (couch/put-document db {:_id id
-                                                  :type "video"
-                                                  :display-name filename
-                                                  :file-name new-short-filename
-                                                  :users [user]
-                                                  :uploaded-by user
-                                                  :uploaded-datetime (.toString (new java.util.Date))})]
-            (json-response video-doc))
-          )))))
+(defn upload-video-handler [req username]
+  (println (get-in req [:params]))
+  (let [id (uuid/to-string (uuid/v4))
+        user     (get-in cookie-check-val [0 :name])
+        filename (get-in req [:params "file" :filename])
+        file-ext (last (clojure.string/split filename #"\."))
+        tempfile (get-in req [:params "file" :tempfile])
+        new-short-filename (str id "." file-ext)]
+    (println "filename: " filename)
+    (println "cookie-check-val: " cookie-check-val)
+    (println "user " user)
+    ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
+    (io/copy (get-in req [:params "file" :tempfile])
+             (io/file (str "./resources/private/" new-short-filename)))
+    ;; put some video metadata into Couch
+    (let [video-doc (couch/put-document db {:_id id
+                                            :type "video"
+                                            :display-name filename
+                                            :file-name new-short-filename
+                                            :users [user]
+                                            :uploaded-by user
+                                            :uploaded-datetime (.toString (new java.util.Date))})]
+      (json-response video-doc))))
 
 (defonce file-upload-progress-atom (atom {}))
 
@@ -402,10 +393,6 @@
                                                             :content-type :json
                                                             :form-params {:name (:user params)
                                                                           :password (:pass params)}})]
-
-      (println params (type params))
-      (println resp)
-      (println (get-in resp [:body :ok]))
       (let [ring-resp
             (assoc 
              (json-response {:body (:body resp) :cookies (:cookies resp)})
@@ -470,97 +457,78 @@
       (println "create-user-handler exception: " e)
       (assoc (json-response false) :status 400))))
 
-(defn change-password-handler [req]
-  (let [cookie-check-val (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      (try
-        (let [params (get-body req)
-              username (get-in cookie-check-val [0 :name])
-              cookie-value (get-in req [:cookies "AuthSession" :value])]
-          (let [old-user
-                (:body (http/get (str "http://localhost:5984/_users/org.couchdb.user:" username)
-                                 {:as :json
-                                  :headers {"Cookie" (str "AuthSession=" cookie-value)}}))
-                new-user (as-> old-user $
-                           (assoc $ :password (:pass params)))]
-            ;; change the password and then re-authenticate since the old cookie is no longer considered valid by CouchDB
-            (let [change-resp
-                  (http/put (str "http://localhost:5984/_users/org.couchdb.user:" username)
-                            {:as :json
-                             :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                             :content-type :json
-                             :form-params new-user})
-                  new-login (http/post "http://localhost:5984/_session"
-                                       {:as :json
-                                        :content-type :json
-                                        :form-params {:name     username
-                                                      :password (:pass params)}})]
-              (assoc 
-               (json-response true)
-               :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies new-login)) ;; set the CouchDB cookie on the ring response
-               ))
-            ))
-        (catch Exception e
-          (json-response false))))))
+(defn change-password-handler [req username]
+  (try
+    (let [params (get-body req)
+          cookie-value (get-in req [:cookies "AuthSession" :value])]
+      (let [old-user
+            (:body (http/get (str "http://localhost:5984/_users/org.couchdb.user:" username)
+                             {:as :json
+                              :headers {"Cookie" (str "AuthSession=" cookie-value)}}))
+            new-user (as-> old-user $
+                       (assoc $ :password (:pass params)))]
+        ;; change the password and then re-authenticate since the old cookie is no longer considered valid by CouchDB
+        (let [change-resp
+              (http/put (str "http://localhost:5984/_users/org.couchdb.user:" username)
+                        {:as :json
+                         :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                         :content-type :json
+                         :form-params new-user})
+              new-login (http/post "http://localhost:5984/_session"
+                                   {:as :json
+                                    :content-type :json
+                                    :form-params {:name     username
+                                                  :password (:pass params)}})]
+          (assoc 
+           (json-response true)
+           :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies new-login)) ;; set the CouchDB cookie on the ring response
+           ))
+        ))
+    (catch Exception e
+      (json-response false))))
 
-(defn logout-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (try
-      (println "logout-handler")
-      (let [resp   (http/delete "http://localhost:5984/_session" {:as :json})]
-        (println "resp: " resp)
-        (assoc 
-         (json-response {:logged-out true})
-         :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
-         )
-        )
-      (catch Exception e
-        (println "Logout exception e" e)
-        (json-response {:logged-out false})))))
+(defn logout-handler [req username]
+  (try
+    (let [resp (http/delete "http://localhost:5984/_session" {:as :json})]
+      (assoc 
+       (json-response {:logged-out true})
+       :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
+       )
+      )
+    (catch Exception e
+      (json-response {:logged-out false}))))
 
 (defn get-session-handler [req]
-  (let [;params (get-body req)
-        cookie-value (get-in req [:cookies "AuthSession" :value])
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])
         resp (http/get "http://localhost:5984/_session" {:as :json
                                                          :headers {"Cookie" (str "AuthSession=" cookie-value)}
                                                          :content-type :json
                                                          })
         ]
-    (println cookie-value)
-    (println resp)
-    ;; (println params)
-    ;; (println req)
-
     (json-response {:body (:body resp)})))
 
-(defn search-text-handler [req]
-  (let [cookie-check-val  (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      (let [username (get-in cookie-check-val [0 :name])
-            params (get-body req)
-            cookie-value (get-in req [:cookies "AuthSession" :value])]
-        (let [resp (http/post
-                    "http://localhost:5984/video-note-taker/_find"
-                    {:as :json
-                     :content-type :json
-                     :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                     :form-params
-                     {"selector"
-                      {"$and" [{"type"
-                                {"$eq" "note"}}
-                               {"users"
-                                {"$elemMatch"
-                                 {"$eq" username}}},
-                               {"text"
-                                {"$regex" (construct-search-regex (:text params) true)}}]}
-                      "execution_stats" true}
-                     })]
-          (println "stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
-          (json-response (assoc (:body resp)
-                                :search-string (:text params))))))))
+(defn search-text-handler [req username]
+  (let [params (get-body req)
+        cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (let [resp (http/post
+                "http://localhost:5984/video-note-taker/_find"
+                {:as :json
+                 :content-type :json
+                 :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                 :form-params
+                 {"selector"
+                  {"$and" [{"type"
+                            {"$eq" "note"}}
+                           {"users"
+                            {"$elemMatch"
+                             {"$eq" username}}},
+                           {"text"
+                            {"$regex" (construct-search-regex (:text params) true)}}]}
+                  "execution_stats" true}
+                 })]
+      (println "search stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
+      (json-response (assoc (:body resp)
+                            :search-string (:text params))))))
 
 (defn user-has-access-to-video [username video]
   (not (empty? (filter #(= username %) (:users video)))))
@@ -621,17 +589,17 @@
         ["download-starter-spreadsheet" (wrap-cookie-auth download-starter-spreadsheet)]
         ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
         ["upload-spreadsheet" (wrap-cookie-auth upload-spreadsheet-handler)]
-        ["upload-video" upload-video-handler]
+        ["upload-video" (wrap-cookie-auth upload-video-handler)]
         ["get-upload-progress" (wrap-cookie-auth get-upload-progress)]
         ["delete-video" (wrap-cookie-auth delete-video-handler)]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]
         ["create-user" create-user-handler]
-        ["change-password" change-password-handler]
-        ["logout" logout-handler]
+        ["change-password" (wrap-cookie-auth change-password-handler)]
+        ["logout" (wrap-cookie-auth logout-handler)]
         ["cookie-check" cookie-check-handler]
-        ["search-text" search-text-handler]
+        ["search-text" (wrap-cookie-auth search-text-handler)]
         ["update-video-permissions" (wrap-cookie-auth update-video-permissions-handler)]
         ["get-connected-users" (wrap-cookie-auth get-connected-users-handler)]
         ]])
