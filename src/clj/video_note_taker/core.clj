@@ -296,14 +296,12 @@
 (defn upload-video-handler [req username]
   (println (get-in req [:params]))
   (let [id (uuid/to-string (uuid/v4))
-        user     (get-in cookie-check-val [0 :name])
         filename (get-in req [:params "file" :filename])
         file-ext (last (clojure.string/split filename #"\."))
         tempfile (get-in req [:params "file" :tempfile])
         new-short-filename (str id "." file-ext)]
     (println "filename: " filename)
-    (println "cookie-check-val: " cookie-check-val)
-    (println "user " user)
+    (println "username " username)
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy (get-in req [:params "file" :tempfile])
              (io/file (str "./resources/private/" new-short-filename)))
@@ -312,8 +310,8 @@
                                             :type "video"
                                             :display-name filename
                                             :file-name new-short-filename
-                                            :users [user]
-                                            :uploaded-by user
+                                            :users [username]
+                                            :uploaded-by username
                                             :uploaded-datetime (.toString (new java.util.Date))})]
       (json-response video-doc))))
 
