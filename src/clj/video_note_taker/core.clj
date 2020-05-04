@@ -31,6 +31,7 @@
    [clojure.java.io :as io]
    [clj-uuid :as uuid]
    [cljc.java-time.zoned-date-time :as zd]
+   [cljc.java-time.duration :as dur]
    [clojure.data.csv :refer [read-csv write-csv]]
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]])
   (:gen-class))
@@ -123,12 +124,36 @@
       (assoc (json-response userCtxt) :cookies new-cookie)
       (json-response false))))
 
-(defn put-doc-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (do
-      (let [doc (get-body req)]
-        (json-response (couch/put-document db doc))))))
+(defn put-doc-handler [req username]
+  (let [doc (get-body req)]
+    (println "last-edit: " (:last-edit doc))
+    (println "dur: " (dur/minus-minutes
+                      (dur/between (zd/parse (:last-edit doc)) (zd/now))
+                      5))
+    (println "true dur: " (dur/is-negative
+                              (dur/minus-minutes
+                               (dur/between (zd/parse (:last-edit doc)) (zd/now))
+                               3)))
+    (let [audited-doc
+          ;; Here we look at the doc type and add in any extra fields we need for auditing
+          (cond
+            (= (:type doc) "note")
+            (let [is-creator? (= username (:created-by doc))
+                  is-last-editor? (if (:last-editor doc)
+                                   (= username (:last-editor doc))
+                                   (= username (:created-by doc)))
+                  sufficiently-recent? (dur/is-negative
+                                        (dur/minus-minutes
+                                         (dur/between (zd/parse (:last-edit doc)) (zd/now))
+                                         3))]
+              (merge doc
+                     {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
+                     ;; when a note is created, we'd expect the user to edit it write away,
+                     ;; so give them a chance to edit it before we mark it as "edited".
+                     (when (not (and is-creator? is-last-editor? sufficiently-recent?))
+                       {:last-editor username})))
+            :else doc)]
+      (json-response (couch/put-document db audited-doc)))))
 
 (defn get-doc [id]
   (couch/get-document db id))
@@ -591,7 +616,7 @@
 (def api-routes
   ["/" [["hello" hello-handler]
         ["get-doc" get-doc-handler]
-        ["put-doc" put-doc-handler]
+        ["put-doc" (wrap-cookie-auth put-doc-handler)]
         ["get-notes" get-notes-handler]
         ["create-note" create-note-handler]
         ["delete-doc" delete-doc-handler]

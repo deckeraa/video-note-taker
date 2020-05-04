@@ -202,7 +202,9 @@
                     (fn [new-doc]
                       (update-note! notes-cursor new-doc)
                       (done-fn))))]
-     [:div {:class "i mid-gray"} (str "By " (:created-by @note-cursor)
+     [:div {:class "i mid-gray"} (str (if (:last-editor @note-cursor)
+                                        (str "Edited by " (:last-editor @note-cursor))
+                                        (str "By " (:created-by @note-cursor))) 
                                       (when-let [last-edit (:last-edit @note-cursor)]
                                         (str " on " (format-date-for-note-display
                                                      (zd/parse last-edit)))))]]]
