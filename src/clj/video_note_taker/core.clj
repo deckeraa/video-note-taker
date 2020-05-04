@@ -49,9 +49,6 @@
 (defn json-type [v]
   (content-type v "application/json"))
 
-(defn hello-handler [req]
-  (text-type (response/response "hello")))
-
 (defn not-authorized-response []
   (assoc 
    (text-type (response/response "Not authorized"))
@@ -158,11 +155,9 @@
 (defn get-doc [id]
   (couch/get-document db id))
 
-(defn get-doc-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (let [doc (get-body req)]
-      (json-response (get-doc (:_id doc))))))
+(defn get-doc-handler [req username]
+  (let [doc (get-body req)]
+    (json-response (get-doc (:_id doc)))))
 
 ;; notes -> by_video
 ;; function(doc) {
@@ -172,32 +167,22 @@
 ;; }
 
 (defn get-notes [video-key]
-  (println "using key " video-key)
   (couch/get-view db "notes" "by_video" {:key video-key :include_docs true}))
 
-(defn get-notes-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (let [doc (get-body req)]
-      (json-response (get-notes (:video-key doc))))))
+(defn get-notes-handler [req username]
+  (let [doc (get-body req)]
+    (json-response (get-notes (:video-key doc)))))
 
-(defn create-note-handler [req]
-  (let [cookie-check-val (cookie-check-from-req req)]
-    (if (not cookie-check-from-req)
-      (not-authorized-response)
-      (do (let [username (get-in cookie-check-val [0 :name])
-                doc (get-body req)
-                video (get-doc (:video doc))]
-            ;; TODO check user access and validate that the ID isn't already taken
-            (json-response (couch/put-document db (merge doc {:created-by username
-                                                              :last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)
-                                                              }))))))))
+(defn create-note-handler [req username]
+  (let [doc (get-body req)
+        video (get-doc (:video doc))]
+    ;; TODO check user access and validate that the ID isn't already taken
+    (json-response (couch/put-document db (merge doc {:created-by username
+                                                      :last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)})))))
 
-(defn delete-doc-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (let [doc (get-body req)]
-      (json-response (couch/delete-document db doc)))))
+(defn delete-doc-handler [req username]
+  (let [doc (get-body req)]
+    (json-response (couch/delete-document db doc))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; _design/videos/_view/by_user
@@ -211,41 +196,32 @@
 ;; }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-video-listing-handler [req]
-  (let [cookie-check-val (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      (do (let [username (get-in cookie-check-val [0 :name])
-                videos   (couch/get-view db "videos" "by_user"
-                                         {:key username :include_docs true})]
-            (json-response (vec (map :doc videos))))))))
-
-(defn get-notes-spreadsheet [video-src]
-  nil)
+(defn get-video-listing-handler [req username]
+  (let [videos (couch/get-view db "videos" "by_user"
+                               {:key username :include_docs true})]
+    (json-response (vec (map :doc videos)))))
 
 (defn escape-csv-field [s]
   (str "\"" (clojure.string/escape s {\" "\"\""}) "\""))
 
-(defn get-notes-spreadsheet-handler [req]
-  (if (not (cookie-check-from-req req))
-    (not-authorized-response)
-    (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
-          notes     (couch/get-view db "notes" "by_video"
-                                    {:key (:video-id query-map) :include_docs true})
-          video     (get-doc (:video-id query-map))]
-      (as-> notes $
-        (map :doc $) ; pull out the docs
-        (sort-by :time $) ; sort
-        (map (fn [note]
-               (str (escape-csv-field (:video note)) ","
-                    (escape-csv-field (:display-name video)) ","
-                    (float (/ (Math/round (* 100 (:time note))) 100)) ","
-                    (escape-csv-field (:text note))))
-             $)
-        (conj $ "video key,video display name,time in seconds,note text")
-        (clojure.string/join "\n" $)
-        (response/response $)
-        (content-type $ "text/csv")))))
+(defn get-notes-spreadsheet-handler [req username]
+  (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
+        notes     (couch/get-view db "notes" "by_video"
+                                  {:key (:video-id query-map) :include_docs true})
+        video     (get-doc (:video-id query-map))]
+    (as-> notes $
+      (map :doc $) ; pull out the docs
+      (sort-by :time $) ; sort
+      (map (fn [note]
+             (str (escape-csv-field (:video note)) ","
+                  (escape-csv-field (:display-name video)) ","
+                  (float (/ (Math/round (* 100 (:time note))) 100)) ","
+                  (escape-csv-field (:text note))))
+           $)
+      (conj $ "video key,video display name,time in seconds,note text")
+      (clojure.string/join "\n" $)
+      (response/response $)
+      (content-type $ "text/csv"))))
 
 (defn import-note-spreadsheet-line [notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
@@ -424,7 +400,7 @@
     (catch Exception e
       (json-response false))))
 
-(defn create-user-handler [req]
+(defn create-user-handler [req username]
   (try
     (let [params (get-body req)
           name (:user params)]
@@ -578,16 +554,15 @@
       (not-authorized-response))))
 
 (def api-routes
-  ["/" [["hello" hello-handler]
-        [["videos/" :id]  (wrap-cookie-auth videos-handler)]
-        ["get-doc" get-doc-handler]
+  ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
+        ["get-doc" (wrap-cookie-auth get-doc-handler)]
         ["put-doc" (wrap-cookie-auth put-doc-handler)]
-        ["get-notes" get-notes-handler]
-        ["create-note" create-note-handler]
-        ["delete-doc" delete-doc-handler]
-        ["get-video-listing" get-video-listing-handler]
+        ["get-notes" (wrap-cookie-auth get-notes-handler)]
+        ["create-note" (wrap-cookie-auth create-note-handler)]
+        ["delete-doc" (wrap-cookie-auth delete-doc-handler)]
+        ["get-video-listing" (wrap-cookie-auth get-video-listing-handler)]
         ["download-starter-spreadsheet" (wrap-cookie-auth download-starter-spreadsheet)]
-        ["get-notes-spreadsheet" get-notes-spreadsheet-handler]
+        ["get-notes-spreadsheet" (wrap-cookie-auth get-notes-spreadsheet-handler)]
         ["upload-spreadsheet" (wrap-cookie-auth upload-spreadsheet-handler)]
         ["upload-video" (wrap-cookie-auth upload-video-handler)]
         ["get-upload-progress" (wrap-cookie-auth get-upload-progress)]
@@ -595,7 +570,7 @@
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
         ["login" login-handler]
-        ["create-user" create-user-handler]
+        ["create-user" (wrap-cookie-auth create-user-handler)]
         ["change-password" (wrap-cookie-auth change-password-handler)]
         ["logout" (wrap-cookie-auth logout-handler)]
         ["cookie-check" cookie-check-handler]
