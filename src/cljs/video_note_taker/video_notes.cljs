@@ -172,12 +172,14 @@
                      :on-click (fn []
                                  (try-set-video-time video-ref-atm video-options-cursor (:time @note-cursor))
                                  )} "green" "32px"]
-    [editable-field (:text @note-cursor)
-     (fn [new-val done-fn]
-       (db/put-doc (assoc @note-cursor :text new-val)
-                (fn [new-doc]
-                  (update-note! notes-cursor new-doc)
-                  (done-fn))))]]
+    [:div
+     [editable-field (:text @note-cursor)
+      (fn [new-val done-fn]
+        (db/put-doc (assoc @note-cursor :text new-val)
+                    (fn [new-doc]
+                      (update-note! notes-cursor new-doc)
+                      (done-fn))))]
+     [:div {:class "i mid-gray"} (str "By " (:created-by @note-cursor))]]]
    [:div {:class "flex items-center ml3"}
     [time-scrubber note-cursor notes-cursor video-ref-atm video-options-cursor]
     [svg/trash {:class "dim ml3"
