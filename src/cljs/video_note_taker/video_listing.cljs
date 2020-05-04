@@ -1,4 +1,5 @@
 (ns video-note-taker.video-listing
+  "Reagent component that displays a user's videos, as well as allow them to upload videos."
   (:require
    [reagent.core :as reagent]
    [cljs-http.client :as http]
@@ -16,13 +17,13 @@
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn load-video-listing [video-listing-cursor]
-  (println "calling load-video-listing")
   (go (let [resp (<! (http/post (db/resolve-endpoint "get-video-listing")
                                 {:json-params {}
                                  :with-credentials false}
                                 ))]
         (db/toast-server-error-if-needed resp nil)
-        (reset! video-listing-cursor (:body resp)))))
+        (when (= 200 (:status resp))
+          (reset! video-listing-cursor (:body resp))))))
 
 (defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
   (let [hover-atm (reagent/atom false)]
@@ -36,14 +37,13 @@
                          (reset! video-cursor video)
                          ;; ... auto-load notes if needed
                          (when (empty? @notes-cursor)
-                           (notes/load-notes notes-cursor video-cursor)) ;; TODO update with the new src from the video
+                           (notes/load-notes notes-cursor video-cursor))
                          ;; update the screen cursor to go to the new screen
-                         (swap! atoms/screen-cursor conj :video)
-                         )
+                         (swap! atoms/screen-cursor conj :video))
              :on-mouse-over (fn [e] (reset! hover-atm true))
              :on-mouse-out  (fn [e] (reset! hover-atm false))}
        [:p (when @hover-atm {:class "b"}) (str (:display-name video))]
-       (when @hover-atm
+       (when @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
          [svg/trash {:on-click
                      (fn [e]
                        (.stopPropagation e) ;; prevent this click from registing as a click on the video
@@ -54,7 +54,6 @@
                                   (go (let [resp (<! (http/post (db/resolve-endpoint "delete-video")
                                                                 {:json-params video
                                                                  :with-credentials true}))]
-                                        (println "Delete resp: " resp)
                                         (if (= 200 (:status resp))
                                           (do
                                             (toaster-oven/add-toast "Video deleted" svg/check "green" nil)
@@ -63,8 +62,12 @@
                                           ))))}))}
           "gray" "24px"]
          )
-       ]))
-  )
+       ])))
+
+(defcard-rg single-video-listing-card
+  "The card for a video listing. Controls are not hooked up on this devcard."
+  [:div
+   [single-video-listing {:display-name "Video_display_name_here.mp4"}]])
 
 (defn upload-progress-updater
   "Gets the current status of the file upload from the server. Uses a timeout to keep
@@ -137,12 +140,10 @@
    [upload-toast (fn [] nil) {:bytes-read 1000000 :content-length 3000000}]])
 
 (defn upload-card [video-listing-cursor]
-  (let [file-input-ref-el (reagent/atom nil)
-        import-results    (reagent/atom nil)]
+  (let [file-input-ref-el (reagent/atom nil)]
     (fn [video-listing-cursor]
       [:div {:class "br3 shadow-4 dim mt3 flex"
              :style {:position :relative}}
-                                        ;   [svg/cloud-upload {:class "relative"} "white" "32px"]
        [:label {:for "file-upload"
                 :class "f2 bg-green white b br3 dib pa2 w-100 tc"}
         "Upload video"]
@@ -155,8 +156,6 @@
                        (reset! file-input-ref-el el))
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
-                             (println "file-upload event: " e)
-                                        ;                             (toaster-oven/add-toast "Uploading video..." nil nil nil)
                              (let [remove-delegate-atm (reagent/atom (fn [] nil))]
                                (toaster-oven/add-toast
                                 [upload-toast remove-delegate-atm]
@@ -168,8 +167,6 @@
                                                    {:multipart-params
                                                     [["file" (aget (.-files file-input) 0)]]
                                                     }))]
-                                     (reset! import-results resp)
-
                                      (if (= 200 (:status resp))
                                        (do
                                          (toaster-oven/add-toast "Video uploaded" svg/check "green" nil)
