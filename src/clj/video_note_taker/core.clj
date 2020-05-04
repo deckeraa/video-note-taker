@@ -215,7 +215,7 @@
       (map (fn [note]
              (str (escape-csv-field (:video note)) ","
                   (escape-csv-field (:display-name video)) ","
-                  (float (/ (Math/round (* 100 (:time note))) 100)) ","
+                  (float (/ (Math/round (float (* 100 (:time note)))) 100)) ","
                   (escape-csv-field (:text note))))
            $)
       (conj $ "video key,video display name,time in seconds,note text")
