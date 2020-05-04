@@ -565,40 +565,33 @@
 (defn user-has-access-to-video [username video]
   (not (empty? (filter #(= username %) (:users video)))))
 
-(defn update-video-permissions-handler [req]
-  (let [cookie-check-val  (cookie-check-from-req req)]
-    (if (not cookie-check-val)
-      (not-authorized-response)
-      (try
-        (let [username (get-in cookie-check-val [0 :name])
-              video (get-body req)
-              current-video (get-doc (:_id video))]
-          ;; make sure that the user is already on the document
-          (println "current-video: " current-video)
-          (if (user-has-access-to-video username current-video)
-            (do
-              (println "new video: " video)
-              ;; update the document
-              (let [updated-video (couch/put-document db video)]
-                (println "updated video: " updated-video)
-                ;; now update the denormalized user permissions stored on the notes
-                (couch/bulk-update
-                 db
-                 (vec (map
-                       (fn [view-result]
-                         (let [v (:doc view-result)]
-                           (println "updating" v)
-                           (assoc v :users (:users video))))
-                       (get-notes (:_id video)))))
-                ;; TODO the bulk update could fail to update certain notes.
-                ;; They will still appear in below the video, but won't show up
-                ;; in the notes search. I should either handle them here or create a search
-                ;; to validate the denormalized 'index' :users field on notes.
-                (json-response updated-video)))
-            (not-authorized-response))
-          )
-        (catch Exception e
-          (println "update-video-permissions-handler e: " e))))))
+(defn update-video-permissions-handler [req username]
+  (try
+    (let [video (get-body req)
+          current-video (get-doc (:_id video))]
+      ;; make sure that the user is already on the document
+      (if (user-has-access-to-video username current-video)
+        (do
+          ;; update the document
+          (let [updated-video (couch/put-document db video)]
+            ;; now update the denormalized user permissions stored on the notes
+            (couch/bulk-update
+             db
+             (vec (map
+                   (fn [view-result]
+                     (let [v (:doc view-result)]
+                       (println "updating" v)
+                       (assoc v :users (:users video))))
+                   (get-notes (:_id video)))))
+            ;; TODO the bulk update could fail to update certain notes.
+            ;; They will still appear in below the video, but won't show up
+            ;; in the notes search. I should either handle them here or create a search
+            ;; to validate the denormalized 'index' :users field on notes.
+            (json-response updated-video)))
+        (not-authorized-response))
+      )
+    (catch Exception e
+      (println "update-video-permissions-handler e: " e))))
 
 (defn get-connected-users-handler [req username]
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
@@ -612,7 +605,7 @@
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
         video (get-doc video-id)
         filename (:file-name video)]
-    (if (contains? (set (:users video)) username)
+    (if (user-has-access-to-video username video)
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
@@ -639,7 +632,7 @@
         ["logout" logout-handler]
         ["cookie-check" cookie-check-handler]
         ["search-text" search-text-handler]
-        ["update-video-permissions" update-video-permissions-handler]
+        ["update-video-permissions" (wrap-cookie-auth update-video-permissions-handler)]
         ["get-connected-users" (wrap-cookie-auth get-connected-users-handler)]
         ]])
 
