@@ -164,7 +164,8 @@
                 doc (get-body req)
                 video (get-doc (:video doc))]
             ;; TODO check user access and validate that the ID isn't already taken
-            (json-response (couch/put-document db (merge doc {:created-by username}))))))))
+            (json-response (couch/put-document db (merge doc {:created-by username
+                                                              :last-edit (.toString (new java.util.Date))}))))))))
 
 (defn delete-doc-handler [req]
   (if (not (cookie-check-from-req req))

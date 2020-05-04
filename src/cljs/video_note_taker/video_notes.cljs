@@ -179,7 +179,9 @@
                     (fn [new-doc]
                       (update-note! notes-cursor new-doc)
                       (done-fn))))]
-     [:div {:class "i mid-gray"} (str "By " (:created-by @note-cursor))]]]
+     [:div {:class "i mid-gray"} (str "By " (:created-by @note-cursor)
+                                      (when-let [last-edit (:last-edit @note-cursor)]
+                                        (str " on " last-edit)))]]]
    [:div {:class "flex items-center ml3"}
     [time-scrubber note-cursor notes-cursor video-ref-atm video-options-cursor]
     [svg/trash {:class "dim ml3"
