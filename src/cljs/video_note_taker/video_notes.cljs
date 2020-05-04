@@ -25,8 +25,8 @@
         (when (= 200 (:status resp))
           (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp)))))))))
 
-(defn upsert-note!
-  "Inserts or updates a given note in the list of notes. Sorts the list by time"
+(defn update-note!
+  "Updates a given note in the list of notes. Sorts the list by time."
   [notes-cursor doc]
   (swap! notes-cursor
          (fn [notes]
@@ -176,7 +176,7 @@
      (fn [new-val done-fn]
        (db/put-doc (assoc @note-cursor :text new-val)
                 (fn [new-doc]
-                  (upsert-note! notes-cursor new-doc)
+                  (update-note! notes-cursor new-doc)
                   (done-fn))))]]
    [:div {:class "flex items-center ml3"}
     [time-scrubber note-cursor notes-cursor video-ref-atm video-options-cursor]
@@ -221,8 +221,7 @@
                                                  :users (:users @video-cursor) ; denormalize which users have access to this note, again for speed while searching. Sharing a video is a less frequent use case and can afford to be slower than searching.
                                                  }
                                                 :with-credentials true}))]
-                                 ;; we don't call upsert-note here since that sorts, and we want a newly created card to appear at the top
-                                 ;; TODO you could still use upsert-doc here. Add a sort? parameter to upsert-note.
+                                 ;; Add the new note to the top of the notes list.
                                  (swap! notes-cursor
                                         (fn [notes]
                                           (vec (concat [(:body resp)] notes)))))))))}
