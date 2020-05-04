@@ -22,9 +22,12 @@
                                  :with-credentials false}
                                 ))]
         (db/toast-server-error-if-needed resp nil)
-        (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp))))))))
+        (when (= 200 (:status resp))
+          (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp)))))))))
 
-(defn upsert-note! [notes-cursor doc]
+(defn upsert-note!
+  "Inserts or updates a given note in the list of notes. Sorts the list by time"
+  [notes-cursor doc]
   (swap! notes-cursor
          (fn [notes]
            (let [new-notes
@@ -37,16 +40,23 @@
              (vec (sort-by :time new-notes)))))
   )
 
-(defn change-time-scrub [note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm change]
+(defn change-time-scrub
+  "Updates the time scrubber value by the change given.
+   Batches updates to wait until 2 seconds after the last change is made."
+  [note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm change]
   (let [new-time (+ (:time @note-cursor) change)]
     (try-set-video-time video-ref-atm video-options-cursor new-time)
     (swap! note-cursor assoc :time new-time)
-    (swap! scrub-timer-count-atm inc)
+    (swap! scrub-timer-count-atm inc) ;; this is the count used to batch scrub changes together
     (js/setTimeout (fn []
                      (when (= 0 (swap! scrub-timer-count-atm dec))
                        (do
-                         (println "Updating the time scrubbing")
-                         (db/put-doc @note-cursor (fn [doc] (swap! note-cursor assoc :_rev (:_rev doc))))))) 2000)
+                         (db/put-doc @note-cursor
+                                     ;; Update the _rev, we already updated the note-cursor above
+                                     ;; Only the _rev is updated, since the note-cursor could have mutated during server call and, if so, will result in another call down.
+                                     ;; This means that the note-cursor will be updated and saved corretly, but it's important that we update the _rev before that second call happens, so that CouchDB accepts the change.
+                                     (fn [doc] (swap! note-cursor assoc :_rev (:_rev doc)))
+                                     )))) 2000)
     ))
 
 (defn format-time [time-in-seconds]
@@ -66,18 +76,6 @@
   (is (= (format-time 40.4583330000001) "0:40.5"))
   (is (= (format-time 95.553641) "1:35.6"))
   (is (= (format-time 95.00001) "1:35.0")))
-
-;; (defn format-time-in-seconds [seconds]
-;;   (let [min (Math/floor (/ seconds 60))
-;;         sec (as-> (rem seconds 60) $
-;;               (str $)
-;;               (if (= 1 (count $)) (str "0" $) $))]
-;;     (str min ":" sec)))
-
-;; (deftest format-time-in-seconds-test
-;;   (is (= "2:00" (format-time-in-seconds 120)))
-;;   (is (= "0:12" (format-time-in-seconds  12)))
-;;   (is (= "1:01" (format-time-in-seconds  61))))
 
 (defn time-scrubber [note-cursor notes-cursor video-ref-atm video-options-cursor]
   (let [scrub-timer-count-atm (reagent/atom 0)]
