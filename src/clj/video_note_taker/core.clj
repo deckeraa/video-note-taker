@@ -64,14 +64,6 @@
 
 (defn put-doc-handler [req username]
   (let [doc (get-body req)]
-    (println "last-edit: " (:last-edit doc))
-    (println "dur: " (dur/minus-minutes
-                      (dur/between (zd/parse (:last-edit doc)) (zd/now))
-                      5))
-    (println "true dur: " (dur/is-negative
-                              (dur/minus-minutes
-                               (dur/between (zd/parse (:last-edit doc)) (zd/now))
-                               3)))
     (let [audited-doc
           ;; Here we look at the doc type and add in any extra fields we need for auditing
           (cond
