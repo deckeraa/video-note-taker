@@ -14,7 +14,8 @@
    [video-note-taker.video :as video :refer [try-set-video-time]]
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.editable-field :refer [editable-field]]
-   [video-note-taker.auth])
+   [video-note-taker.auth]
+   [video-note-taker.pick-list :as pick-list])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
