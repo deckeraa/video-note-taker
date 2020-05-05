@@ -10,7 +10,7 @@
    [video-note-taker.db :as db]
    [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
-   [devcards.core :refer [defcard deftest]]
+   [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn needs-auth-cookie
@@ -108,6 +108,54 @@
            (if @creating-new-user?
              "Couldn't create new user :("
              "Login failed :(")])]])))
+
+(defn user-creation []
+  (let [user-atm (reagent/atom "")
+        pass-atm (reagent/atom "")
+        pass-rpt-atm (reagent/atom "")
+        creation-failed-atm (reagent/atom false)]
+    (fn []
+      [:div {:class "flex flex-column items-center justify-center"}
+       [:div {:class "flex flex-column items-center justify-center w-80"}
+        [:div {:class "flex items-center flex-wrap ma1"}
+         [:div {:class ""} "Username"]
+         [:input {:class "mh2" :type :text :value @user-atm :on-change #(reset! user-atm (-> % .-target .-value))}]]
+        [:div {:class "flex items-center flex-wrap ma1"}
+         [:div {:class ""} "Password"]
+         [:input {:class "mh2" :type :password :value @pass-atm :on-change #(reset! pass-atm (-> % .-target .-value))}]]
+        [:div {:class "flex items-center flex-wrap ma1"}
+         [:div {:class ""} "Repeat password"]
+         [:input {:class "mh2" :type :password :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]]
+        (when (not (= @pass-atm @pass-rpt-atm))
+          [:div {:class "f5 red"}
+           "Passwords do not match."])
+        [:button {:class  (str "f2 br3 white bn pa3 mv2 tc w5 "
+                               (if (and (= @pass-atm @pass-rpt-atm)
+                                        (not (empty? @pass-atm)))
+                                 "bg-blue dim"
+                                 "bg-light-blue"
+                                 ))
+                  :on-click (fn []
+                              (reset! creation-failed-atm false)
+                              (if (= @pass-atm @pass-rpt-atm)
+                                (go (let [resp (<! (http/post (db/resolve-endpoint "create-user")
+                                                              {:json-params {:user @user-atm
+                                                                             :pass @pass-atm}
+                                                               :with-credentials false} ;; no need to pass cookies while logging in -- the user shouldn't have our cookie at this point
+                                                              ))]
+                                      (if (and (:body resp) (= 200 (:status resp)))
+                                        (println "User created!")
+                                        ;(js/setTimeout #(swap! logged-in-atm inc) 200)
+                                        (reset! creation-failed-atm true))))
+                                (reset! creation-failed-atm true)))}
+         "Create user"]
+        (when @creation-failed-atm
+          [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
+           "Couldn't create new user :("])]])))
+
+(defcard-rg user-creation-card
+  "If you have the cookie set this will actually create new users."
+  [user-creation])
 
 (defn password-changer
   "Reagent component to change a users password."

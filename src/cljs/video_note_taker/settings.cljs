@@ -84,4 +84,5 @@
                     :on-change (fn [e]
                                  (swap! settings-cursor assoc :show-app-state (-> e .-target .-checked))
                                  (db/put-doc @settings-cursor (fn [new-doc] (reset! settings-cursor new-doc))))}]
-           [:div "Show app-state atom at the bottom of each page"]]])])))
+           [:div "Show app-state atom at the bottom of each page"]]
+          [auth/user-creation]])])))
