@@ -9,7 +9,8 @@
   [{remove-delegate-atm :remove-delegate-atom
     data-cursor :data-cursor
     auto-load-fn :option-load-fn
-    can-delete-option-fn :can-delete-option-fn}]
+    can-delete-option-fn :can-delete-option-fn
+    caption :caption}]
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
@@ -18,7 +19,7 @@
     (fn [remove-delegate-atm data-cursor]
       [:div {:class "flex flex-column"}
        ;; List out the current selection who selected to be on the video
-       [:div {} "Share with:"]
+       [:div {} caption]
        [:ul
         (doall (map (fn [option]
                       ^{:key option}
@@ -41,7 +42,7 @@
                                )}
          (doall (map (fn [name]
                        ^{:key name}
-                       [:option {:value name} (if (= name "") "- Select user -" name)])
+                       [:option {:value name} (if (= name "") "-- Select option --" name)])
                      (conj (clojure.set/difference @option-list-atm @selected-data-atm) "")))]]
        ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
@@ -55,12 +56,13 @@
          "Ok"]]])))
 
 (defcard-rg test-share-dialog
-  (let [data-cursor        (reagent/atom [:a :b :c])]
+  (let [data-cursor        (reagent/atom ["a" "b" "c"])]
     [:div {:class ""}
      [share-dialog
       {:remove-delete-atom    (reagent/atom (fn [] nil))
        :data-cursor           data-cursor     
-       :option-load-fn        (fn [] (println "option-load") [:c :d :e :f])
-       :can-delete-option-fn  (fn [option] (not (= option :a)))
+       :option-load-fn        (fn [] (println "option-load") ["c" "d" "e" "f"])
+       :can-delete-option-fn  (fn [option] (not (= option "a")))
+       :caption               "CAPTION GOES HERE:"
        }]
      [:p (str @data-cursor)]]))
