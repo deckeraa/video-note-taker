@@ -107,34 +107,6 @@
 ;; Ring Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-session-handler [req]
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])
-        resp (http/get "http://localhost:5984/_session" {:as :json
-                                                         :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                                                         :content-type :json
-                                                         })
-        ]
-    (json-response {:body (:body resp)})))
-
-
-(defn get-cookie-handler [req]
-  (try
-    (let [params (get-body req)
-          resp (http/post "http://localhost:5984/_session" {:as :json
-                                                            :content-type :json
-                                                            :form-params {:name (:user params)
-                                                                          :password (:pass params)}})]
-      (let [ring-resp
-            (assoc 
-             (json-response {:body (:body resp) :cookies (:cookies resp)})
-             :cookies (remove-cookie-attrs-not-supported-by-ring (:cookies resp)) ;; set the CouchDB cookie on the ring response
-             ;; :cookies {"secret" {:value "foobar", :secure true, :max-age 3600}}
-             )]
-                                        ;      (println ring-resp)
-        ring-resp))
-    (catch Exception e
-      (json-response {:result "login failed"}))))
-
 (defn login-handler [req]
   (try
     (let [params (get-body req)
