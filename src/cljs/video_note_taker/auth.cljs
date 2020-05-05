@@ -13,7 +13,9 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn needs-auth-cookie []
+(defn needs-auth-cookie
+  "Determines whether the user needs to log by examing the presence of the authorization cookie."
+  []
   (as-> js/document $
     (.-cookie $)
     (clojure.string/split $ "; ")
@@ -22,16 +24,21 @@
                   (not (nil? (second %)))) $)
     (empty? $)))
 
-(defn run-cookie-renewer []
+(defn run-cookie-renewer
+  "Creates a recurring call to the server to refresh the authorization cookie."
+  []
   (js/setTimeout (fn []
-                   (println "Running cookie renewer: " (str (new js/Date)))
                    (go (let [resp (<! (http/post (db/resolve-endpoint "cookie-check")
                                                         {:json-params {}
                                                          :with-credentials true}))]
                          (run-cookie-renewer))))
                  (* 25 60 1000)))
 
-(defn login [logged-in-atm]
+(defn login
+  "Reagent control that allows a user to log in (or optionally create new users).
+   At present the new user creation functionality is behind wrap-cookie-auth on the server;
+   a better security model for new user creation will be needed to turn it back on client-side."
+  [logged-in-atm]
   (let [user-atm (reagent/atom "")
         pass-atm (reagent/atom "")
         pass-rpt-atm (reagent/atom "")
@@ -100,7 +107,9 @@
              "Couldn't create new user :("
              "Login failed :(")])]])))
 
-(defn password-changer []
+(defn password-changer
+  "Reagent component to change a users password."
+  []
   (let [pass-atm     (reagent/atom "")
         pass-rpt-atm (reagent/atom "")]
     (fn []
@@ -112,10 +121,6 @@
        [:div {:class "flex items-center justify-between"}
         [:label "Repeat: "]
         [:input {:class "mh2" :type :password :value @pass-rpt-atm :on-change #(reset! pass-rpt-atm (-> % .-target .-value))}]]
-       ;; (when (and (not (= @pass-atm @pass-rpt-atm))
-       ;;            (not (empty? @pass-atm))
-       ;;            (not (empty? @pass-rpt-atm)))
-       ;;   [:p {:class "red"} "passwords do not match"])
        [:button {:class (str "bn br3 white pa2 ma2 "
                              (if (and (= @pass-atm @pass-rpt-atm)
                                       (not (empty? @pass-atm)))
@@ -125,15 +130,15 @@
                                                            {:json-params {:pass @pass-atm}
                                                             :with-credentials true}))]
                                         ; check the result here
-                                   (println "resp: " resp)
-                                   (println "the body: " (get-in resp [:body]))
                                    (if (true? (get-in resp [:body]))
                                      (toaster-oven/add-toast "Password changed." svg/check "green" nil)
                                      (toaster-oven/add-toast (str "Couldn't update password :(") svg/x "red" nil))
                                    )))}
         "Change password"]])))
 
-(defn manage-identity [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
+(defn manage-identity
+  "Reagent component used in the Settings screen that allows a user do various profile edit activites such as changing a password or logging out."
+  [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
   [:div
    [:h2 "Manage Identity"]
    [:h3 "Log out"]
