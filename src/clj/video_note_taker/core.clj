@@ -33,7 +33,8 @@
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
    [clojure.data.csv :refer [read-csv write-csv]]
-   [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]])
+   [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]]
+   [video-note-taker.upload-progress :as upload-progress])
   (:gen-class))
 
 (def db
@@ -314,18 +315,6 @@
                                             :uploaded-datetime (.toString (new java.util.Date))})]
       (json-response video-doc))))
 
-(defonce file-upload-progress-atom (atom {}))
-
-(defn upload-progress-fn [req bytes-read content-length item-count]
-  (let [req (cookies-request req)
-        cookie-value (get-in req [:cookies "AuthSession" :value])]
-    ;; TODO this isn't quite correct since we're using cookie-value as a session key, but the cookie-value gets refreshed mid-session on a regular basis.
-    (swap! file-upload-progress-atom assoc cookie-value {:bytes-read bytes-read :content-length content-length})))
-
-(defn get-upload-progress [req username]
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (json-response (get @file-upload-progress-atom cookie-value))))
-
 (defn delete-video-handler [req username]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
@@ -562,7 +551,7 @@
         ["get-notes-spreadsheet" (wrap-cookie-auth get-notes-spreadsheet-handler)]
         ["upload-spreadsheet" (wrap-cookie-auth upload-spreadsheet-handler)]
         ["upload-video" (wrap-cookie-auth upload-video-handler)]
-        ["get-upload-progress" (wrap-cookie-auth get-upload-progress)]
+        ["get-upload-progress" (wrap-cookie-auth upload-progress/get-upload-progress)]
         ["delete-video" (wrap-cookie-auth delete-video-handler)]
         ["get-cookie" get-cookie-handler]
         ["get-session" get-session-handler]
@@ -611,7 +600,7 @@
       (wrap-params)
       (wrap-cookies)
       (wrap-partial-content)
-      (wrap-multipart-params {:progress-fn upload-progress-fn})
+      (wrap-multipart-params {:progress-fn upload-progress/upload-progress-fn})
       (wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]
