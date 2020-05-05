@@ -75,11 +75,13 @@
        ;; [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
-       [:h2 "Developer settings"]
-       [:div {:class "flex items-center"}
-        [:input {:type :checkbox :class "ma2"
-                 :checked (:show-app-state @settings-cursor)
-                 :on-change (fn [e]
-                              (swap! settings-cursor assoc :show-app-state (-> e .-target .-checked))
-                              (db/put-doc @settings-cursor (fn [new-doc] (reset! settings-cursor new-doc))))}]
-        [:div "Show app-state atom at the bottom of each page"]]])))
+       (when (auth/is-admin?)
+         [:div
+          [:h2 "Developer settings"]
+          [:div {:class "flex items-center"}
+           [:input {:type :checkbox :class "ma2"
+                    :checked (:show-app-state @settings-cursor)
+                    :on-change (fn [e]
+                                 (swap! settings-cursor assoc :show-app-state (-> e .-target .-checked))
+                                 (db/put-doc @settings-cursor (fn [new-doc] (reset! settings-cursor new-doc))))}]
+           [:div "Show app-state atom at the bottom of each page"]]])])))

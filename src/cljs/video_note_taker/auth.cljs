@@ -138,13 +138,17 @@
                                    )))}
         "Change password"]])))
 
+(defn is-admin?
+  ([] (is-admin? atoms/user-cursor))
+  ([user-cursor] (contains? (set (:roles @atoms/user-cursor)) "_admin")))
+
 (defn manage-identity
   "Reagent component used in the Settings screen that allows a user do various profile edit activites such as changing a password or logging out."
   [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
   [:div
    [:h2 "Manage Identity"]
    [:div {} "Hello " (:name @atoms/user-cursor) "."]
-   (when (contains? (set (:roles @atoms/user-cursor)) "_admin")
+   (when (is-admin?)
      [:div {} "You are an admin."])
    [:h3 "Log out"]
    [:div {:class "f3 br1 white bg-light-red b tc pa3 ma3 dim"
