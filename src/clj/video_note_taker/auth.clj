@@ -108,8 +108,9 @@
     (let [cookie-check-val (cookie-check-from-req req)]
       (if (not cookie-check-val)
         (not-authorized-response)
-        (let [username (get-in cookie-check-val [0 :name])]
-          (handler req username))))))
+        (let [username (get-in cookie-check-val [0 :name])
+              roles    (get-in cookie-check-val [0 :roles])]
+          (handler req username roles))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ring Handlers
@@ -132,7 +133,7 @@
     (catch Exception e
       (json-response false))))
 
-(defn create-user-handler [req username]
+(defn create-user-handler [req username roles]
   (try
     (let [params (get-body req)
           name (:user params)]
@@ -165,7 +166,7 @@
       (println "create-user-handler exception: " e)
       (assoc (json-response false) :status 400))))
 
-(defn change-password-handler [req username]
+(defn change-password-handler [req username roles]
   (try
     (let [params (get-body req)
           cookie-value (get-in req [:cookies "AuthSession" :value])]
@@ -195,7 +196,7 @@
     (catch Exception e
       (json-response false))))
 
-(defn logout-handler [req username]
+(defn logout-handler [req username roles]
   (try
     (let [resp (http/delete "http://localhost:5984/_session" {:as :json})]
       (assoc 

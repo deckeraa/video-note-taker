@@ -62,7 +62,7 @@
       (json/read-str)
       (keywordize-keys)))
 
-(defn put-doc-handler [req username]
+(defn put-doc-handler [req username roles]
   (let [doc (get-body req)]
     (let [audited-doc
           ;; Here we look at the doc type and add in any extra fields we need for auditing
@@ -88,7 +88,7 @@
 (defn get-doc [id]
   (couch/get-document db id))
 
-(defn get-doc-handler [req username]
+(defn get-doc-handler [req username roles]
   (let [doc (get-body req)]
     (json-response (get-doc (:_id doc)))))
 
@@ -102,18 +102,18 @@
 (defn get-notes [video-key]
   (couch/get-view db "notes" "by_video" {:key video-key :include_docs true}))
 
-(defn get-notes-handler [req username]
+(defn get-notes-handler [req username roles]
   (let [doc (get-body req)]
     (json-response (get-notes (:video-key doc)))))
 
-(defn create-note-handler [req username]
+(defn create-note-handler [req username roles]
   (let [doc (get-body req)
         video (get-doc (:video doc))]
     ;; TODO check user access and validate that the ID isn't already taken
     (json-response (couch/put-document db (merge doc {:created-by username
                                                       :last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)})))))
 
-(defn delete-doc-handler [req username]
+(defn delete-doc-handler [req username roles]
   (let [doc (get-body req)]
     (json-response (couch/delete-document db doc))))
 
@@ -129,7 +129,7 @@
 ;; }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-video-listing-handler [req username]
+(defn get-video-listing-handler [req username roles]
   (let [videos (couch/get-view db "videos" "by_user"
                                {:key username :include_docs true})]
     (json-response (vec (map :doc videos)))))
@@ -137,7 +137,7 @@
 (defn escape-csv-field [s]
   (str "\"" (clojure.string/escape s {\" "\"\""}) "\""))
 
-(defn get-notes-spreadsheet-handler [req username]
+(defn get-notes-spreadsheet-handler [req username roles]
   (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
         notes     (couch/get-view db "notes" "by_video"
                                   {:key (:video-id query-map) :include_docs true})
@@ -182,7 +182,7 @@
 )
           (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."}))))))
 
-(defn download-starter-spreadsheet [req username]
+(defn download-starter-spreadsheet [req username roles]
   (println "download-starter-spreadsheet" username)
   (let [videos (couch/get-view db "videos" "by_user"
                                {:key username :include_docs true})]
@@ -202,7 +202,7 @@
 
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
-(defn upload-spreadsheet-handler [req username]
+(defn upload-spreadsheet-handler [req username roles]
   (let [notes-by-video (atom {})
         success-imports-counter (atom 0)
         failed-imports (atom [])
@@ -217,7 +217,7 @@
 
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
-(defn upload-video-handler [req username]
+(defn upload-video-handler [req username roles]
   (println (get-in req [:params]))
   (let [id (uuid/to-string (uuid/v4))
         filename (get-in req [:params "file" :filename])
@@ -239,7 +239,7 @@
                                             :uploaded-datetime (.toString (new java.util.Date))})]
       (json-response video-doc))))
 
-(defn delete-video-handler [req username]
+(defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
         video (get-doc video-id)]
@@ -272,7 +272,7 @@
         (json-response {:success true})))
     ))
 
-(defn search-text-handler [req username]
+(defn search-text-handler [req username roles]
   (let [params (get-body req)
         cookie-value (get-in req [:cookies "AuthSession" :value])]
     (let [resp (http/post
@@ -298,7 +298,7 @@
 (defn user-has-access-to-video [username video]
   (not (empty? (filter #(= username %) (:users video)))))
 
-(defn update-video-permissions-handler [req username]
+(defn update-video-permissions-handler [req username roles]
   (try
     (let [video (get-body req)
           current-video (get-doc (:_id video))]
@@ -326,7 +326,7 @@
     (catch Exception e
       (println "update-video-permissions-handler e: " e))))
 
-(defn get-connected-users-handler [req username]
+(defn get-connected-users-handler [req username roles]
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
   (let [resp (couchdb-request :get (url/url db "/_users/_all_docs"))]
     (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
@@ -334,7 +334,7 @@
          (remove nil?)
          (json-response))))
 
-(defn videos-handler [req username]
+(defn videos-handler [req username roles]
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
         video (get-doc video-id)
         filename (:file-name video)]
