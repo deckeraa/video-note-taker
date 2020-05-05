@@ -28,7 +28,11 @@
     (if (= :video-selection (peek @screen-cursor))
       [:div {:class "b ma2"} "Video Note Taker"]
       [:div {:class "bg-white br-100 pa1 ma1 dim"
-             :on-click (fn [] (swap! screen-cursor pop))}
+             :on-click (fn []
+                         (swap! screen-cursor pop)
+                         ;; screen-based logic can go here
+                         (cond (= :video-selection (peek @screen-cursor))
+                               (listing/load-video-listing atoms/video-listing-cursor)))}
        [svg/chevron-left {} "#357edd" "24px"]])
     (when (= :video (peek @screen-cursor))
       [:div {:class ""} (:display-name @video-cursor)])
