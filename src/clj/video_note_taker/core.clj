@@ -251,7 +251,6 @@
 
 (defn wrap-cookie-auth [handler]
   (fn [req]
-    (println "wrap-cookie-auth")
     (let [cookie-check-val (cookie-check-from-req req)]
       (if (not cookie-check-val)
         (not-authorized-response)
