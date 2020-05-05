@@ -1,4 +1,5 @@
 (ns video-note-taker.core
+  "Video Note Taker is a web-based collaborative video annotation app."
   (:require
    [reagent.core :as reagent]
    [cljs-http.client :as http]
@@ -22,39 +23,41 @@
 
 (defn header [screen-cursor video-cursor]
   [:div {:class "flex items-center f4 justify-between w-100 bg-blue white mb1"}
-   [:div {:class "flex items-center"}                             ; left side
+   ;; left side
+   [:div {:class "flex items-center"}                             
     (if (= :video-selection (peek @screen-cursor))
       [:div {:class "b ma2"} "Video Note Taker"]
       [:div {:class "bg-white br-100 pa1 ma1 dim"
              :on-click (fn [] (swap! screen-cursor pop))}
        [svg/chevron-left {} "#357edd" "24px"]])
-    ;; (when (= :video (peek @screen-cursor))
-    ;;   )
     (when (= :video (peek @screen-cursor))
       [:div {:class ""} (:display-name @video-cursor)])
     (when (= :settings (peek @screen-cursor))
       [:div {:class "b ma2"} "Settings"])]
-   [svg/cog {:class "ma2 dim"
+   ;; right side
+   [svg/cog {:class "ma2 dim" 
              :on-click (fn [] (swap! screen-cursor conj :settings))} "white" "26px"]
    ])
 
 
 (defn page [ratom]
-  (let [;video-ref-atm (clojure.core/atom nil)
-        notes-cursor atoms/notes-cursor
+  (let [notes-cursor atoms/notes-cursor
         _auto-loaded-settings      (reagent/atom false)
-        ;_auto-load-settings (settings/load-settings atoms/settings-cursor)
         ]
     (fn []
       @atoms/login-cursor ; referenced so that this component refreshes when the login-cursor changes
       (if (auth/needs-auth-cookie)
+        ;; Show login screen if needed
         [auth/login atoms/login-cursor]
+        ;; Otherwise, render the app
         (do
+          ;; Auto-load data if needed
           (when (compare-and-set! atoms/video-listing-cursor nil [])
             (listing/load-video-listing atoms/video-listing-cursor))
           (when (not @_auto-loaded-settings)
             (settings/load-settings atoms/settings-cursor)
             (reset! _auto-loaded-settings true))
+          ;; Draw thte page
           [:div {:class "flex flex-column items-center"}
            [header atoms/screen-cursor atoms/video-cursor]
            (when (= :video-selection (peek @atoms/screen-cursor))
