@@ -90,7 +90,9 @@
                                    (println "login response: " resp)
                                    (swap! logged-in-atm inc)
                                    (if (:body resp)
-                                     (js/setTimeout #(swap! logged-in-atm inc) 200)
+                                     (do
+                                       (reset! atoms/user-cursor (:body resp))
+                                       (js/setTimeout #(swap! logged-in-atm inc) 200))
                                      (reset! login-failed-atm true)))))}
            "Login"])
         (when allow-new-user-creation?
@@ -141,6 +143,9 @@
   [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
   [:div
    [:h2 "Manage Identity"]
+   [:div {} "Hello " (:name @atoms/user-cursor) "."]
+   (when (contains? (set (:roles @atoms/user-cursor)) "_admin")
+     [:div {} "You are an admin."])
    [:h3 "Log out"]
    [:div {:class "f3 br1 white bg-light-red b tc pa3 ma3 dim"
           :on-click (fn []

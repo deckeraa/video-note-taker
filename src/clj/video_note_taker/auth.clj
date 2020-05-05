@@ -124,7 +124,7 @@
                                                             :form-params {:name     (:user params)
                                                                           :password (:pass params)}})]
       (assoc 
-       (json-response true)
+       (json-response {:name (get-in resp [:body :name]) :roles (get-in resp [:body :roles])})
        :cookies (as-> (:cookies resp) $
                   (remove-cookie-attrs-not-supported-by-ring $)
                   ;; (set-cookies-flag $ :secure true)
