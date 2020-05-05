@@ -85,17 +85,25 @@
       [(get-in resp [:body :userCtx])
        (remove-cookie-attrs-not-supported-by-ring (:cookies resp))])))
 
-(defn cookie-check-from-req [req]
+(defn cookie-check-from-req
+  "Same as cookie-check, but takes in a Ring request rather than a cookie value directly."
+  [req]
   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
     (cookie-check cookie-value)))
 
-(defn cookie-check-handler [req]
+(defn cookie-check-handler
+  "Checks a users cookie for freshness and passes back a newer cookie if the
+  current cookie is still valid but CouchDB has a fresher cookie available."
+  [req]
   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
     (if-let [[userCtxt new-cookie] (cookie-check cookie-value)]
       (assoc (json-response userCtxt) :cookies new-cookie)
       (json-response false))))
 
-(defn wrap-cookie-auth [handler]
+(defn wrap-cookie-auth
+  "Ring middleware that pass a handler the req and the username if the user's cookie is valid.
+   Returns a 'not authorized' response otherwise."
+  [handler]
   (fn [req]
     (let [cookie-check-val (cookie-check-from-req req)]
       (if (not cookie-check-val)
@@ -106,23 +114,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ring Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn login-handler [req]
   (try
     (let [params (get-body req)
+          _ (println "Login request for " (:user params))
           resp (http/post "http://localhost:5984/_session" {:as :json
                                                             :content-type :json
                                                             :form-params {:name     (:user params)
                                                                           :password (:pass params)}})]
-      (println "Login params: " params)
-      (println "Login resp: " resp)
       (assoc 
        (json-response true)
        :cookies (as-> (:cookies resp) $
                   (remove-cookie-attrs-not-supported-by-ring $)
                   ;; (set-cookies-flag $ :secure true)
                   ;; (set-cookies-flag $ :same-site :strict)
-                  (do (println $) $)
                  )))
     (catch Exception e
       (json-response false))))
