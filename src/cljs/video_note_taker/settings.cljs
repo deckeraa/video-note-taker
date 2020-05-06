@@ -5,7 +5,8 @@
    [cljs.core.async :refer [<! >! chan close! timeout put!]]
    [video-note-taker.db :as db]
    [video-note-taker.auth :as auth]
-   [video-note-taker.video-notes :as video-notes])
+   [video-note-taker.video-notes :as video-notes]
+   [video-note-taker.groups :as groups])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -75,6 +76,11 @@
        ;; [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
+       (when (auth/is-admin?)
+         (let [group-cursor (reagent/atom [])]
+           [:div
+            [:h2 "Manage Groups"]
+            [groups/groups group-cursor]]))
        (when (auth/is-admin?)
          [:div
           [:h2 "Developer settings"]

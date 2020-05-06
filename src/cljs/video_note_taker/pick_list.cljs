@@ -1,10 +1,10 @@
-(ns video-note-taker.pick_list
+(ns video-note-taker.pick-list
   (:require [reagent.core :as reagent]
             [video-note-taker.svg :as svg])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]))
 
-(defn share-dialog
+(defn pick-list
   "Dialog that allows a user to share the video with other users."
   [{remove-delegate-atm :remove-delegate-atom
     data-cursor :data-cursor
@@ -14,7 +14,9 @@
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
-        _ (when auto-load-fn (reset! option-list-atm (set (auto-load-fn))))
+        _ (when auto-load-fn (auto-load-fn option-list-atm)
+                                        ;(reset! option-list-atm (set (auto-load-fn)))
+                )
         ]
     (fn [remove-delegate-atm data-cursor]
       [:div {:class "flex flex-column"}
@@ -55,13 +57,13 @@
                               )}
          "Ok"]]])))
 
-(defcard-rg test-share-dialog
+(defcard-rg test-pick-list
   (let [data-cursor        (reagent/atom ["a" "b" "c"])]
     [:div {:class ""}
-     [share-dialog
+     [pick-list
       {:remove-delete-atom    (reagent/atom (fn [] nil))
        :data-cursor           data-cursor     
-       :option-load-fn        (fn [] (println "option-load") ["c" "d" "e" "f"])
+       :option-load-fn        (fn [options-cursor] (reset! options-cursor ["c" "d" "e" "f"]))
        :can-delete-option-fn  (fn [option] (not (= option "a")))
        :caption               "CAPTION GOES HERE:"
        }]

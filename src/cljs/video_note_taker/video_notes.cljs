@@ -104,8 +104,9 @@
   This will change in the future when a user connection workflow is implemented."
   [user-list-atm]
   (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
-                               {}))]
-        (reset! user-list-atm (set (:body resp))))))
+                               {}))
+            users (set (:body resp))]
+        (reset! user-list-atm users))))
 
 (defn share-dialog
   "Dialog that allows a user to share the video with other users."
