@@ -5,6 +5,15 @@
    [ring.util.json-response :refer [json-response]]
    [video-note-taker.util :as util]))
 
+;; groups -> by_user
+;; function (doc) {
+;;   if(doc.type === "group") {
+;;     for(var idx in doc.users) {
+;;             emit(doc.users[idx], doc._id);
+;;         }
+;;   }
+;; }
+
 (defn get-groups-handler [req username roles]
   (let [groups (couch/get-view db "groups" "by_user"
                                {:key username :include_docs true})]
