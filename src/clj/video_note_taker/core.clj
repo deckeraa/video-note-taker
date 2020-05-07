@@ -366,6 +366,7 @@
         ["update-video-permissions" (wrap-cookie-auth update-video-permissions-handler)]
         ["get-connected-users" (wrap-cookie-auth get-connected-users-handler)]
         ["get-groups" (wrap-cookie-auth groups/get-groups-handler)]
+        ["group" (wrap-cookie-auth groups/group-handler)]
         ]])
 
 (defn wrap-index
