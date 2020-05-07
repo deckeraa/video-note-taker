@@ -35,7 +35,8 @@
    [clojure.data.csv :refer [read-csv write-csv]]
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]]
    [video-note-taker.upload-progress :as upload-progress]
-   [video-note-taker.auth :as auth :refer [wrap-cookie-auth]])
+   [video-note-taker.auth :as auth :refer [wrap-cookie-auth]]
+   [video-note-taker.groups :as groups])
   (:gen-class))
 
 (def db
@@ -364,6 +365,7 @@
         ["search-text" (wrap-cookie-auth search-text-handler)]
         ["update-video-permissions" (wrap-cookie-auth update-video-permissions-handler)]
         ["get-connected-users" (wrap-cookie-auth get-connected-users-handler)]
+        ["get-groups" (wrap-cookie-auth groups/get-groups-handler)]
         ]])
 
 (defn wrap-index
