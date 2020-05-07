@@ -6,7 +6,8 @@
    [video-note-taker.db :as db]
    [video-note-taker.auth :as auth]
    [video-note-taker.video-notes :as video-notes]
-   [video-note-taker.groups :as groups])
+   [video-note-taker.groups :as groups]
+   [video-note-taker.listing :as listing])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))

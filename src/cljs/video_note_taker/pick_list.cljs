@@ -6,19 +6,34 @@
 
 (defn pick-list
   "Dialog that allows a user to share the video with other users."
-  [{remove-delegate-atm :remove-delegate-atom
-    data-cursor :data-cursor
-    auto-load-fn :option-load-fn
-    can-delete-option-fn :can-delete-option-fn
-    caption :caption}]
+  [{:keys [remove-delegate-atom
+           data-cursor
+           option-load-fn
+           can-delete-option-fn
+           caption
+           ok-fn
+           cancel-fn]}
+   ]
+  ;; [{
+  ;;   remove-delegate-atm :remove-delegate-atom
+  ;;   data-cursor :data-cursor
+  ;;   option-load-fn :option-load-fn
+  ;;   can-delete-option-fn :can-delete-option-fn
+  ;;   caption :caption
+  ;;   ok-fn :ok-fn
+  ;;   cancel-fn :cancel-fn}
+  ;;  ]
+  (println "caption" caption)
+  (println "remove-delegate-atom" remove-delegate-atom)
+  (println "ok-fn" ok-fn)
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
-        _ (when auto-load-fn (auto-load-fn option-list-atm)
-                                        ;(reset! option-list-atm (set (auto-load-fn)))
+        _ (when option-load-fn (option-load-fn option-list-atm)
+                                        ;(reset! option-list-atm (set (option-load-fn)))
                 )
         ]
-    (fn [remove-delegate-atm data-cursor]
+    (fn [data-cursor]
       [:div {:class "flex flex-column"}
        ;; List out the current selection who selected to be on the video
        [:div {} caption]
@@ -49,12 +64,14 @@
        ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
+                  :on-click (fn [e]
+                              (@remove-delegate-atom)
+                              (when cancel-fn (cancel-fn)))} ; closes the dialog
          "Cancel"]
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e]
-                              (@remove-delegate-atm) ; closes the dialog
-                              )}
+                              (@remove-delegate-atom) ; closes the dialog
+                              (when ok-fn (ok-fn)))}
          "Ok"]]])))
 
 (defcard-rg test-pick-list
@@ -63,7 +80,7 @@
      [pick-list
       {:remove-delete-atom    (reagent/atom (fn [] nil))
        :data-cursor           data-cursor     
-       :option-load-fn        (fn [options-cursor] (reset! options-cursor ["c" "d" "e" "f"]))
+       :option-load-fn        (fn [options-cursor] (reset! options-cursor #{"c" "d" "e" "f"}))
        :can-delete-option-fn  (fn [option] (not (= option "a")))
        :caption               "CAPTION GOES HERE:"
        }]

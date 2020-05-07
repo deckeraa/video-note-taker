@@ -74,3 +74,11 @@
         (println resp)
         (println (:body resp))
         (handler-fn (:body resp) resp))))
+
+(defn put-endpoint-in-atom [endpoint params data-atom]
+  (go (let [resp (<! (http/post (resolve-endpoint endpoint)
+                                {:json-params params
+                                 :with-credentials true}))]
+        (toast-server-error-if-needed resp nil)
+        (when (= 200 (:status resp))
+          (reset! data-atom (:body resp))))))
