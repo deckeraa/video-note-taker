@@ -28,6 +28,9 @@
 ;;   (let [group-cursor (reagent/atom {})]
 ;;     [groups group-cursor]))
 
+(defn load-groups [data-cursor]
+  (db/put-endpoint-in-atom "get-groups" {} data-cursor))
+
 (defn group-card [group-cursor options]
   (let [users-cursor (reagent/cursor group-cursor [:users])
         is-editing? (reagent/atom false)]

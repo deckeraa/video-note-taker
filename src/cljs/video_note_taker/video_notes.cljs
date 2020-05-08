@@ -15,7 +15,8 @@
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.editable-field :refer [editable-field]]
    [video-note-taker.auth]
-   [video-note-taker.pick-list :as pick-list])
+   [video-note-taker.pick-list :as pick-list]
+   [video-note-taker.groups :as groups])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -112,6 +113,7 @@
   "Dialog that allows a user to share the video with other users."
   [remove-delegate-atm video-cursor notes-cursor]
   (let [selected-users-atm (reagent/atom (set (:users @video-cursor)))
+        groups-cursor (reagent/cursor video-cursor [:groups])
         user-input-atm (reagent/atom "")
         user-list-atm  (reagent/atom #{})
         _ (load-connected-users user-list-atm)
@@ -144,6 +146,13 @@
                        ^{:key name}
                        [:option {:value name} (if (= name "") "- Select user -" name)])
                      (conj (clojure.set/difference @user-list-atm @selected-users-atm) "")))]]
+       ;; [pick-list/pick-list
+       ;;  {
+       ;;   :data-cursor           groups-cursor
+       ;;   :option-load-fn        groups/load-groups
+       ;;   :caption               "Select a group:"
+       ;;   :remove-delegate-atom  (reagent/atom (fn [] nil))
+       ;;   }]
        ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"

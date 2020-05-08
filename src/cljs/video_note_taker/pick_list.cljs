@@ -43,7 +43,7 @@
        ;; A selection box for adding new users
        [:div {:class "flex br3"}
         [:select {:type :text
-                  :class "bn"
+                  :class "bn w5"
                   :value @user-input-atm
                   :on-change (fn [e]
                                (swap! selected-data-atm conj (-> e .-target .-value))
@@ -80,7 +80,7 @@
        [pick-list
         {:remove-delegate-atom    (reagent/atom (fn [] nil))
          :data-cursor           data-cursor     
-         :option-load-fn        (fn [options-cursor] (reset! options-cursor #{"c" "d" "e" "f"}))
+         :option-load-fn        (fn [options-cursor] (reset! options-cursor #{"c" "d" "e" "f" "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"}))
          :can-delete-option-fn  (fn [option] (not (= option "a")))
          :caption               "CAPTION GOES HERE:"
          }]
