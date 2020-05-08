@@ -14,26 +14,18 @@
            ok-fn
            cancel-fn]}
    ]
-  ;; [{
-  ;;   remove-delegate-atm :remove-delegate-atom
-  ;;   data-cursor :data-cursor
-  ;;   option-load-fn :option-load-fn
-  ;;   can-delete-option-fn :can-delete-option-fn
-  ;;   caption :caption
-  ;;   ok-fn :ok-fn
-  ;;   cancel-fn :cancel-fn}
-  ;;  ]
   (println "caption" caption)
   (println "remove-delegate-atom" remove-delegate-atom)
   (println "ok-fn" ok-fn)
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
+        preferred-type (type @data-cursor) ; we preserve the seq type of data-cursor, but use sets internally. preferred-type tells us what seq type to case back to when putting the selection back into the data-cursor.
         _ (when option-load-fn (option-load-fn option-list-atm)
                                         ;(reset! option-list-atm (set (option-load-fn)))
                 )
         ]
-    (fn [data-cursor]
+    (fn []
       [:div {:class "flex flex-column"}
        ;; List out the current selection who selected to be on the video
        [:div {} caption]
@@ -70,18 +62,26 @@
          "Cancel"]
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e]
+                              (reset! data-cursor
+                                      (condp = preferred-type
+                                        cljs.core/List
+                                        (list @selected-data-atm)
+                                        cljs.core/PersistentVector
+                                        (vec @selected-data-atm)
+                                        @selected-data-atm))
                               (@remove-delegate-atom) ; closes the dialog
                               (when ok-fn (ok-fn)))}
          "Ok"]]])))
 
 (defcard-rg test-pick-list
   (let [data-cursor        (reagent/atom ["a" "b" "c"])]
-    [:div {:class ""}
-     [pick-list
-      {:remove-delete-atom    (reagent/atom (fn [] nil))
-       :data-cursor           data-cursor     
-       :option-load-fn        (fn [options-cursor] (reset! options-cursor #{"c" "d" "e" "f"}))
-       :can-delete-option-fn  (fn [option] (not (= option "a")))
-       :caption               "CAPTION GOES HERE:"
-       }]
-     [:p (str @data-cursor)]]))
+    (fn []
+      [:div {:class ""}
+       [pick-list
+        {:remove-delegate-atom    (reagent/atom (fn [] nil))
+         :data-cursor           data-cursor     
+         :option-load-fn        (fn [options-cursor] (reset! options-cursor #{"c" "d" "e" "f"}))
+         :can-delete-option-fn  (fn [option] (not (= option "a")))
+         :caption               "CAPTION GOES HERE:"
+         }]
+       [:p (str @data-cursor)]])))

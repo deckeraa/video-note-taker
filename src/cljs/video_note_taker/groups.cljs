@@ -38,7 +38,9 @@
            (:name @group-cursor)
            (fn [v close-fn]
              (swap! group-cursor assoc :name v)
-             (db/post-to-endpoint "group" @group-cursor close-fn))]
+             (close-fn)
+;             (db/post-to-endpoint "group" @group-cursor close-fn)
+             )]
           [pick-list
            {
             :data-cursor           users-cursor
@@ -47,8 +49,8 @@
             :caption               "Select a user:"
             :remove-delegate-atom  (reagent/atom (fn [] nil))
             :cancel-fn #(reset! is-editing? false)
-            }]
-          ]
+            :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor #(reset! is-editing? false)))
+            }]]
          [:div
           [:div (str @group-cursor)]
           [:button {:on-click #(reset! is-editing? true)} "Edit"]])])))
