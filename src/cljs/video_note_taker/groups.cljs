@@ -29,15 +29,21 @@
 
 (defn group-card [group-cursor]
   [:div
-   [editable-field/editable-field (:name group-cursor) (fn [v] (assoc group-cursor :name v))]
-   [groups group-cursor]])
+   [:div (str @group-cursor)]
+   [editable-field/editable-field
+    (:name @group-cursor)
+    (fn [v close-fn]
+      (swap! group-cursor assoc :name v)
+      (db/post-to-endpoint "group" @group-cursor close-fn))]
+;   [groups group-cursor]
+   ])
 
 (defn group-listing []
   (let [data-cursor (reagent/atom [])]
     (fn []
       [listing/listing
        {:data-cursor data-cursor
-        :card-fn (fn [group-cursor] [:div {} (str "group-cursor " @group-cursor)])
+        :card-fn group-card;(fn [group-cursor] [:div {} (str "group-cursor " @group-cursor)])
         :load-fn (partial db/put-endpoint-in-atom "get-groups" {} data-cursor)
         :new-async-fn (fn [call-with-new-data-fn]
                   ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
