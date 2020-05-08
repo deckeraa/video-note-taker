@@ -29,12 +29,15 @@
     (swap! data-cursor conj item-to-add)
     ))
 
+(defn reload [{:keys [load-fn data-cursor] :as options}]
+  ((:load-fn options) (:data-cursor options)))
+
 (defn listing [{:keys [data-cursor card-fn load-fn new-fn new-async-fn add-caption new-card-location] :as options}]
   (when load-fn (load-fn data-cursor)
         (fn []
-          [:div
+          [:div {:class "flex flex-column items-center"}
            ;;[:div {} (str @data-cursor)]
-           [:ul
+           [:ul {:class "list"}
             (doall
              (map (fn [idx]
                     (let [item-cursor (reagent/cursor data-cursor [idx])
@@ -46,25 +49,14 @@
                                ]]))
                   (range 0 (count @data-cursor))))]
            (when (or new-fn new-async-fn)
-             [:button {:class ""
+             [:button {:class "bn br3 white bg-green dim pa2"
                        :on-click
                        (fn [evt]
-                         (new-async-fn (partial add-item data-cursor new-card-location))
-                         ;; (if new-async-fn
-                         ;;   (new-async-fn (partial add-item data-cursor new-card-location))
-                         ;;   (add-item data-cursor new-card-location (new-fn)))
-                         )
-                       ;; (fn [item-to-add evt]
-                                 ;;   (case new-card-location
-                                 ;;     :top
-                                 ;;     (swap! data-cursor (fn [data]
-                                 ;;                          (vec (concat [(new-fn)] data))))
-                                 ;;     :bottom
-                                 ;;     (swap! data-cursor conj (new-fn))
-                                 ;;     ;; default is the bottom
-                                 ;;     (swap! data-cursor conj (new-fn))
-                                 ;;     ))
-                       }
+;                         (new-async-fn (partial add-item data-cursor new-card-location))
+                         (if new-async-fn
+                           (new-async-fn (partial add-item data-cursor new-card-location))
+                           (add-item data-cursor new-card-location (new-fn)))
+                         )}
               (or add-caption "+ Add")])
            ])))
 

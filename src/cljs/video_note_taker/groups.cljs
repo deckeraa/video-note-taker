@@ -34,7 +34,7 @@
     (fn []
       [:div
        (if @is-editing?
-         [:div
+         [:div {:class "br3 shadow-4 pv3 pl3"}
           [editable-field/editable-field
            (:name @group-cursor)
            (fn [v close-fn]
@@ -50,7 +50,10 @@
             :caption               "Select a user:"
             :remove-delegate-atom  (reagent/atom (fn [] nil))
             :cancel-fn #(reset! is-editing? false)
-            :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor #(reset! is-editing? false)))
+            :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor
+                                               (fn []
+                                                 (listing/reload options)
+                                                 (reset! is-editing? false))))
             }]]
          [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
           ;;          [:div (str @group-cursor)]
@@ -73,7 +76,7 @@
                                        (fn []
                                          (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
                                          ; Reload the list after deletion
-                                         ((:load-fn options) (:data-cursor options)))))}))}
+                                         (listing/reload options))))}))}
               "grey" "18px"])]])])))
 
 (defn group-listing []
