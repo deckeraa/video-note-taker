@@ -17,6 +17,8 @@
 (defn get-groups-handler [req username roles]
   (let [groups (couch/get-view db "groups" "by_user"
                                {:key username :include_docs true})]
+    (println "groups: " groups)
+    (println "map :doc " (map :doc groups))
     (json-response (vec (map :doc groups)))))
 
 (defn group-handler [req username roles]

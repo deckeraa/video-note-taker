@@ -81,7 +81,9 @@
          (let [group-cursor (reagent/atom [])]
            [:div
             [:h2 "Manage Groups"]
-            [groups/groups group-cursor]]))
+            [groups/group-listing]
+;            [groups/groups group-cursor]
+            ]))
        (when (auth/is-admin?)
          [:div
           [:h2 "Developer settings"]

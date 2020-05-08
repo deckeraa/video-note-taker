@@ -34,8 +34,7 @@
 (defn group-listing []
   (let [data-cursor (reagent/atom [])]
     (fn []
-      
       [listing/listing
        {:data-cursor data-cursor
-        :card-fn (fn [group] [:div "group"])
+        :card-fn (fn [group-cursor] [:div {} (str "group-cursor " @group-cursor)])
         :load-fn (partial db/put-endpoint-in-atom "get-groups" {} data-cursor)}])))
