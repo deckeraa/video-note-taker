@@ -53,7 +53,7 @@
             :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor #(reset! is-editing? false)))
             }]]
          [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
-                                        ;          [:div (str @group-cursor)]
+          [:div (str @group-cursor)]
           [:div
            [:div {:class "f3"} (:name @group-cursor)]
            [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
@@ -70,6 +70,7 @@
                                       (db/post-to-endpoint
                                        "delete-group"
                                        @group-cursor
+                                       (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
                                        (fn [] "TODO reload the list")))}))}
               "grey" "18px"])]])])))
 
