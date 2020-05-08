@@ -70,8 +70,9 @@
                                       (db/post-to-endpoint
                                        "delete-group"
                                        @group-cursor
-                                       (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
-                                       (fn [] "TODO reload the list")))}))}
+                                       (fn []
+                                         (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
+                                         (fn [] "TODO reload the list"))))}))}
               "grey" "18px"])]])])))
 
 (defn group-listing []
@@ -85,5 +86,7 @@
                   ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
                   ;;   {:_id uuid :name "My Untitled Group"})
                         (db/post-to-endpoint "group" {:name "My Untitled Group"}
-                                             (fn [doc] (call-with-new-data-fn doc))))
+                                             (fn [doc]
+                                               (println "doc from post-to-endpoint: " doc)
+                                               (call-with-new-data-fn doc))))
         :add-caption "Create new group"}])))

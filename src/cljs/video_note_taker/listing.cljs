@@ -16,6 +16,9 @@
                         data)))))
 
 (defn add-item [data-cursor new-card-location item-to-add]
+  (println "data-cursor: " data-cursor)
+  (println "new-card-location: " new-card-location)
+  (println "item-to-add: " item-to-add)
   (case new-card-location
     :top
     (swap! data-cursor (fn [data]
@@ -30,6 +33,7 @@
   (when load-fn (load-fn data-cursor)
         (fn []
           [:div
+           [:div {} (str @data-cursor)]
            [:ul
             (doall
              (map (fn [idx]
@@ -44,9 +48,11 @@
              [:button {:class ""
                        :on-click
                        (fn [evt]
-                         (if new-async-fn
-                           (new-async-fn (partial add-item data-cursor new-card-location))
-                           (add-item data-cursor new-card-location (new-fn))))
+                         (new-async-fn (partial add-item data-cursor new-card-location))
+                         ;; (if new-async-fn
+                         ;;   (new-async-fn (partial add-item data-cursor new-card-location))
+                         ;;   (add-item data-cursor new-card-location (new-fn)))
+                         )
                        ;; (fn [item-to-add evt]
                                  ;;   (case new-card-location
                                  ;;     :top
