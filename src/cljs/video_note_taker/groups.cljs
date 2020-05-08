@@ -51,9 +51,12 @@
             :cancel-fn #(reset! is-editing? false)
             :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor #(reset! is-editing? false)))
             }]]
-         [:div
-          [:div (str @group-cursor)]
-          [:button {:on-click #(reset! is-editing? true)} "Edit"]])])))
+         [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
+                                        ;          [:div (str @group-cursor)]
+          [:div
+           [:div {:class "f3"} (:name @group-cursor)]
+           [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
+          [svg/pencil {:class "ma3" :on-click #(reset! is-editing? true)} "grey" "18px"]])])))
 
 (defn group-listing []
   (let [data-cursor (reagent/atom [])]
