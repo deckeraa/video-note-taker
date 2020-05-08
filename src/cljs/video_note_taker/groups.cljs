@@ -11,32 +11,47 @@
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]))
 
-(defn groups [group-cursor]
-  (fn []
-    [pick-list
-     {
-      :data-cursor           group-cursor
-      :option-load-fn        load-connected-users
-      :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))
-      :caption               "Select a user:"
-      :remove-delegate-atom  (reagent/atom (fn [] nil))
-      }]
-    ))
+;; (defn groups [group-cursor]
+;;   (fn []
+;;     [pick-list
+;;      {
+;;       :data-cursor           group-cursor
+;;       :option-load-fn        load-connected-users
+;;       :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))
+;;       :caption               "Select a user:"
+;;       :remove-delegate-atom  (reagent/atom (fn [] nil))
+;;       }]
+;;     ))
 
-(defcard-rg groups-card
-  (let [group-cursor (reagent/atom {})]
-    [groups group-cursor]))
+;; (defcard-rg groups-card
+;;   (let [group-cursor (reagent/atom {})]
+;;     [groups group-cursor]))
 
 (defn group-card [group-cursor]
-  [:div
-   [:div (str @group-cursor)]
-   [editable-field/editable-field
-    (:name @group-cursor)
-    (fn [v close-fn]
-      (swap! group-cursor assoc :name v)
-      (db/post-to-endpoint "group" @group-cursor close-fn))]
-;   [groups group-cursor]
-   ])
+  (let [users-cursor (reagent/cursor group-cursor [:users])
+        is-editing? (reagent/atom false)]
+    (fn []
+      [:div
+       (if @is-editing?
+         [:div
+          [editable-field/editable-field
+           (:name @group-cursor)
+           (fn [v close-fn]
+             (swap! group-cursor assoc :name v)
+             (db/post-to-endpoint "group" @group-cursor close-fn))]
+          [pick-list
+           {
+            :data-cursor           users-cursor
+            :option-load-fn        load-connected-users
+            :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))
+            :caption               "Select a user:"
+            :remove-delegate-atom  (reagent/atom (fn [] nil))
+            :cancel-fn #(reset! is-editing? false)
+            }]
+          ]
+         [:div
+          [:div (str @group-cursor)]
+          [:button {:on-click #(reset! is-editing? true)} "Edit"]])])))
 
 (defn group-listing []
   (let [data-cursor (reagent/atom [])]

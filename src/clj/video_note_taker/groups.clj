@@ -30,4 +30,4 @@
       (if (= (:created-by saved-group) username)
         (couch/put-document db req-group)
         (util/not-authorized-response))
-      (couch/put-document db (merge req-group {:type "group" :created-by username})))))
+      (couch/put-document db (merge req-group {:type "group" :created-by username :users []})))))
