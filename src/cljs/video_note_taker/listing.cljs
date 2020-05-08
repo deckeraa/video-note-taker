@@ -8,6 +8,13 @@
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]))
 
+(defn remove-item-from-listing [data-cursor id-to-remove]
+  (println "Removing " id-to-remove)
+  (swap! data-cursor
+         (fn [data]
+           (vec (remove #(= (:_id %) id-to-remove)
+                        data)))))
+
 (defn listing [{:keys [data-cursor card-fn load-fn new-fn add-caption new-card-location]}]
   (when load-fn (load-fn data-cursor)
         (fn []
@@ -15,9 +22,12 @@
            [:ul
             (doall
              (map (fn [idx]
-                    (let [item-cursor (reagent/cursor data-cursor [idx])]
-                      ^{:key (:_id @item-cursor)}
-                      [:li {} [card-fn item-cursor]]))
+                    (let [item-cursor (reagent/cursor data-cursor [idx])
+                          id (:_id @item-cursor)]
+                      ^{:key id}
+                      [:li {} [card-fn item-cursor (partial remove-item-from-listing
+                                                            data-cursor
+                                                            id)]]))
                   (range 0 (count @data-cursor))))]
            (when new-fn
              [:button {:class ""
@@ -37,11 +47,14 @@
 (defcard-rg listing-devcard
   (let [data-cursor (reagent/atom [])
         load-fn (fn [data-cursor] (reset! data-cursor [{:_id "abc" :text "foo"} {:_id "def" :text "bar"}]))
-        card-fn (fn [item]
-                  [:div {:class ""} (str (:_id @item) " " (:text @item))])
+        card-fn (fn [item remove-delegate]
+                  [:div {:class ""}
+                   (str (:_id @item) " " (:text @item))
+                   [:button {:class "red ma2" :on-click remove-delegate} "x"]])
         counter (reagent/atom 0)]
     (fn []
       [:div "Listing devcard"
+       [:div {} (str "data-cursor " @data-cursor)]
        [listing {:data-cursor data-cursor
                  :card-fn card-fn
                  :load-fn load-fn
