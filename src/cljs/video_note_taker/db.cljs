@@ -82,3 +82,17 @@
         (toast-server-error-if-needed resp nil)
         (when (= 200 (:status resp))
           (reset! data-atom (:body resp))))))
+
+(defn post-to-endpoint
+  ([endpoint params]
+   (post-to-endpoint endpoint params nil nil))
+  ([endpoint params success-fn]
+   (post-to-endpoint endpoint params success-fn nil))
+  ([endpoint params success-fn fail-fn]
+   (go (let [resp (<! (http/post (resolve-endpoint endpoint)
+                                 {:json-params params
+                                  :with-credentials true}))]
+         (toast-server-error-if-needed resp nil)
+         (if (= 200 (:status resp))
+           (when success-fn (success-fn (:body resp) resp))
+           (when fail-fn (fail-fn (:body resp) resp)))))))

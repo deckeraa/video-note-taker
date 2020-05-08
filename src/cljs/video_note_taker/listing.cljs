@@ -15,7 +15,18 @@
            (vec (remove #(= (:_id %) id-to-remove)
                         data)))))
 
-(defn listing [{:keys [data-cursor card-fn load-fn new-fn add-caption new-card-location]}]
+(defn add-item [data-cursor new-card-location item-to-add]
+  (case new-card-location
+    :top
+    (swap! data-cursor (fn [data]
+                         (vec (concat [item-to-add] data))))
+    :bottom
+    (swap! data-cursor conj item-to-add)
+    ;; default is the bottom
+    (swap! data-cursor conj item-to-add)
+    ))
+
+(defn listing [{:keys [data-cursor card-fn load-fn new-fn new-async-fn add-caption new-card-location]}]
   (when load-fn (load-fn data-cursor)
         (fn []
           [:div
@@ -29,18 +40,24 @@
                                                             data-cursor
                                                             id)]]))
                   (range 0 (count @data-cursor))))]
-           (when new-fn
+           (when (or new-fn new-async-fn)
              [:button {:class ""
-                       :on-click (fn [evt]
-                                   (case new-card-location
-                                     :top
-                                     (swap! data-cursor (fn [data]
-                                                          (vec (concat [(new-fn)] data))))
-                                     :bottom
-                                     (swap! data-cursor conj (new-fn))
-                                     ;; default is the bottom
-                                     (swap! data-cursor conj (new-fn))
-                                     ))}
+                       :on-click
+                       (fn [evt]
+                         (if new-async-fn
+                           (new-async-fn (partial add-item data-cursor new-card-location))
+                           (add-item data-cursor new-card-location (new-fn))))
+                       ;; (fn [item-to-add evt]
+                                 ;;   (case new-card-location
+                                 ;;     :top
+                                 ;;     (swap! data-cursor (fn [data]
+                                 ;;                          (vec (concat [(new-fn)] data))))
+                                 ;;     :bottom
+                                 ;;     (swap! data-cursor conj (new-fn))
+                                 ;;     ;; default is the bottom
+                                 ;;     (swap! data-cursor conj (new-fn))
+                                 ;;     ))
+                       }
               (or add-caption "+ Add")])
            ])))
 

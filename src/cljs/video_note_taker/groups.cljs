@@ -1,5 +1,6 @@
 (ns video-note-taker.groups
   (:require [reagent.core :as reagent]
+            [cljs-uuid-utils.core :as uuid]
             [video-note-taker.svg :as svg]
             [video-note-taker.atoms :as atoms]
             [video-note-taker.video-notes :refer [load-connected-users]]
@@ -37,4 +38,10 @@
       [listing/listing
        {:data-cursor data-cursor
         :card-fn (fn [group-cursor] [:div {} (str "group-cursor " @group-cursor)])
-        :load-fn (partial db/put-endpoint-in-atom "get-groups" {} data-cursor)}])))
+        :load-fn (partial db/put-endpoint-in-atom "get-groups" {} data-cursor)
+        :new-async-fn (fn [call-with-new-data-fn]
+                  ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
+                  ;;   {:_id uuid :name "My Untitled Group"})
+                        (db/post-to-endpoint "group" {:name "My Untitled Group"}
+                                             (fn [doc] (call-with-new-data-fn doc))))
+        :add-caption "Create new group"}])))
