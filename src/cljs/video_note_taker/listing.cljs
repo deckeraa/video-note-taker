@@ -29,20 +29,21 @@
     (swap! data-cursor conj item-to-add)
     ))
 
-(defn listing [{:keys [data-cursor card-fn load-fn new-fn new-async-fn add-caption new-card-location]}]
+(defn listing [{:keys [data-cursor card-fn load-fn new-fn new-async-fn add-caption new-card-location] :as options}]
   (when load-fn (load-fn data-cursor)
         (fn []
           [:div
-           [:div {} (str @data-cursor)]
+           ;;[:div {} (str @data-cursor)]
            [:ul
             (doall
              (map (fn [idx]
                     (let [item-cursor (reagent/cursor data-cursor [idx])
                           id (:_id @item-cursor)]
                       ^{:key id}
-                      [:li {} [card-fn item-cursor (partial remove-item-from-listing
-                                                            data-cursor
-                                                            id)]]))
+                      [:li {} [card-fn item-cursor options;; (partial remove-item-from-listing
+                                                   ;;          data-cursor
+                                                   ;;          id)
+                               ]]))
                   (range 0 (count @data-cursor))))]
            (when (or new-fn new-async-fn)
              [:button {:class ""

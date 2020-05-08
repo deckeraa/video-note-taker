@@ -28,7 +28,7 @@
 ;;   (let [group-cursor (reagent/atom {})]
 ;;     [groups group-cursor]))
 
-(defn group-card [group-cursor]
+(defn group-card [group-cursor options]
   (let [users-cursor (reagent/cursor group-cursor [:users])
         is-editing? (reagent/atom false)]
     (fn []
@@ -53,7 +53,7 @@
             :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor #(reset! is-editing? false)))
             }]]
          [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
-          [:div (str @group-cursor)]
+          ;;          [:div (str @group-cursor)]
           [:div
            [:div {:class "f3"} (:name @group-cursor)]
            [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
@@ -72,7 +72,8 @@
                                        @group-cursor
                                        (fn []
                                          (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
-                                         (fn [] "TODO reload the list"))))}))}
+                                         ; Reload the list after deletion
+                                         ((:load-fn options) (:data-cursor options)))))}))}
               "grey" "18px"])]])])))
 
 (defn group-listing []
@@ -80,7 +81,7 @@
     (fn []
       [listing/listing
        {:data-cursor data-cursor
-        :card-fn group-card;(fn [group-cursor] [:div {} (str "group-cursor " @group-cursor)])
+        :card-fn group-card
         :load-fn (partial db/put-endpoint-in-atom "get-groups" {} data-cursor)
         :new-async-fn (fn [call-with-new-data-fn]
                   ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
