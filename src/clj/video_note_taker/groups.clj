@@ -22,6 +22,13 @@
     (println "map :doc " (map :dooc groups))
     (json-response (vec (map :doc groups)))))
 
+(defn delete-group-handler [req username roles]
+  (let [req-group   (util/get-body req)
+        saved-group (couch/get-document db (:_id req-group))]
+    (if (= (:created-by saved-group) username)
+      (couch/delete-document db saved-group)
+      (util/not-authorized-response))))
+
 (defn group-handler [req username roles]
   (let [req-group   (util/get-body req)
         saved-group (couch/get-document db (:_id req-group))]

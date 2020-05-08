@@ -367,6 +367,7 @@
         ["get-connected-users" (wrap-cookie-auth get-connected-users-handler)]
         ["get-groups" (wrap-cookie-auth groups/get-groups-handler)]
         ["group" (wrap-cookie-auth groups/group-handler)]
+        ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
         ]])
 
 (defn wrap-index

@@ -7,6 +7,7 @@
             [video-note-taker.pick-list :refer [pick-list]]
             [video-note-taker.listing :as listing]
             [video-note-taker.editable-field :as editable-field]
+            [video-note-taker.toaster-oven :as toaster-oven]
             [video-note-taker.db :as db])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]))
@@ -56,7 +57,21 @@
           [:div
            [:div {:class "f3"} (:name @group-cursor)]
            [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
-          [svg/pencil {:class "ma3" :on-click #(reset! is-editing? true)} "grey" "18px"]])])))
+          [:div {:class "flex flex-columns"}
+           [svg/pencil {:class "mh3" :on-click #(reset! is-editing? true)} "grey" "18px"]
+           (when (= (:created-by @group-cursor) (:name @atoms/user-cursor))
+             [svg/trash {:class "mr2"
+                         :on-click
+                         (fn []
+                           (toaster-oven/add-toast
+                            "Delete group permanently?" nil nil
+                            {:cancel-fn (fn [] nil)
+                             :ok-fn (fn []
+                                      (db/post-to-endpoint
+                                       "delete-group"
+                                       @group-cursor
+                                       (fn [] "TODO reload the list")))}))}
+              "grey" "18px"])]])])))
 
 (defn group-listing []
   (let [data-cursor (reagent/atom [])]
