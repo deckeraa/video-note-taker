@@ -230,6 +230,8 @@
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy (get-in req [:params "file" :tempfile])
              (io/file (str "./resources/private/" new-short-filename)))
+    ;; delete the temp file -- this happens automatically by Ring, but takes an hour, so this frees up space sooner
+    (io/delete-file (get-in req [:params "file" :tempfile]))
     ;; put some video metadata into Couch
     (let [video-doc (couch/put-document db {:_id id
                                             :type "video"
