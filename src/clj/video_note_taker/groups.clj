@@ -18,8 +18,6 @@
 (defn get-groups-handler [req username roles]
   (let [groups (couch/get-view db "groups" "by_user"
                                {:key username :include_docs true})]
-    (println "groups: " groups)
-    (println "map :doc " (map :dooc groups))
     (json-response (vec (map :doc groups)))))
 
 (defn delete-group-handler [req username roles]
@@ -32,7 +30,6 @@
 (defn group-handler [req username roles]
   (let [req-group   (util/get-body req)
         saved-group (couch/get-document db (:_id req-group))]
-    (println "group-handler: " req-group)
     (if saved-group
       (if (= (:created-by saved-group) username)
         (json-response (couch/put-document db req-group))

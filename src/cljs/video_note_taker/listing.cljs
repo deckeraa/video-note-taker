@@ -9,16 +9,12 @@
    [devcards.core :refer [defcard defcard-rg deftest]]))
 
 (defn remove-item-from-listing [data-cursor id-to-remove]
-  (println "Removing " id-to-remove)
   (swap! data-cursor
          (fn [data]
            (vec (remove #(= (:_id %) id-to-remove)
                         data)))))
 
 (defn add-item [data-cursor new-card-location item-to-add]
-  (println "data-cursor: " data-cursor)
-  (println "new-card-location: " new-card-location)
-  (println "item-to-add: " item-to-add)
   (case new-card-location
     :top
     (swap! data-cursor (fn [data]

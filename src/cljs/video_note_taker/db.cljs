@@ -92,7 +92,6 @@
    (go (let [resp (<! (http/post (resolve-endpoint endpoint)
                                  {:json-params params
                                   :with-credentials true}))]
-         (println "post-to-endpoint resp: " resp)
          (toast-server-error-if-needed resp nil)
          (if (= 200 (:status resp))
            (when success-fn (success-fn (:body resp) resp))
