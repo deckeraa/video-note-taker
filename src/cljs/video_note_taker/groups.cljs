@@ -1,16 +1,18 @@
 (ns video-note-taker.groups
   (:require [reagent.core :as reagent]
             [cljs-uuid-utils.core :as uuid]
+            [cljs-http.client :as http]
+            [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
             [video-note-taker.svg :as svg]
             [video-note-taker.atoms :as atoms]
-            [video-note-taker.video-notes :refer [load-connected-users]]
             [video-note-taker.pick-list :refer [pick-list]]
             [video-note-taker.listing :as listing]
             [video-note-taker.editable-field :as editable-field]
             [video-note-taker.toaster-oven :as toaster-oven]
             [video-note-taker.db :as db])
   (:require-macros
-   [devcards.core :refer [defcard defcard-rg deftest]]))
+   [devcards.core :refer [defcard defcard-rg deftest]]
+   [cljs.core.async.macros :refer [go]]))
 
 ;; (defn groups [group-cursor]
 ;;   (fn []
@@ -27,6 +29,16 @@
 ;; (defcard-rg groups-card
 ;;   (let [group-cursor (reagent/atom {})]
 ;;     [groups group-cursor]))
+
+(defn load-connected-users
+  "Loads the list of connects users. Used to populate the list of options for the share dialog.
+  At present, each user is connected to each other user in the Alpha Deploy.
+  This will change in the future when a user connection workflow is implemented."
+  [user-list-atm]
+  (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
+                               {}))
+            users (set (:body resp))]
+        (reset! user-list-atm users))))
 
 (defn load-groups [data-cursor]
   (db/put-endpoint-in-atom "get-groups" {} data-cursor))

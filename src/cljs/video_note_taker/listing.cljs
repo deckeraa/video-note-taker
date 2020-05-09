@@ -2,7 +2,6 @@
   (:require [reagent.core :as reagent]
             [video-note-taker.svg :as svg]
             [video-note-taker.atoms :as atoms]
-            [video-note-taker.video-notes :refer [load-connected-users]]
             [video-note-taker.pick-list :refer [pick-list]]
             [video-note-taker.db :as db])
   (:require-macros
