@@ -124,7 +124,7 @@
         (doall (map (fn [option]
                       ^{:key option}
                       [:li {:class "flex items-center justify-center"}
-                       (get option :name)
+                       (get option name-key)
                        (when (or (nil? can-delete-option-fn) (can-delete-option-fn option))
                          [svg/x {:class "ma2 dim"
                                  :on-click (fn []
@@ -150,11 +150,11 @@
          (doall
           (map (fn [item]
                  (println "option: " item)
-                 ^{:key (:_id item)}
+                 ^{:key (or (:_id item) "-- Select option --")}
                  [:option {:value (or (:_id item) "")}
                   (if (= item "")
                     "-- Select option --"
-                    (:name item))])
+                    (get item name-key))])
                (conj (clojure.set/difference
                       (set (vals @option-list-atm))
                       @selected-data-atm)
