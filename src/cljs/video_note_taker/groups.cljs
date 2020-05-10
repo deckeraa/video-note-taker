@@ -43,6 +43,15 @@
 (defn load-groups [data-cursor]
   (db/put-endpoint-in-atom "get-groups" {} data-cursor))
 
+(defn load-groups-into-map [data-cursor]
+  (db/post-to-endpoint
+   "get-groups" {}
+   (fn [groups]
+     ;; take out _id from each doc and make a map of that
+     (reset! data-cursor
+            (apply merge (map (fn [v] {(str (:_id v)) v}) groups)))))
+  )
+
 (defn group-card [group-cursor options]
   (let [users-cursor (reagent/cursor group-cursor [:users])
         is-editing? (reagent/atom false)]

@@ -122,10 +122,10 @@
         save-to-cursor-fn #(reset! data-cursor
                                       (condp = preferred-type
                                         cljs.core/List
-                                        (list @selected-data-atm)
+                                        (list (map :_id @selected-data-atm))
                                         cljs.core/PersistentVector
-                                        (vec @selected-data-atm)
-                                        @selected-data-atm))
+                                        (vec  (map :_id @selected-data-atm))
+                                        (map :_id @selected-data-atm)))
         ;; save off save-to-cursor-fn into a passed-in atom so that parent controls can implement their own "ok" button if desired
         _ (when save-to-cursor-delegate-atom (reset! save-to-cursor-delegate-atom save-to-cursor-fn))
         _ (when option-load-fn (option-load-fn option-list-atm)

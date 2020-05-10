@@ -109,7 +109,7 @@
             users (set (:body resp))]
         (reset! user-list-atm users))))
 
-(defn share-dialog
+(defn share-dialog-old
   "Dialog that allows a user to share the video with other users."
   [remove-delegate-atm video-cursor notes-cursor]
   (let [selected-users-atm (reagent/atom (set (:users @video-cursor)))
@@ -170,6 +170,57 @@
                                     (reset! video-cursor (:body resp))
                                     (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
                                     (load-notes notes-cursor video-cursor))))}
+         "Ok"]]])))
+
+(defn share-dialog
+  "Dialog that allows a user to share the video with other users."
+  [remove-delegate-atm video-cursor notes-cursor]
+  (let [users-cursor  (reagent/cursor video-cursor [:users])
+        groups-cursor (reagent/cursor video-cursor [:groups])
+        users-save-atom (reagent/atom #())
+        groups-save-atom (reagent/atom #())
+        ]
+    (compare-and-set! groups-cursor nil []) ;; initialize groups if needed
+    (compare-and-set! users-cursor nil []) ;; initialize users if needed
+    (fn [remove-delegate-atm video-cursor notes-cursor]
+      [:div {:class "flex flex-column"}
+       ;; List out the current users selected to be on the video
+       [pick-list/pick-list
+        {:data-cursor users-cursor
+         :option-load-fn load-connected-users
+         :caption "Share with users:"
+         :save-to-cursor-delegate-atom users-save-atom}]
+       [pick-list/pick-list-with-docs
+        {
+         :data-cursor           groups-cursor
+         :option-load-fn        groups/load-groups-into-map
+         :caption               "Share with groups:"
+         :save-to-cursor-delegate-atom groups-save-atom
+         :name-key :name
+         }]
+       ;; Cancel and OK buttons
+       [:p (str @video-cursor)]
+       [:p (str @users-cursor)]
+       [:p (str @groups-cursor)]
+       [:div {:class "flex mt2 mh2"}
+        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                  :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
+         "Cancel"]
+        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                  :on-click (fn [e]
+                              (@users-save-atom)
+                              (@groups-save-atom)
+                              (@remove-delegate-atm) ; closes the dialog
+                              ;; (go (let [resp (<! (http/post
+                              ;;                     (db/resolve-endpoint "update-video-permissions")
+                              ;;                     {:json-params (assoc @video-cursor
+                              ;;                                          :users (vec @selected-users-atm))
+                              ;;                      :with-credentials true}))]
+                              ;;       (db/toast-server-error-if-needed resp nil)
+                              ;;       (reset! video-cursor (:body resp))
+                              ;;       (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
+                              ;;       (load-notes notes-cursor video-cursor)))
+                              )}
          "Ok"]]])))
 
 (defcard-rg test-share-dialog

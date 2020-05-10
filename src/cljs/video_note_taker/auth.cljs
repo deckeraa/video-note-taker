@@ -109,6 +109,10 @@
              "Couldn't create new user :("
              "Login failed :(")])]])))
 
+(defcard-rg user-creation-card
+  "Can be used to set the cookie."
+  [login (reagent/atom {})])
+
 (defn user-creation []
   (let [user-atm (reagent/atom "")
         pass-atm (reagent/atom "")
