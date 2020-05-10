@@ -23,7 +23,7 @@
                                 ))]
         (db/toast-server-error-if-needed resp nil)
         (when (= 200 (:status resp))
-          (reset! video-listing-cursor (:body resp))))))
+          (reset! video-listing-cursor (sort-by :display-name (:body resp)))))))
 
 (defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
   (let [hover-atm (reagent/atom false)]
