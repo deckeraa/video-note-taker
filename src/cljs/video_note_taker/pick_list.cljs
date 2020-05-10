@@ -64,23 +64,25 @@
                      (conj (clojure.set/difference @option-list-atm @selected-data-atm) ""))))]]
        ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e]
-                              (@remove-delegate-atom)
-                              (when cancel-fn (cancel-fn)))} ; closes the dialog
-         "Cancel"]
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e]
-                              (reset! data-cursor
-                                      (condp = preferred-type
-                                        cljs.core/List
-                                        (list @selected-data-atm)
-                                        cljs.core/PersistentVector
-                                        (vec @selected-data-atm)
-                                        @selected-data-atm))
-                              (@remove-delegate-atom) ; closes the dialog
-                              (when ok-fn (ok-fn)))}
-         "Ok"]]])))
+        (when cancel-fn
+          [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                    :on-click (fn [e]
+                                (when remove-delegate-atom (@remove-delegate-atom))
+                                (when cancel-fn (cancel-fn)))} ; closes the dialog
+           "Cancel"])
+        (when ok-fn
+          [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                    :on-click (fn [e]
+                                (reset! data-cursor
+                                        (condp = preferred-type
+                                          cljs.core/List
+                                          (list @selected-data-atm)
+                                          cljs.core/PersistentVector
+                                          (vec @selected-data-atm)
+                                          @selected-data-atm))
+                                (when remove-delegate-atom (@remove-delegate-atom)) ; closes the dialog
+                                (when ok-fn (ok-fn)))}
+           "Ok"])]])))
 
 
 
@@ -106,12 +108,23 @@
            caption
            ok-fn
            cancel-fn
-           name-key]}
+           save-to-cursor-delegate-atom
+           name-key
+           ]}
    ]
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
         preferred-type (type @data-cursor) ; we preserve the seq type of data-cursor, but use sets internally. preferred-type tells us what seq type to case back to when putting the selection back into the data-cursor.
+        save-to-cursor-fn #(reset! data-cursor
+                                      (condp = preferred-type
+                                        cljs.core/List
+                                        (list @selected-data-atm)
+                                        cljs.core/PersistentVector
+                                        (vec @selected-data-atm)
+                                        @selected-data-atm))
+        ;; save off save-to-cursor-fn into a passed-in atom so that parent controls can implement their own "ok" button if desired
+        _ (when save-to-cursor-delegate-atom (reset! save-to-cursor-delegate-atom save-to-cursor-fn))
         _ (when option-load-fn (option-load-fn option-list-atm)
                                         ;(reset! option-list-atm (set (option-load-fn)))
                 )
@@ -160,27 +173,32 @@
                       @selected-data-atm)
                      "")))]]
        ;; Cancel and OK buttons
+
        [:div {:class "flex mt2 mh2"}
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e]
-                              (@remove-delegate-atom)
-                              (when cancel-fn (cancel-fn)))} ; closes the dialog
-         "Cancel"]
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e]
-                              (reset! data-cursor
-                                      (condp = preferred-type
-                                        cljs.core/List
-                                        (list @selected-data-atm)
-                                        cljs.core/PersistentVector
-                                        (vec @selected-data-atm)
-                                        @selected-data-atm))
-                              (@remove-delegate-atom) ; closes the dialog
-                              (when ok-fn (ok-fn)))}
-         "Ok"]]])))
+        (when cancel-fn
+          [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                    :on-click (fn [e]
+                                (@remove-delegate-atom)
+                                (cancel-fn))} ; closes the dialog
+           "Cancel"])
+        (when ok-fn
+          [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                    :on-click (fn [e]
+                                (save-to-cursor-fn)
+                                ;; (reset! data-cursor
+                                ;;         (condp = preferred-type
+                                ;;           cljs.core/List
+                                ;;           (list @selected-data-atm)
+                                ;;           cljs.core/PersistentVector
+                                ;;           (vec @selected-data-atm)
+                                ;;           @selected-data-atm))
+                                (@remove-delegate-atom) ; closes the dialog
+                                (ok-fn))}
+           "Ok"])]])))
 
 (defcard-rg test-pick-list-with-map
-  (let [data-cursor        (reagent/atom [{:_id 123 :name "abc"}])]
+  (let [data-cursor        (reagent/atom [{:_id 123 :name "abc"}])
+        save-to-cursor-delegate-atom (reagent/atom (fn [] nil))]
     (fn []
       [:div {:class ""}
        [pick-list-with-docs
@@ -194,5 +212,19 @@
          :can-delete-option-fn  (fn [option] (not (= option "a")))
          :caption               "CAPTION GOES HERE:"
          :name-key :name
+         :save-to-cursor-delegate-atom save-to-cursor-delegate-atom
          }]
+       [:button {:on-click #(@save-to-cursor-delegate-atom)} "save-to-cursor-delegate"]
        [:p (str @data-cursor)]])))
+
+(defcard-rg double-pick-list
+  (let [video-cursor  (reagent/atom {:users [] :groups []})
+        users-cursor  (reagent/cursor video-cursor [:users])
+        groups-cursor (reagent/cursor video-cursor [:groups])]
+    (fn []
+      [:div {:class ""}
+       [pick-list
+        {:data-cursor users-cursor
+         :option-load-fn #(reset! % #{"Alpha" "Bravo" "Charlie"})
+         :caption "Users:"}]
+       [:button {:on-click (fn [] nil)} "Ok"]])))
