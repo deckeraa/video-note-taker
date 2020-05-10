@@ -13,12 +13,21 @@
            caption
            ok-fn
            cancel-fn
+           save-to-cursor-delegate-atom
            name-key]}
    ]
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
         preferred-type (type @data-cursor) ; we preserve the seq type of data-cursor, but use sets internally. preferred-type tells us what seq type to case back to when putting the selection back into the data-cursor.
+        save-to-cursor-fn #(reset! data-cursor
+                                   (condp = preferred-type
+                                     cljs.core/List
+                                     (list @selected-data-atm)
+                                     cljs.core/PersistentVector
+                                     (vec @selected-data-atm)
+                                     @selected-data-atm))
+        _ (when save-to-cursor-delegate-atom (reset! save-to-cursor-delegate-atom save-to-cursor-fn))
         _ (when option-load-fn (option-load-fn option-list-atm)
                                         ;(reset! option-list-atm (set (option-load-fn)))
                 )
@@ -73,13 +82,7 @@
         (when ok-fn
           [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                     :on-click (fn [e]
-                                (reset! data-cursor
-                                        (condp = preferred-type
-                                          cljs.core/List
-                                          (list @selected-data-atm)
-                                          cljs.core/PersistentVector
-                                          (vec @selected-data-atm)
-                                          @selected-data-atm))
+                                (save-to-cursor-fn)
                                 (when remove-delegate-atom (@remove-delegate-atom)) ; closes the dialog
                                 (when ok-fn (ok-fn)))}
            "Ok"])]])))
@@ -150,10 +153,6 @@
                   :class "bn w5"
                   :value @user-input-atm
                   :on-change (fn [e]
-                               (println "option: " (-> e .-target .-value))
-                               (println "type option: " (type (-> e .-target .-value)))
-                               (println "option-list-atm: " @option-list-atm)
-                               (println "Selected " (get-in @option-list-atm [(-> e .-target .-value)]))
                                (swap! selected-data-atm
                                       conj
                                       (get @option-list-atm
@@ -162,7 +161,6 @@
                                )}
          (doall
           (map (fn [item]
-                 (println "option: " item)
                  ^{:key (or (:_id item) "-- Select option --")}
                  [:option {:value (or (:_id item) "")}
                   (if (= item "")
@@ -185,13 +183,6 @@
           [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                     :on-click (fn [e]
                                 (save-to-cursor-fn)
-                                ;; (reset! data-cursor
-                                ;;         (condp = preferred-type
-                                ;;           cljs.core/List
-                                ;;           (list @selected-data-atm)
-                                ;;           cljs.core/PersistentVector
-                                ;;           (vec @selected-data-atm)
-                                ;;           @selected-data-atm))
                                 (@remove-delegate-atom) ; closes the dialog
                                 (ok-fn))}
            "Ok"])]])))
@@ -220,11 +211,22 @@
 (defcard-rg double-pick-list
   (let [video-cursor  (reagent/atom {:users [] :groups []})
         users-cursor  (reagent/cursor video-cursor [:users])
-        groups-cursor (reagent/cursor video-cursor [:groups])]
+        groups-cursor (reagent/cursor video-cursor [:groups])
+        users-save-atom (reagent/atom #())
+        groups-save-atom (reagent/atom #())]
     (fn []
       [:div {:class ""}
        [pick-list
         {:data-cursor users-cursor
          :option-load-fn #(reset! % #{"Alpha" "Bravo" "Charlie"})
-         :caption "Users:"}]
-       [:button {:on-click (fn [] nil)} "Ok"]])))
+         :caption "Users:"
+         :save-to-cursor-delegate-atom users-save-atom}]
+       [pick-list-with-docs
+        {:data-cursor groups-cursor
+         :option-load-fn #(reset! % {"456" {:_id 456 :name "def"}
+                                     "789" {:_id 789 :name "ghi"}})
+         :caption "Groups:"
+         :name-key :name
+         :save-to-cursor-delegate-atom groups-save-atom}]
+       [:button {:on-click (fn [] (@users-save-atom) (@groups-save-atom))} "Ok"]
+       [:p (str @video-cursor)]])))
