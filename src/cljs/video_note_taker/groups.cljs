@@ -118,3 +118,15 @@
                                                (println "doc from post-to-endpoint: " doc)
                                                (call-with-new-data-fn doc))))
         :add-caption "Create new group"}])))
+
+(defcard-rg bulk-docs-devcards
+  (let [resp-atom (reagent/atom "")]
+    (fn []
+      [:div
+       [:button {:on-click
+                 #(db/put-endpoint-in-atom
+                   "bulk-get-doc"
+                   {:docs [{:id "6ad12c0291d9f043fb092d076a000cc1"}
+                           {:id "6ad12c0291d9f043fb092d076a006c04"}]} resp-atom)} "bulk-get-doc"]
+       [:p (str @resp-atom)]])))
+ 
