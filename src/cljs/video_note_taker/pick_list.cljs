@@ -118,43 +118,47 @@
         ]
     (fn []
       [:div {:class "flex flex-column"}
-       ;; List out the current selection who selected to be on the video
+       ;; List out the current selections
        [:div {} caption]
        [:ul
         (doall (map (fn [option]
                       ^{:key option}
                       [:li {:class "flex items-center justify-center"}
-                       (if name-key
-                         (str option)
-                           option)
+                       (get option :name)
                        (when (or (nil? can-delete-option-fn) (can-delete-option-fn option))
                          [svg/x {:class "ma2 dim"
                                  :on-click (fn []
                                              (swap! selected-data-atm disj option))}
                           "red" "12px"])])
                     @selected-data-atm))]
-       ;; A selection box for adding new users
+       ;; A selection box for adding new items
        [:div {:class "flex br3"}
         [:select {:type :text
                   :class "bn w5"
                   :value @user-input-atm
                   :on-change (fn [e]
-                               (swap! selected-data-atm conj (-> e .-target .-value))
+                               (println "option: " (-> e .-target .-value))
+                               (println "type option: " (type (-> e .-target .-value)))
+                               (println "option-list-atm: " @option-list-atm)
+                               (println "Selected " (get-in @option-list-atm [(-> e .-target .-value)]))
+                               (swap! selected-data-atm
+                                      conj
+                                      (get @option-list-atm
+                                           (-> e .-target .-value)))
                                (reset! user-input-atm "")
                                )}
          (doall
-          (if name-key
-            (map (fn [item]
-                   ^{:key item}
-                   [:option {:value (or item "")}
-                    (if (= item "")
-                      "-- Select option --"
-                      (:name item))])
-                 (conj (clojure.set/difference @option-list-atm @selected-data-atm) ""))
-            (map (fn [name]
-                       ^{:key name}
-                       [:option {:value name} (if (= name "") "-- Select option --" name)])
-                     (conj (clojure.set/difference @option-list-atm @selected-data-atm) ""))))]]
+          (map (fn [item]
+                 (println "option: " item)
+                 ^{:key (:_id item)}
+                 [:option {:value (or (:_id item) "")}
+                  (if (= item "")
+                    "-- Select option --"
+                    (:name item))])
+               (conj (clojure.set/difference
+                      (set (vals @option-list-atm))
+                      @selected-data-atm)
+                     "")))]]
        ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
@@ -179,14 +183,14 @@
   (let [data-cursor        (reagent/atom [{:_id 123 :name "abc"}])]
     (fn []
       [:div {:class ""}
-       [pick-list
+       [pick-list-with-docs
         {:remove-delegate-atom    (reagent/atom (fn [] nil))
          :data-cursor           data-cursor     
          :option-load-fn
          (fn [options-cursor]
            (reset! options-cursor
-                   #{{:_id 456 :name "def"}
-                     {:_id 789 :name "ghi"}}))
+                   {"456" {:_id 456 :name "def"}
+                    "789" {:_id 789 :name "ghi"}}))
          :can-delete-option-fn  (fn [option] (not (= option "a")))
          :caption               "CAPTION GOES HERE:"
          :name-key :name
