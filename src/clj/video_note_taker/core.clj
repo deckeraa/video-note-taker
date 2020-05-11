@@ -153,10 +153,50 @@
 ;; }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn run-mango-query [req query]
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (let [resp (http/post
+                "http://localhost:5984/video-note-taker/_find"
+                {:as :json
+                 :content-type :json
+                 :headers {"Cookie" (str "AuthSession=" cookie-value)}
+                 :form-params query
+                 ;; {"selector"
+                 ;;  {"$and" [{"type"
+                 ;;            {"$eq" "note"}}
+                 ;;           {"users"
+                 ;;            {"$elemMatch"
+                 ;;             {"$eq" username}}},
+                 ;;           {"text"
+                 ;;            {"$regex" (construct-search-regex (:text params) true)}}]}
+                 ;;  "execution_stats" true}
+                 })]
+      (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
+      (:body resp))))
+
+;; (defn get-video-listing-handler [req username roles]
+;;   (let [videos (couch/get-view db "videos" "by_user"
+;;                                {:key username :include_docs true})]
+;;     (json-response (vec (map :doc videos)))))
+
 (defn get-video-listing-handler [req username roles]
-  (let [videos (couch/get-view db "videos" "by_user"
-                               {:key username :include_docs true})]
-    (json-response (vec (map :doc videos)))))
+  (let [users ["charlie" "alpha"]
+        groups ["6ad12c0291d9f043fb092d076a000cc1"]
+        query {"selector"
+               {"$and" [{"type"
+                         {"$eq" "video"}}
+                        {"$or"
+                         [{"users"
+                           {"$elemMatch"
+                            {"$eq" username}}}
+                          {"groups"
+                           {"$elemMatch"
+                            {"$in" groups}}}]}]}
+               "execution_stats" true}
+        videos (run-mango-query req query)]
+    (println "mango search returned: " videos)
+    (println "Sending up: " (vec (:docs videos)))
+    (json-response (vec (:docs videos)))))
 
 (defn escape-csv-field [s]
   (str "\"" (clojure.string/escape s {\" "\"\""}) "\""))
