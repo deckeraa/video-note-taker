@@ -134,9 +134,8 @@
                                         ;(reset! option-list-atm (set (option-load-fn)))
                 )]
     (if id-lookup-fn
-;      (println "id-lookup-fn" id-lookup-fn)
       (id-lookup-fn (vec @data-cursor) selected-data-atm)
-      (db/bulk-lookup-to-atom (vec @data-cursor) selected-data-atm))
+      (db/bulk-lookup (vec @data-cursor) (fn [docs] (reset! selected-data-atm (set docs)))))
     (fn []
       [:div {:class "flex flex-column"}
        ;; List out the current selections
