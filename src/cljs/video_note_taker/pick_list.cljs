@@ -1,6 +1,7 @@
 (ns video-note-taker.pick-list
   (:require [reagent.core :as reagent]
-            [video-note-taker.svg :as svg])
+            [video-note-taker.svg :as svg]
+            [video-note-taker.db :as db])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]))
 
@@ -113,9 +114,10 @@
            cancel-fn
            save-to-cursor-delegate-atom
            name-key
+           id-lookup-fn
            ]}
    ]
-  (let [selected-data-atm (reagent/atom (set @data-cursor))
+  (let [selected-data-atm (reagent/atom nil)
         user-input-atm (reagent/atom "")
         option-list-atm  (reagent/atom #{})
         preferred-type (type @data-cursor) ; we preserve the seq type of data-cursor, but use sets internally. preferred-type tells us what seq type to case back to when putting the selection back into the data-cursor.
@@ -130,11 +132,15 @@
         _ (when save-to-cursor-delegate-atom (reset! save-to-cursor-delegate-atom save-to-cursor-fn))
         _ (when option-load-fn (option-load-fn option-list-atm)
                                         ;(reset! option-list-atm (set (option-load-fn)))
-                )
-        ]
+                )]
+    (if id-lookup-fn
+;      (println "id-lookup-fn" id-lookup-fn)
+      (id-lookup-fn (vec @data-cursor) selected-data-atm)
+      (db/bulk-lookup-to-atom (vec @data-cursor) selected-data-atm))
     (fn []
       [:div {:class "flex flex-column"}
        ;; List out the current selections
+       ;[:div (str @selected-data-atm)]
        [:div {} caption]
        [:ul
         (doall (map (fn [option]
@@ -188,7 +194,7 @@
            "Ok"])]])))
 
 (defcard-rg test-pick-list-with-map
-  (let [data-cursor        (reagent/atom [{:_id 123 :name "abc"}])
+  (let [data-cursor        (reagent/atom [123])
         save-to-cursor-delegate-atom (reagent/atom (fn [] nil))]
     (fn []
       [:div {:class ""}
@@ -204,6 +210,11 @@
          :caption               "CAPTION GOES HERE:"
          :name-key :name
          :save-to-cursor-delegate-atom save-to-cursor-delegate-atom
+         :id-lookup-fn (fn [ids atom-to-put-docs-in]
+                         (reset! atom-to-put-docs-in
+                                 (set (map (fn [id]
+                                             {:_id id :name (str "foo_" id)})
+                                           ids))))
          }]
        [:button {:on-click #(@save-to-cursor-delegate-atom)} "save-to-cursor-delegate"]
        [:p (str @data-cursor)]])))

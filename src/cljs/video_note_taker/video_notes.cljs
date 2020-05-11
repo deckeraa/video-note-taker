@@ -225,7 +225,8 @@
 
 (defcard-rg test-share-dialog
   (let [remove-delegate-atm (reagent/atom (fn [] nil))
-        video-cursor        (reagent/atom {:_id "abc123" :users ["alpha" "bravo" "charlie"]})
+        video-cursor        (reagent/atom {:_id "abc123" :users ["alpha" "bravo" "charlie"]
+                                           :groups ["6ad12c0291d9f043fb092d076a000cc1"]})
         notes-cursor        (reagent/atom [])]
     [:div {:class ""}
      [share-dialog remove-delegate-atm video-cursor notes-cursor]]))

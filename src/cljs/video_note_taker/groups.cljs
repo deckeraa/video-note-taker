@@ -130,3 +130,11 @@
                            {:id "6ad12c0291d9f043fb092d076a006c04"}]} resp-atom)} "bulk-get-doc"]
        [:p (str @resp-atom)]])))
  
+
+(defcard-rg bulk-lookup-to-atom-devcard
+  (let [resp-atom (reagent/atom "")]
+    (db/bulk-lookup-to-atom [{:id "6ad12c0291d9f043fb092d076a000cc1"}
+                             {:id "6ad12c0291d9f043fb092d076a006c04"}]
+                            resp-atom)
+    (fn []
+      [:p (str @resp-atom)])))

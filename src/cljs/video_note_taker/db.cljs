@@ -96,3 +96,19 @@
          (if (= 200 (:status resp))
            (when success-fn (success-fn (:body resp) resp))
            (when fail-fn (fail-fn (:body resp) resp)))))))
+
+(defn bulk-lookup
+  ([ids]
+   (bulk-lookup ids nil nil))
+  ([ids success-fn]
+   (bulk-lookup ids success-fn nil))
+  ([ids success-fn fail-fn]
+   (post-to-endpoint "bulk-get-doc" {:docs ids} success-fn fail-fn)))
+
+(defn bulk-lookup-to-atom [ids atom]
+  (println "ids: " ids)
+  (bulk-lookup ids (fn [resp]
+                     (println "bulk-lookup-to-atom resp: " resp)
+                     (reset! atom resp)
+                     (println "bulk-lookup-to-atom: " atom)
+                     )))
