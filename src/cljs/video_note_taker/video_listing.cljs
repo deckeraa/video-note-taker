@@ -22,7 +22,6 @@
                                  :with-credentials false}
                                 ))]
         (db/toast-server-error-if-needed resp nil)
-        (println "Recieved: " (:body resp))
         (when (= 200 (:status resp))
           (reset! video-listing-cursor (sort-by :display-name (:body resp)))))))
 
