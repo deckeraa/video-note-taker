@@ -481,11 +481,21 @@
       (println caption req)
       resp)))
 
+(defn wrap-not-found [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (if resp
+        resp
+        (do
+          (println "Sending 404 to " (:remote-addr req) " for " (:uri req))
+          (response/not-found "Not found"))))))
+
 (def app
   (-> (make-handler api-routes)
       (wrap-index)
       (wrap-file "resources/public" {:prefer-handler? true})
       (wrap-content-type)
+      (wrap-not-found)
       (wrap-params)
       (wrap-cookies)
       (wrap-partial-content)
