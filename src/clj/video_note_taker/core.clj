@@ -72,7 +72,11 @@
       (json/read-str)
       (keywordize-keys)))
 
-(defn put-hook-fn [doc username roles]
+(defn put-hook-fn
+  "When a CouchDB call is made using a db.clj function that uses the hooks,
+  put-hook-fn will be called so that you can modify the document (for example, adding timestamps)
+  before it gets sent to CouchDB."
+  [doc username roles]
   (cond
     (= (:type doc) "note")
     (let [is-creator? (= username (:created-by doc))
@@ -138,11 +142,13 @@
     (json-response (get-notes (:video-key doc)))))
 
 (defn create-note-handler [req username roles]
-  (let [doc (get-body req)
-        video (get-doc (:video doc))]
-    ;; TODO check user access and validate that the ID isn't already taken
-    (json-response (couch/put-document db (merge doc {:created-by username
-                                                      :last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)})))))
+  (let [doc (merge (get-body req)
+                   {:created-by username
+                    :last-edit (zd/format
+                                (zd/now)
+                                java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)})
+        couch-resp (db/put-doc my-db put-hook-fn doc username roles (db/get-auth-cookie req))]
+    (json-response couch-resp)))
 
 (defn delete-doc-handler [req username roles]
   (let [doc (get-body req)]
@@ -293,7 +299,6 @@
     ;; delete the temp file -- this happens automatically by Ring, but takes an hour, so this frees up space sooner
     (io/delete-file (get-in req [:params "file" :tempfile]))
     ;; put some video metadata into Couch
-    ;; [db put-hook-fn doc username roles auth-cookie]
     (let [video-doc (db/put-doc
                      my-db put-hook-fn
                      {:_id id

@@ -57,8 +57,14 @@
    (let [audited-doc
          (if put-hook-fn
            (put-hook-fn doc username roles)
-           doc)]
-     (couch-request db :post "" audited-doc {} auth-cookie))))
+           doc)
+         couch-resp
+         (couch-request db :post "" audited-doc {} auth-cookie)]
+     (when (not (:ok couch-resp))
+       (println "Putting " couch-resp " failed: " couch-resp "."))
+     ;; couch-resp will be in the form {:ok true, :id ..., :rev ...}
+     ;; Thus we need to lookup the created doc
+     (couch-request db :get (:id couch-resp) {} {} auth-cookie))))
 
 (defn put-doc-handler [db put-hook-fn req username roles]
   (let [doc (get-body req)
