@@ -189,7 +189,8 @@
         {:data-cursor users-cursor
          :option-load-fn load-connected-users
          :caption "Share with users:"
-         :save-to-cursor-delegate-atom users-save-atom}]
+         :save-to-cursor-delegate-atom users-save-atom
+         :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))}]
        [pick-list/pick-list-with-docs
         {
          :data-cursor           groups-cursor
