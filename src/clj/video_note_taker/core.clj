@@ -33,6 +33,7 @@
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
    [clojure.data.csv :refer [read-csv write-csv]]
+   [video-note-taker.db :as db]
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]]
    [video-note-taker.upload-progress :as upload-progress]
    [video-note-taker.auth :as auth :refer [wrap-cookie-auth]]
@@ -45,6 +46,14 @@
            :username "admin"
            :password (or password "test")
            )))
+
+(def couch-url "http://localhost:5984/video-note-taker")
+
+(def my-db
+  (let [password (System/getenv "VNT_DB_PASSWORD")]
+    {:url couch-url
+     :username "admin"
+     :password (or password "test")}))
 
 (defn text-type [v]
   (content-type v "text/html"))
@@ -63,28 +72,24 @@
       (json/read-str)
       (keywordize-keys)))
 
-(defn put-doc-handler [req username roles]
-  (let [doc (get-body req)]
-    (let [audited-doc
-          ;; Here we look at the doc type and add in any extra fields we need for auditing
-          (cond
-            (= (:type doc) "note")
-            (let [is-creator? (= username (:created-by doc))
-                  is-last-editor? (if (:last-editor doc)
-                                   (= username (:last-editor doc))
-                                   (= username (:created-by doc)))
-                  sufficiently-recent? (dur/is-negative
-                                        (dur/minus-minutes
-                                         (dur/between (zd/parse (:last-edit doc)) (zd/now))
-                                         3))]
-              (merge doc
-                     {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
-                     ;; when a note is created, we'd expect the user to edit it write away,
-                     ;; so give them a chance to edit it before we mark it as "edited".
-                     (when (not (and is-creator? is-last-editor? sufficiently-recent?))
-                       {:last-editor username})))
-            :else doc)]
-      (json-response (couch/put-document db audited-doc)))))
+(defn put-hook-fn [doc username roles]
+  (cond
+    (= (:type doc) "note")
+    (let [is-creator? (= username (:created-by doc))
+          is-last-editor? (if (:last-editor doc)
+                            (= username (:last-editor doc))
+                            (= username (:created-by doc)))
+          sufficiently-recent? (dur/is-negative
+                                (dur/minus-minutes
+                                 (dur/between (zd/parse (:last-edit doc)) (zd/now))
+                                 3))]
+      (merge doc
+             {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
+             ;; when a note is created, we'd expect the user to edit it write away,
+             ;; so give them a chance to edit it before we mark it as "edited".
+             (when (not (and is-creator? is-last-editor? sufficiently-recent?))
+               {:last-editor username})))
+    :else doc))
 
 (defn get-doc [id]
   (couch/get-document db id))
@@ -163,15 +168,6 @@
                  :content-type :json
                  :headers {"Cookie" (str "AuthSession=" cookie-value)}
                  :form-params query
-                 ;; {"selector"
-                 ;;  {"$and" [{"type"
-                 ;;            {"$eq" "note"}}
-                 ;;           {"users"
-                 ;;            {"$elemMatch"
-                 ;;             {"$eq" username}}},
-                 ;;           {"text"
-                 ;;            {"$regex" (construct-search-regex (:text params) true)}}]}
-                 ;;  "execution_stats" true}
                  })]
       (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
       (:body resp))))
@@ -196,7 +192,7 @@
                            {"$elemMatch"
                             {"$in" groups}}}]}]}
                "execution_stats" true}
-        videos (run-mango-query req query)]
+        videos (db/run-mango-query query (db/get-auth-cookie req))]
     (json-response (vec (:docs videos)))))
 
 (defn escape-csv-field [s]
@@ -430,7 +426,7 @@
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
         ["get-doc" (wrap-cookie-auth get-doc-handler)]
         ["bulk-get-doc" (wrap-cookie-auth bulk-get-doc-handler)]
-        ["put-doc" (wrap-cookie-auth put-doc-handler)]
+        ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler my-db put-hook-fn))]
         ["get-notes" (wrap-cookie-auth get-notes-handler)]
         ["create-note" (wrap-cookie-auth create-note-handler)]
         ["delete-doc" (wrap-cookie-auth delete-doc-handler)]
