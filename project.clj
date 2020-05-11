@@ -107,7 +107,7 @@
     {:id           "min"
      :source-paths ["src/cljs"]
      :compiler     {:main            video-note-taker.core
-                    :optimizations   :advanced
+                    :optimizations   :simple
                     :output-to       "resources/public/js/app.js"
                     :output-dir      "resources/public/js/min"
                     :elide-asserts   true
