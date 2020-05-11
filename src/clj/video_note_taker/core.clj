@@ -174,14 +174,15 @@
       (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
       (:body resp))))
 
-;; (defn get-video-listing-handler [req username roles]
-;;   (let [videos (couch/get-view db "videos" "by_user"
-;;                                {:key username :include_docs true})]
-;;     (json-response (vec (map :doc videos)))))
+(defn load-groups-for-user
+  "Returns a list of group IDs, e.g.
+  [\"6ad12c0291d9f043fb092d076a000cc1\" \"6ad12c0291d9f043fb092d076a006c04\"]"
+  [username]
+  (vec (map :id (couch/get-view db "groups" "by_user" {:key username})))
+  )
 
 (defn get-video-listing-handler [req username roles]
-  (let [users ["charlie" "alpha"]
-        groups ["6ad12c0291d9f043fb092d076a000cc1"]
+  (let [groups (load-groups-for-user username)
         query {"selector"
                {"$and" [{"type"
                          {"$eq" "video"}}
@@ -194,8 +195,6 @@
                             {"$in" groups}}}]}]}
                "execution_stats" true}
         videos (run-mango-query req query)]
-    (println "mango search returned: " videos)
-    (println "Sending up: " (vec (:docs videos)))
     (json-response (vec (:docs videos)))))
 
 (defn escape-csv-field [s]
