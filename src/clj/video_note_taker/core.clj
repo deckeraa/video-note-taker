@@ -93,18 +93,16 @@
   (let [doc (get-body req)]
     (json-response (get-doc (:_id doc)))))
 
-(defn bulk-get-doc-handler [req username roles]
-  (let [doc-req (get-body req)
-        cookie-value (get-in req [:cookies "AuthSession" :value])]
+(defn bulk-get [req query]
+  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
     (let [resp (http/post
                 "http://localhost:5984/video-note-taker/_bulk_get"
                 {:as :json
                  :content-type :json
                  :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                 :form-params doc-req
+                 :form-params query
                  :query-params {:revs false}
                  })]
-                                        ;      (println "get-bulk-resp: " resp)
       (let [looked-up-docs (->> resp
                                :body
                                :results
@@ -113,8 +111,12 @@
                                (map :ok)
                                ;; TODO need to add access checks to this
                                )]
-;        (println looked-up-docs)
-        (json-response looked-up-docs)))))
+        looked-up-docs))))
+
+(defn bulk-get-doc-handler [req username roles]
+  (let [doc-req (get-body req)
+        cookie-value (get-in req [:cookies "AuthSession" :value])]
+    (json-response (bulk-get req doc-req))))
 
 ;; notes -> by_video
 ;; function(doc) {
@@ -372,11 +374,18 @@
 ;;   (let [video {:_id 123 :display-name "my_video.mp4" :file-name "123.mp4"
 ;;                :users ["alpha" "bravo"] :groups ["my_family"]}]))
 
+(defn get-users-from-groups [req groups]
+  (let [group-docs (bulk-get req {:docs (vec (map (fn [group] {:id group}) groups))})]
+    (apply clojure.set/union (map (comp set :users) group-docs)))
+  )
 
 (defn update-video-permissions-handler [req username roles]
   (try
     (let [video (get-body req)
-          current-video (get-doc (:_id video))]
+          current-video (get-doc (:_id video))
+          listed-users (set (:users video))
+          group-users (get-users-from-groups req (:groups video))
+          all-users (clojure.set/union listed-users group-users)]
       ;; make sure that the user is already on the document
       (if (user-has-access-to-video username current-video)
         (do
@@ -389,7 +398,7 @@
                    (fn [view-result]
                      (let [v (:doc view-result)]
                        (println "updating" v)
-                       (assoc v :users (:users video))))
+                       (assoc v :users (vec all-users))))
                    (get-notes (:_id video)))))
             ;; TODO the bulk update could fail to update certain notes.
             ;; They will still appear in below the video, but won't show up
