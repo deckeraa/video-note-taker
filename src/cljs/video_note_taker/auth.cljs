@@ -113,6 +113,18 @@
   "Can be used to set the cookie."
   [login (reagent/atom {})])
 
+(defn load-user-cursor
+  ([atm]
+   (db/put-endpoint-in-atom "cookie-check" {} atm)))
+
+(defcard-rg load-user-cursor
+  "Don't forget to login to set the auth cookie before running this."
+  (let [resp-atom (reagent/atom nil)]
+    (fn []
+      [:div
+       [:button {:on-click (fn [] (load-user-cursor resp-atom)) } "load-user-cursor"]
+       [:p (str @resp-atom)]])))
+
 (defn user-creation []
   (let [user-atm (reagent/atom "")
         pass-atm (reagent/atom "")
