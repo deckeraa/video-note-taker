@@ -361,7 +361,17 @@
                             :search-string (:text params))))))
 
 (defn user-has-access-to-video [username video]
-  (not (empty? (filter #(= username %) (:users video)))))
+  (let [groups (load-groups-for-user username)]
+    (or
+     ; Are they listed in the :users key?
+     (not (empty? (filter #(= username %) (:users video))))
+     ; Is one of the groups of which they are part listed in the :groups key?
+     (not (empty? (clojure.set/intersection (set groups) (set (:groups video))))))))
+
+;; (deftest test-user-has-access-to-video
+;;   (let [video {:_id 123 :display-name "my_video.mp4" :file-name "123.mp4"
+;;                :users ["alpha" "bravo"] :groups ["my_family"]}]))
+
 
 (defn update-video-permissions-handler [req username roles]
   (try
