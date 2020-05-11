@@ -160,17 +160,17 @@
 ;; }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn run-mango-query [req query]
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (let [resp (http/post
-                "http://localhost:5984/video-note-taker/_find"
-                {:as :json
-                 :content-type :json
-                 :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                 :form-params query
-                 })]
-      (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
-      (:body resp))))
+;; (defn run-mango-query [req query]
+;;   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
+;;     (let [resp (http/post
+;;                 "http://localhost:5984/video-note-taker/_find"
+;;                 {:as :json
+;;                  :content-type :json
+;;                  :headers {"Cookie" (str "AuthSession=" cookie-value)}
+;;                  :form-params query
+;;                  })]
+;;       (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
+;;       (:body resp))))
 
 (defn load-groups-for-user
   "Returns a list of group IDs, e.g.
@@ -293,13 +293,18 @@
     ;; delete the temp file -- this happens automatically by Ring, but takes an hour, so this frees up space sooner
     (io/delete-file (get-in req [:params "file" :tempfile]))
     ;; put some video metadata into Couch
-    (let [video-doc (couch/put-document db {:_id id
-                                            :type "video"
-                                            :display-name filename
-                                            :file-name new-short-filename
-                                            :users [username]
-                                            :uploaded-by username
-                                            :uploaded-datetime (.toString (new java.util.Date))})]
+    ;; [db put-hook-fn doc username roles auth-cookie]
+    (let [video-doc (db/put-doc
+                     my-db put-hook-fn
+                     {:_id id
+                      :type "video"
+                      :display-name filename
+                      :file-name new-short-filename
+                      :users [username]
+                      :uploaded-by username
+                      :uploaded-datetime (.toString (new java.util.Date))}
+                     username
+                     roles (db/get-auth-cookie req))]
       (json-response video-doc))))
 
 (defn delete-video-handler [req username roles]
