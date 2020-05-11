@@ -103,7 +103,7 @@
   ([ids success-fn]
    (bulk-lookup ids success-fn nil))
   ([ids success-fn fail-fn]
-   (post-to-endpoint "bulk-get-doc" {:docs ids} success-fn fail-fn)))
+   (post-to-endpoint "bulk-get-doc" {:docs (vec (map (fn [id] {:id id}) ids))} success-fn fail-fn)))
 
 (defn bulk-lookup-to-atom [ids atom]
   (println "ids: " ids)
