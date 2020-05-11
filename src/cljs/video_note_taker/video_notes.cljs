@@ -199,9 +199,6 @@
          :name-key :name
          }]
        ;; Cancel and OK buttons
-       [:p (str @video-cursor)]
-       [:p (str @users-cursor)]
-       [:p (str @groups-cursor)]
        [:div {:class "flex mt2 mh2"}
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
@@ -211,16 +208,12 @@
                               (@users-save-atom)
                               (@groups-save-atom)
                               (@remove-delegate-atm) ; closes the dialog
-                              ;; (go (let [resp (<! (http/post
-                              ;;                     (db/resolve-endpoint "update-video-permissions")
-                              ;;                     {:json-params (assoc @video-cursor
-                              ;;                                          :users (vec @selected-users-atm))
-                              ;;                      :with-credentials true}))]
-                              ;;       (db/toast-server-error-if-needed resp nil)
-                              ;;       (reset! video-cursor (:body resp))
-                              ;;       (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
-                              ;;       (load-notes notes-cursor video-cursor)))
-                              )}
+                              (db/post-to-endpoint
+                               "update-video-permissions" @video-cursor
+                               (fn [new-doc]
+                                 (reset! video-cursor new-doc)
+                                 (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
+                                 (load-notes notes-cursor video-cursor))))}
          "Ok"]]])))
 
 (defcard-rg test-share-dialog
