@@ -24,8 +24,6 @@
    [cemerick.url :as url]
    [clj-http.client :as http]
    [com.ashafa.clutch :as couch]
-   [com.ashafa.clutch.utils :as utils]
-   [com.ashafa.clutch.http-client :refer [couchdb-request]]
    [clojure.data.json :as json]
    [clojure.java.shell :as shell :refer [sh]]
    [clojure.java.io :as io]
@@ -220,7 +218,15 @@
                                         ; This will prevent duplicate notes in case a spreadsheet is uploaded multiple times
         (if (empty? (filter #(< (Math/abs (- time-in-seconds %)) 0.25)
                             (get-in @notes-by-video [video-key])))
-          (do (couch/put-document db {:type "note" :video video-key :video-display-name (:display-name video) :time time-in-seconds :text note-text  :users (:users video) :created-by username})
+          (do (db/put-doc my-db put-hook-fn
+                          {:type "note"
+                           :video video-key
+                           :video-display-name (:display-name video)
+                           :time time-in-seconds
+                           :text note-text
+                           :users (:users video)
+                           :created-by username}
+                          username roles auth-cookie)
               (swap! notes-by-video #(assoc % video-key
                                             (conj (get % video-key) time-in-seconds)))
               (swap! success-imports-counter inc)
@@ -360,7 +366,8 @@
       (if (user-has-access-to-video username current-video)
         (do
           ;; update the document
-          (let [updated-video (couch/put-document db video)
+          (let [updated-video (db/put-doc my-db put-hook-fn video
+                                          username roles (db/get-auth-cookie req))
                 affected-notes (get-notes (:_id video) username roles (db/get-auth-cookie req))]
             ;; now update the denormalized user permissions stored on the notes
             (db/bulk-update
