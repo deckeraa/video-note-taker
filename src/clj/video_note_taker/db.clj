@@ -132,9 +132,14 @@
     ;; (println "get-view couch-resp: "
     ;;          (vec (filter #(get-hook-fn % username roles)
     ;;                       (map :doc (:rows couch-resp)))))
-    (if (:include_docs options) 
-      (vec (filter #(get-hook-fn % username roles)
-                   (map :doc (:rows couch-resp))))
+    (if (:include_docs options)
+      (if (or username roles auth-cookie)
+        ;; do the access check
+        (vec (filter #(get-hook-fn % username roles)
+                     (map :doc (:rows couch-resp))))
+        ;; if, on the server side, we did not supply username, roles, or auth-cookie,
+        ;; then the check logic is assumed to be contained in the view itself. 
+        (vec (map :doc (:rows couch-resp))))
       (:rows couch-resp))))
 
 (defn run-mango-query [query auth-cookie]
