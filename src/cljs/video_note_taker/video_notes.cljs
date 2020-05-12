@@ -28,7 +28,7 @@
                                 ))]
         (db/toast-server-error-if-needed resp nil)
         (when (= 200 (:status resp))
-          (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp)))))))))
+          (reset! notes-cursor (vec (sort-by :time (:body resp))))))))
 
 (defn update-note!
   "Updates a given note in the list of notes. Sorts the list by time."

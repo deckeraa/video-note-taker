@@ -122,6 +122,21 @@
         resp (delete-doc db delete-hook-fn doc username roles auth-cookie)]
     (json-response resp)))
 
+(defn get-view [db get-hook-fn design-doc-name view-name options username roles auth-cookie]
+  (let [couch-resp (couch-request
+                    db :get
+                    (str "_design/" design-doc-name "/_view/" view-name)
+                    {}
+                    {:query-params (update-in options [:key] json/write-str)}
+                    auth-cookie)]
+    ;; (println "get-view couch-resp: "
+    ;;          (vec (filter #(get-hook-fn % username roles)
+    ;;                       (map :doc (:rows couch-resp)))))
+    (if (:include_docs options) 
+      (vec (filter #(get-hook-fn % username roles)
+                   (map :doc (:rows couch-resp))))
+      (:rows couch-resp))))
+
 (defn run-mango-query [query auth-cookie]
   (let [results (couch-request db :post "_find" query {} auth-cookie)]
     (println "search stats for " query  " : "(get-in results [:execution_stats]))

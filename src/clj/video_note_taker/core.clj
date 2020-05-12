@@ -168,12 +168,13 @@
 ;;   }
 ;; }
 
-(defn get-notes [video-key]
-  (couch/get-view db "notes" "by_video" {:key video-key :include_docs true}))
+(defn get-notes [video-key username roles auth-cookie]
+  (db/get-view my-db get-hook-fn "notes" "by_video" {:key video-key :include_docs true} username roles auth-cookie)
+  )
 
 (defn get-notes-handler [req username roles]
   (let [doc (get-body req)]
-    (json-response (get-notes (:video-key doc)))))
+    (json-response (get-notes (:video-key doc) username roles (db/get-auth-cookie req)))))
 
 (defn create-note-handler [req username roles]
   (let [doc (merge (get-body req)
