@@ -87,13 +87,21 @@
      ; Is one of the groups of which they are part listed in the :groups key?
      (not (empty? (clojure.set/intersection (set groups) (set (:groups video))))))))
 
+(defn user-has-access-to-note [username note]
+  (contains? (set (:users note)) username))
+
+(defn user-has-access-to-group [username group]
+  (contains? (set (:users group)) username))
+
 (defn get-hook-fn [real-doc username roles]
 ;  (println "calling get-hook-fn: " real-doc username roles)
   ;; TODO add access checks
   (case (:type real-doc)
-    "video" (user-has-access-to-video username real-doc))
-  true
-  )
+    "video" (user-has-access-to-video username real-doc)
+    "note"  (user-has-access-to-note  username real-doc)
+    "group" (user-has-access-to-group username real-doc)
+    "settings" true
+    false))
 
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
