@@ -72,7 +72,6 @@
   (let [doc (get-body req)
         auth-cookie (get-auth-cookie req)
         get-resp (get-doc db get-hook-fn (:_id doc) username roles auth-cookie)]
-    (println "get-resp: " get-resp)
     (if get-resp
       (json-response get-resp)
       (not-authorized-response))))
@@ -82,8 +81,6 @@
                                   query
                                   {:query-params {:revs false}}
                                   auth-cookie)]
-    (println "bulk-get: " couch-resp)
-    (println username roles)
     (let [filtered-docs (->> couch-resp
                                :results
                                (map :docs)
@@ -92,7 +89,6 @@
                                (filter (fn [doc] (get-hook-fn doc username roles)))
                                (vec)
                                )]
-      (println "filtered-docs: " filtered-docs)
       filtered-docs)))
 
 (defn bulk-get-doc-handler [db get-hook-fn req username roles]

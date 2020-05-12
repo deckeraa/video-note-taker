@@ -34,7 +34,8 @@
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]]
    [video-note-taker.upload-progress :as upload-progress]
    [video-note-taker.auth :as auth :refer [wrap-cookie-auth]]
-   [video-note-taker.groups :as groups])
+   [video-note-taker.groups :as groups]
+   [video-note-taker.access :as access])
   (:gen-class))
 
 (def couch-url "http://localhost:5984/video-note-taker")
@@ -69,73 +70,10 @@
       (json/read-str)
       (keywordize-keys)))
 
-(defn load-groups-for-user
-  "Returns a list of group IDs, e.g.
-  [\"6ad12c0291d9f043fb092d076a000cc1\" \"6ad12c0291d9f043fb092d076a006c04\"]"
-  [username]
-  (vec (map :id (db/get-view db nil "groups" "by_user" {:key username} nil nil nil))))
-
-(defn user-has-access-to-video [username video]
-  (let [groups (load-groups-for-user username)]
-    (or
-     ; Are they listed in the :users key?
-     (not (empty? (filter #(= username %) (:users video))))
-     ; Is one of the groups of which they are part listed in the :groups key?
-     (not (empty? (clojure.set/intersection (set groups) (set (:groups video))))))))
-
-(defn user-has-access-to-note [username note]
-  (contains? (set (:users note)) username))
-
-(defn user-has-access-to-group [username group]
-  (or
-   (= username (:created-by group))
-   (contains? (set (:users group)) username)))
-
-(defn get-hook-fn [real-doc username roles]
-;  (println "calling get-hook-fn: " real-doc username roles)
-  ;; TODO add access checks
-  (case (:type real-doc)
-    "video" (user-has-access-to-video username real-doc)
-    "note"  (user-has-access-to-note  username real-doc)
-    "group" (user-has-access-to-group username real-doc)
-    "settings" true
-    false))
-
-(defn put-hook-fn
-  "When a CouchDB call is made using a db.clj function that uses the hooks,
-  put-hook-fn will be called so that you can modify the document (for example, adding timestamps)
-  before it gets sent to CouchDB. Returns nil if the user doesn't have permission to modify the doc."
-  [doc username roles]
-  (cond
-    (= (:type doc) "note")
-    (let [is-creator? (= username (:created-by doc))
-          is-last-editor? (if (:last-editor doc)
-                            (= username (:last-editor doc))
-                            (= username (:created-by doc)))
-          sufficiently-recent? (dur/is-negative
-                                (dur/minus-minutes
-                                 (dur/between (zd/parse (:last-edit doc)) (zd/now))
-                                 3))]
-      (merge doc
-             {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
-             ;; when a note is created, we'd expect the user to edit it write away,
-             ;; so give them a chance to edit it before we mark it as "edited".
-             (when (not (and is-creator? is-last-editor? sufficiently-recent?))
-               {:last-editor username})))
-    :else doc))
-
-(defn delete-hook-fn [real-doc req-doc username roles]
-  (case (:type req-doc)
-    "video" (= username (:uploaded-by real-doc))
-    "note"  (contains? (set (:users real-doc)) username)
-    "group" (= username (:created-by real-doc))
-    false))
-
-
-(def get-doc (partial db/get-doc db get-hook-fn))
+(def get-doc (partial db/get-doc db access/get-hook-fn))
 
 (defn get-notes [video-key username roles auth-cookie]
-  (db/get-view db get-hook-fn "notes" "by_video" {:key video-key :include_docs true} username roles auth-cookie)
+  (db/get-view db access/get-hook-fn "notes" "by_video" {:key video-key :include_docs true} username roles auth-cookie)
   )
 
 (defn get-notes-handler [req username roles]
@@ -148,8 +86,14 @@
                     :last-edit (zd/format
                                 (zd/now)
                                 java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)})
-        couch-resp (db/put-doc db put-hook-fn doc username roles (db/get-auth-cookie req))]
+        couch-resp (db/put-doc db access/put-hook-fn doc username roles (db/get-auth-cookie req))]
     (json-response couch-resp)))
+
+(defn load-groups-for-user
+  "Returns a list of group IDs, e.g.
+  [\"6ad12c0291d9f043fb092d076a000cc1\" \"6ad12c0291d9f043fb092d076a006c04\"]"
+  [username]
+  (vec (map :id (db/get-view db nil "groups" "by_user" {:key username} nil nil nil))))
 
 (defn get-video-listing-handler [req username roles]
   (let [groups (load-groups-for-user username)
@@ -174,7 +118,7 @@
 
 (defn get-notes-spreadsheet-handler [req username roles]
   (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
-        notes     (db/get-view db get-hook-fn "notes" "by_video"
+        notes     (db/get-view db access/get-hook-fn "notes" "by_video"
                                {:key (:video-id query-map) :include_docs true}
                                username roles (db/get-auth-cookie req))
         video     (get-doc (:video-id query-map) username roles (db/get-auth-cookie req))]
@@ -210,7 +154,7 @@
                                         ; This will prevent duplicate notes in case a spreadsheet is uploaded multiple times
         (if (empty? (filter #(< (Math/abs (- time-in-seconds %)) 0.25)
                             (get-in @notes-by-video [video-key])))
-          (do (db/put-doc db put-hook-fn
+          (do (db/put-doc db access/put-hook-fn
                           {:type "note"
                            :video video-key
                            :video-display-name (:display-name video)
@@ -226,7 +170,7 @@
           (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."}))))))
 
 (defn download-starter-spreadsheet [req username roles]
-  (let [videos (db/get-view db get-hook-fn "videos" "by_user"
+  (let [videos (db/get-view db access/get-hook-fn "videos" "by_user"
                             {:key username :include_docs true}
                             username roles (db/get-auth-cookie req))]
     (as-> videos $
@@ -275,7 +219,7 @@
     (io/delete-file (get-in req [:params "file" :tempfile]))
     ;; put some video metadata into Couch
     (let [video-doc (db/put-doc
-                     db put-hook-fn
+                     db access/put-hook-fn
                      {:_id id
                       :type "video"
                       :display-name filename
@@ -291,13 +235,13 @@
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
         video (get-doc video-id nil nil nil)]
-    (if (not (db/delete-doc db delete-hook-fn doc username roles (db/get-auth-cookie req)))
+    (if (not (db/delete-doc db access/delete-hook-fn doc username roles (db/get-auth-cookie req)))
       (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
              :status 403)
       (do
         ;; delete all notes related to the video
         (db/bulk-update
-             db put-hook-fn
+             db access/put-hook-fn
              (vec (map
                    #(assoc % :_deleted true)
                    (get-notes (:_id video) username roles (db/get-auth-cookie req))))
@@ -340,7 +284,7 @@
 (defn get-users-from-groups [req groups username roles]
   (let [group-docs
         (db/bulk-get
-         db get-hook-fn
+         db access/get-hook-fn
          {:docs (vec (map (fn [group] {:id group}) groups))}
          username roles (db/get-auth-cookie req))
         ]
@@ -355,15 +299,15 @@
           group-users (get-users-from-groups req (:groups video) username roles)
           all-users (clojure.set/union listed-users group-users)]
       ;; make sure that the user is already on the document
-      (if (user-has-access-to-video username current-video)
+      (if (access/user-has-access-to-video username current-video)
         (do
           ;; update the document
-          (let [updated-video (db/put-doc db put-hook-fn video
+          (let [updated-video (db/put-doc db access/put-hook-fn video
                                           username roles (db/get-auth-cookie req))
                 affected-notes (get-notes (:_id video) username roles (db/get-auth-cookie req))]
             ;; now update the denormalized user permissions stored on the notes
             (db/bulk-update
-             db put-hook-fn
+             db access/put-hook-fn
              (vec (map #(assoc % :users (vec all-users)) affected-notes))
              username roles (db/get-auth-cookie req))
             ;; TODO the bulk update could fail to update certain notes.
@@ -394,12 +338,12 @@
 
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
-        ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler db get-hook-fn))]
-        ["bulk-get-doc" (wrap-cookie-auth (partial db/bulk-get-doc-handler db get-hook-fn))]
-        ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler db put-hook-fn))]
+        ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler db access/get-hook-fn))]
+        ["bulk-get-doc" (wrap-cookie-auth (partial db/bulk-get-doc-handler db access/get-hook-fn))]
+        ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler db access/put-hook-fn))]
         ["get-notes" (wrap-cookie-auth get-notes-handler)]
         ["create-note" (wrap-cookie-auth create-note-handler)]
-        ["delete-doc" (wrap-cookie-auth (partial db/delete-doc-handler db delete-hook-fn))]
+        ["delete-doc" (wrap-cookie-auth (partial db/delete-doc-handler db access/delete-hook-fn))]
         ["get-video-listing" (wrap-cookie-auth get-video-listing-handler)]
         ["download-starter-spreadsheet" (wrap-cookie-auth download-starter-spreadsheet)]
         ["get-notes-spreadsheet" (wrap-cookie-auth get-notes-spreadsheet-handler)]
