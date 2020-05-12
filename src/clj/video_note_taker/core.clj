@@ -240,15 +240,17 @@
     (json-response (vec (:docs videos)))))
 
 (defn escape-csv-field [s]
-  (str "\"" (clojure.string/escape s {\" "\"\""}) "\""))
+  (if s ;; null check to prevent java.lang.NullPointerException from clojure.string/escape
+    (str "\"" (clojure.string/escape s {\" "\"\""}) "\"")
+    nil))
 
 (defn get-notes-spreadsheet-handler [req username roles]
   (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
-        notes     (couch/get-view db "notes" "by_video"
-                                  {:key (:video-id query-map) :include_docs true})
-        video     (get-doc (:video-id query-map) username roles (db/get-auth-cookie))]
+        notes     (db/get-view my-db get-hook-fn "notes" "by_video"
+                               {:key (:video-id query-map) :include_docs true}
+                               username roles (db/get-auth-cookie req))
+        video     (get-doc (:video-id query-map) username roles (db/get-auth-cookie req))]
     (as-> notes $
-      (map :doc $) ; pull out the docs
       (sort-by :time $) ; sort
       (map (fn [note]
              (str (escape-csv-field (:video note)) ","
@@ -288,11 +290,10 @@
           (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."}))))))
 
 (defn download-starter-spreadsheet [req username roles]
-  (println "download-starter-spreadsheet" username)
-  (let [videos (couch/get-view db "videos" "by_user"
-                               {:key username :include_docs true})]
+  (let [videos (db/get-view my-db get-hook-fn "videos" "by_user"
+                            {:key username :include_docs true}
+                            username roles (db/get-auth-cookie req))]
     (as-> videos $
-      (map :doc $) ; pull out the docs from the view response
       (sort-by :display-name $) ; sort
       (map (fn [video]
              (str (escape-csv-field (:_id video)) ","

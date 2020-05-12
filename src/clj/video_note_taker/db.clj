@@ -129,9 +129,6 @@
                     {}
                     {:query-params (update-in options [:key] json/write-str)}
                     auth-cookie)]
-    ;; (println "get-view couch-resp: "
-    ;;          (vec (filter #(get-hook-fn % username roles)
-    ;;                       (map :doc (:rows couch-resp)))))
     (if (:include_docs options)
       (if (or username roles auth-cookie)
         ;; do the access check
