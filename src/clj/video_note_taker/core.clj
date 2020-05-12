@@ -275,8 +275,6 @@
       (json-response (assoc resp
                             :search-string (:text params))))))
 
-
-
 ;; (deftest test-user-has-access-to-video
 ;;   (let [video {:_id 123 :display-name "my_video.mp4" :file-name "123.mp4"
 ;;                :users ["alpha" "bravo"] :groups ["my_family"]}]))
@@ -322,11 +320,20 @@
 
 (defn get-connected-users-handler [req username roles]
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
-  (let [resp (db/couch-request users-db :get "_all_docs" {} {} (db/get-auth-cookie req))]
-    (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
-              (:rows resp))
-         (remove nil?)
-         (json-response))))
+  (if (contains? (set roles) "_admin")
+    ;; admins get all users
+    (let [resp (db/couch-request users-db :get "_all_docs" {} {} (db/get-auth-cookie req))]
+      (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
+                (:rows resp))
+           (remove nil?)
+           (json-response)))
+    ;; non-admins get all users that they are in a group with
+    (let [groups (db/get-view db access/get-hook-fn "groups" "by_user" {:key username :include_docs true}
+                              username roles (db/get-auth-cookie req))
+          users (apply clojure.set/union (map :users groups))]
+      (println "groups: " groups)
+      (println "users: " users)
+      (json-response (vec users)))))
 
 (defn videos-handler [req username roles]
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
