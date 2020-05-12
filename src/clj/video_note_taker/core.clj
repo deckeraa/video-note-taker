@@ -121,18 +121,12 @@
 (defn delete-hook-fn [real-doc req-doc username roles]
   (case (:type req-doc)
     "video" (= username (:uploaded-by real-doc))
+    "note"  (contains? (set (:users real-doc)) username)
+    "group" (= username (:created-by real-doc))
     false))
 
-;; (defn get-doc [id]
-;;   (couch/get-document db id)
-;;   ;(db/)
-;;   )
 
 (def get-doc (partial db/get-doc my-db get-hook-fn))
-
-;; (defn get-doc-handler [req username roles]
-;;   (let [doc (get-body req)]
-;;     (json-response (get-doc (:_id doc)))))
 
 (defn bulk-get [req query]
   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
