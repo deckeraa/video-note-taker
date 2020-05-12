@@ -114,7 +114,7 @@
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
   put-hook-fn will be called so that you can modify the document (for example, adding timestamps)
-  before it gets sent to CouchDB."
+  before it gets sent to CouchDB. Returns nil if the user doesn't have permission to modify the doc."
   [doc username roles]
   (cond
     (= (:type doc) "note")
@@ -144,13 +144,6 @@
 
 (def get-doc (partial db/get-doc my-db get-hook-fn))
 
-;; notes -> by_video
-;; function(doc) {
-;;   if ('video' in doc) {
-;;       emit(doc.video, doc._id );
-;;   }
-;; }
-
 (defn get-notes [video-key username roles auth-cookie]
   (db/get-view my-db get-hook-fn "notes" "by_video" {:key video-key :include_docs true} username roles auth-cookie)
   )
@@ -167,32 +160,6 @@
                                 java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)})
         couch-resp (db/put-doc my-db put-hook-fn doc username roles (db/get-auth-cookie req))]
     (json-response couch-resp)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; _design/videos/_view/by_user
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; function (doc) {
-;;   if(doc.type === "video") {
-;;     for(var idx in doc.users) {
-;;             emit(doc.users[idx], doc._id);
-;;         }
-;;   }
-;; }
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (defn run-mango-query [req query]
-;;   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
-;;     (let [resp (http/post
-;;                 "http://localhost:5984/video-note-taker/_find"
-;;                 {:as :json
-;;                  :content-type :json
-;;                  :headers {"Cookie" (str "AuthSession=" cookie-value)}
-;;                  :form-params query
-;;                  })]
-;;       (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
-;;       (:body resp))))
-
-
 
 (defn get-video-listing-handler [req username roles]
   (let [groups (load-groups-for-user username)
@@ -331,13 +298,12 @@
              :status 403)
       (do
         ;; delete all notes related to the video
-        (couch/bulk-update
-         db
-         (vec (map
-               (fn [view-result]
-                 (let [v (:doc view-result)]
-                   (assoc v :_deleted true)))
-               (get-notes (:_id video)))))
+        (db/bulk-update
+             my-db put-hook-fn
+             (vec (map
+                   #(assoc % :_deleted true)
+                   (get-notes (:_id video) username roles (db/get-auth-cookie req))))
+             username roles (db/get-auth-cookie req))
         ;; Currently this doesn't handle bulk update conflicts.
         ;; Notes not deleted because of a conflict will be rare and  won't cause a problem,
         ;; but they will be left sitting around, so either we need to do something here
@@ -394,13 +360,13 @@
       (if (user-has-access-to-video username current-video)
         (do
           ;; update the document
-          (println "video: " video)
           (let [updated-video (couch/put-document db video)
                 affected-notes (get-notes (:_id video) username roles (db/get-auth-cookie req))]
             ;; now update the denormalized user permissions stored on the notes
-            (couch/bulk-update
-             db
-             (vec (map #(assoc % :users (vec all-users)) affected-notes)))
+            (db/bulk-update
+             my-db put-hook-fn
+             (vec (map #(assoc % :users (vec all-users)) affected-notes))
+             username roles (db/get-auth-cookie req))
             ;; TODO the bulk update could fail to update certain notes.
             ;; They will still appear in below the video, but won't show up
             ;; in the notes search. I should either handle them here or create a search

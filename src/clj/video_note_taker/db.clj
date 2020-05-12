@@ -111,6 +111,16 @@
   (let [query (get-body req)]
     (json-response (bulk-get db get-hook-fn query username roles (get-auth-cookie req)))))
 
+(defn bulk-update [db put-hook-fn docs username roles auth-cookie]
+  (let [audited-docs (if (or username roles auth-cookie)
+                        (vec (remove nil? 
+                                     (map #(put-hook-fn % username roles)
+                                          docs))))]
+    (let [couch-resp (couch-request db :post "_bulk_docs" {:docs docs} {} auth-cookie)]
+      (println "couch-resp: " couch-resp)
+      couch-resp)
+    ))
+
 (defn put-doc
   ([db put-hook-fn doc username roles]
    (put-doc db put-hook-fn doc username roles nil))
