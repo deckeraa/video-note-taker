@@ -79,6 +79,12 @@
       (json/read-str)
       (keywordize-keys)))
 
+(defn load-groups-for-user
+  "Returns a list of group IDs, e.g.
+  [\"6ad12c0291d9f043fb092d076a000cc1\" \"6ad12c0291d9f043fb092d076a006c04\"]"
+  [username]
+  (vec (map :id (db/get-view my-db nil "groups" "by_user" {:key username} nil nil nil))))
+
 (defn user-has-access-to-video [username video]
   (let [groups (load-groups-for-user username)]
     (or
@@ -91,7 +97,9 @@
   (contains? (set (:users note)) username))
 
 (defn user-has-access-to-group [username group]
-  (contains? (set (:users group)) username))
+  (or
+   (= username (:created-by group))
+   (contains? (set (:users group)) username)))
 
 (defn get-hook-fn [real-doc username roles]
 ;  (println "calling get-hook-fn: " real-doc username roles)
@@ -209,11 +217,7 @@
 ;;       (println "search stats for " query  " : "(get-in resp [:body :execution_stats]))
 ;;       (:body resp))))
 
-(defn load-groups-for-user
-  "Returns a list of group IDs, e.g.
-  [\"6ad12c0291d9f043fb092d076a000cc1\" \"6ad12c0291d9f043fb092d076a006c04\"]"
-  [username]
-  (vec (map :id (db/get-view my-db get-hook-fn "groups" "by_user" {:key username} username nil nil))))
+
 
 (defn get-video-listing-handler [req username roles]
   (let [groups (load-groups-for-user username)
@@ -394,8 +398,13 @@
 ;;   (let [video {:_id 123 :display-name "my_video.mp4" :file-name "123.mp4"
 ;;                :users ["alpha" "bravo"] :groups ["my_family"]}]))
 
-(defn get-users-from-groups [req groups]
-  (let [group-docs (bulk-get req {:docs (vec (map (fn [group] {:id group}) groups))})]
+(defn get-users-from-groups [req groups username roles]
+  (let [group-docs
+        (db/bulk-get
+         my-db get-hook-fn
+         {:docs (vec (map (fn [group] {:id group}) groups))}
+         username roles (db/get-auth-cookie req))
+        ]
     (apply clojure.set/union (map (comp set :users) group-docs)))
   )
 
@@ -404,22 +413,19 @@
     (let [video (get-body req)
           current-video (get-doc (:_id video) nil nil nil)
           listed-users (set (:users video))
-          group-users (get-users-from-groups req (:groups video))
+          group-users (get-users-from-groups req (:groups video) username roles)
           all-users (clojure.set/union listed-users group-users)]
       ;; make sure that the user is already on the document
       (if (user-has-access-to-video username current-video)
         (do
           ;; update the document
-          (let [updated-video (couch/put-document db video)]
+          (println "video: " video)
+          (let [updated-video (couch/put-document db video)
+                affected-notes (get-notes (:_id video) username roles (db/get-auth-cookie req))]
             ;; now update the denormalized user permissions stored on the notes
             (couch/bulk-update
              db
-             (vec (map
-                   (fn [view-result]
-                     (let [v (:doc view-result)]
-                       (println "updating" v)
-                       (assoc v :users (vec all-users))))
-                   (get-notes (:_id video)))))
+             (vec (map #(assoc % :users (vec all-users)) affected-notes)))
             ;; TODO the bulk update could fail to update certain notes.
             ;; They will still appear in below the video, but won't show up
             ;; in the notes search. I should either handle them here or create a search

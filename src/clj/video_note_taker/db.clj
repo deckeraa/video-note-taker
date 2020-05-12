@@ -89,6 +89,28 @@
       (json-response get-resp)
       (not-authorized-response))))
 
+(defn bulk-get [db get-hook-fn query username roles auth-cookie]
+  (let [couch-resp (couch-request db :post "_bulk_get"
+                                  query
+                                  {:query-params {:revs false}}
+                                  auth-cookie)]
+    (println "bulk-get: " couch-resp)
+    (println username roles)
+    (let [filtered-docs (->> couch-resp
+                               :results
+                               (map :docs)
+                               (flatten)
+                               (map :ok)
+                               (filter (fn [doc] (get-hook-fn doc username roles)))
+                               (vec)
+                               )]
+      (println "filtered-docs: " filtered-docs)
+      filtered-docs)))
+
+(defn bulk-get-doc-handler [db get-hook-fn req username roles]
+  (let [query (get-body req)]
+    (json-response (bulk-get db get-hook-fn query username roles (get-auth-cookie req)))))
+
 (defn put-doc
   ([db put-hook-fn doc username roles]
    (put-doc db put-hook-fn doc username roles nil))
