@@ -79,12 +79,19 @@
       (json/read-str)
       (keywordize-keys)))
 
-(defn video-hook-fn [real-doc username roles]
-  true)
+(defn user-has-access-to-video [username video]
+  (let [groups (load-groups-for-user username)]
+    (or
+     ; Are they listed in the :users key?
+     (not (empty? (filter #(= username %) (:users video))))
+     ; Is one of the groups of which they are part listed in the :groups key?
+     (not (empty? (clojure.set/intersection (set groups) (set (:groups video))))))))
 
 (defn get-hook-fn [real-doc username roles]
 ;  (println "calling get-hook-fn: " real-doc username roles)
   ;; TODO add access checks
+  (case (:type real-doc)
+    "video" (user-has-access-to-video username real-doc))
   true
   )
 
@@ -391,13 +398,7 @@
       (json-response (assoc resp
                             :search-string (:text params))))))
 
-(defn user-has-access-to-video [username video]
-  (let [groups (load-groups-for-user username)]
-    (or
-     ; Are they listed in the :users key?
-     (not (empty? (filter #(= username %) (:users video))))
-     ; Is one of the groups of which they are part listed in the :groups key?
-     (not (empty? (clojure.set/intersection (set groups) (set (:groups video))))))))
+
 
 ;; (deftest test-user-has-access-to-video
 ;;   (let [video {:_id 123 :display-name "my_video.mp4" :file-name "123.mp4"
@@ -449,9 +450,9 @@
 
 (defn videos-handler [req username roles]
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
-        video (get-doc video-id nil nil nil)
+        video (get-doc video-id username roles (db/get-auth-cookie req))
         filename (:file-name video)]
-    (if (user-has-access-to-video username video)
+    (if (and video filename) ;; get-doc does the acess check for us
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
