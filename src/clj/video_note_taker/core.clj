@@ -144,31 +144,6 @@
 
 (def get-doc (partial db/get-doc my-db get-hook-fn))
 
-(defn bulk-get [req query]
-  (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (let [resp (http/post
-                "http://localhost:5984/video-note-taker/_bulk_get"
-                {:as :json
-                 :content-type :json
-                 :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                 :form-params query
-                 :query-params {:revs false}
-                 })]
-      (let [looked-up-docs (->> resp
-                               :body
-                               :results
-                               (map :docs)
-                               (flatten)
-                               (map :ok)
-                               ;; TODO need to add access checks to this
-                               )]
-        looked-up-docs))))
-
-(defn bulk-get-doc-handler [req username roles]
-  (let [doc-req (get-body req)
-        cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (json-response (bulk-get req doc-req))))
-
 ;; notes -> by_video
 ;; function(doc) {
 ;;   if ('video' in doc) {
@@ -455,7 +430,7 @@
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
         ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler my-db get-hook-fn))]
-        ["bulk-get-doc" (wrap-cookie-auth bulk-get-doc-handler)]
+        ["bulk-get-doc" (wrap-cookie-auth (partial db/bulk-get-doc-handler my-db get-hook-fn))]
         ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler my-db put-hook-fn))]
         ["get-notes" (wrap-cookie-auth get-notes-handler)]
         ["create-note" (wrap-cookie-auth create-note-handler)]
