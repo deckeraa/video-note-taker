@@ -363,24 +363,19 @@
 (defn search-text-handler [req username roles]
   (let [params (get-body req)
         cookie-value (get-in req [:cookies "AuthSession" :value])]
-    (let [resp (http/post
-                "http://localhost:5984/video-note-taker/_find"
-                {:as :json
-                 :content-type :json
-                 :headers {"Cookie" (str "AuthSession=" cookie-value)}
-                 :form-params
-                 {"selector"
-                  {"$and" [{"type"
-                            {"$eq" "note"}}
-                           {"users"
-                            {"$elemMatch"
-                             {"$eq" username}}},
-                           {"text"
-                            {"$regex" (construct-search-regex (:text params) true)}}]}
-                  "execution_stats" true}
-                 })]
-      (println "search stats for " (:text params)  " : "(get-in resp [:body :execution_stats]))
-      (json-response (assoc (:body resp)
+    (let [query {"selector"
+                 {"$and" [{"type"
+                           {"$eq" "note"}}
+                          {"users"
+                           {"$elemMatch"
+                            {"$eq" username}}},
+                          {"text"
+                           {"$regex" (construct-search-regex (:text params) true)}}]}
+                 "execution_stats" true}
+          resp (db/run-mango-query query (db/get-auth-cookie req))
+          ]
+      (println "search stats for " (:text params)  " : "(get-in resp [:execution_stats]))
+      (json-response (assoc resp
                             :search-string (:text params))))))
 
 (defn user-has-access-to-video [username video]
