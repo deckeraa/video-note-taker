@@ -95,6 +95,10 @@
                {:last-editor username})))
     :else doc))
 
+(defn delete-hook-fn [doc username roles]
+  "TODO add checks into this"
+  true)
+
 (defn get-doc [id]
   (couch/get-document db id))
 
@@ -151,8 +155,12 @@
     (json-response couch-resp)))
 
 (defn delete-doc-handler [req username roles]
-  (let [doc (get-body req)]
-    (json-response (couch/delete-document db doc))))
+  (let [doc (get-body req)
+;        resp (db/)
+        resp (couch/delete-document db doc)
+        ]
+    (println "delete-doc-handler: " resp)
+    (json-response resp)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; _design/videos/_view/by_user
@@ -439,7 +447,7 @@
         ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler my-db put-hook-fn))]
         ["get-notes" (wrap-cookie-auth get-notes-handler)]
         ["create-note" (wrap-cookie-auth create-note-handler)]
-        ["delete-doc" (wrap-cookie-auth delete-doc-handler)]
+        ["delete-doc" (wrap-cookie-auth (partial db/delete-doc-handler my-db delete-hook-fn))]
         ["get-video-listing" (wrap-cookie-auth get-video-listing-handler)]
         ["download-starter-spreadsheet" (wrap-cookie-auth download-starter-spreadsheet)]
         ["get-notes-spreadsheet" (wrap-cookie-auth get-notes-spreadsheet-handler)]
@@ -458,6 +466,7 @@
         ["get-groups" (wrap-cookie-auth groups/get-groups-handler)]
         ["group" (wrap-cookie-auth groups/group-handler)]
         ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
+        ["install-views" (wrap-cookie-auth (partial db/install-views my-db))]
         ]])
 
 (defn wrap-index

@@ -36,6 +36,7 @@
   ([db method endpoint form-params http-options auth-cookie]
    (:body ((case method
              :get clj-http.client/get
+             :delete clj-http.client/delete
              clj-http.client/post)
            (str (:url db) "/" endpoint)
            (merge
@@ -71,7 +72,71 @@
         cookie (get-auth-cookie req)]
     (json-response (put-doc db put-hook-fn doc username roles cookie))))
 
+(defn delete-doc [db delete-hook-fn doc username roles auth-cookie]
+  (if (and (:_id doc) (delete-hook-fn doc username roles))
+    (couch-request db :delete (:_id doc) nil {:query-params {:rev (:_rev doc)}} auth-cookie)
+    false))
+
+(defn delete-doc-handler [db delete-hook-fn req username roles]
+  (let [doc (get-body req)
+        auth-cookie (get-auth-cookie req)
+        resp (delete-doc db delete-hook-fn doc username roles auth-cookie)]x
+    (json-response resp)))
+
 (defn run-mango-query [query auth-cookie]
   (let [results (couch-request db :post "_find" query {} auth-cookie)]
     (println "search stats for " query  " : "(get-in results [:execution_stats]))
     results))
+
+(defn install-views [db req username roles]
+  (if (contains? (set roles) "_admin")
+    (do
+      (try
+        (put-doc db (fn [doc _ _] doc)
+                 {:_id "_design/videos"
+                  :views
+                  {:by_user
+                   {:map "function (doc) {
+                      if(doc.type === \"video\") {
+                         for(var idx in doc.users) {
+                            emit(doc.users[idx],doc._id);
+                         }
+                      }
+                    }"}}
+                  :language "javascript"}
+                 username roles)
+        (catch Exception e
+          (println "Didn't install _design/videos")))
+      (try
+        (put-doc db (fn [doc _ _] doc)
+                 {:_id "_design/groups"
+                  :views
+                  {:by_user
+                   {:map "function (doc) {
+                      if(doc.type === \"group\") {
+                         emit(doc[\"created-by\"],doc._id);
+                         for(var idx in doc.users) {
+                            emit(doc.users[idx],doc._id);
+                         }
+                      }
+                    }"}}
+                  :language "javascript"}
+                 username roles)
+        (catch Exception e
+          (println "Didn't install _design/groups")))
+      (try
+        (put-doc db (fn [doc _ _] doc)
+                 {:_id "_design/notes"
+                  :views
+                  {:by_video
+                   {:map "function (doc) {
+                      if(doc.type === \"note\" && \"video\" in doc) {
+                         emit(doc.video, doc._id);
+                      }
+                    }"}}
+                  :language "javascript"}
+                 username roles)
+        (catch Exception e
+          (println "Didn't install _design/notes")))
+      (json-response true))
+    (json-response false)))
