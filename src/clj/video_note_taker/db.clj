@@ -61,22 +61,32 @@
 
 (defn get-doc
   ([db get-hook-fn id username roles auth-cookie]
-   (if (or (get-hook-fn id username roles)
+   (try (let [real-doc (couch-request db :get id {} {} auth-cookie)]
+          (if (or (get-hook-fn real-doc username roles)
            ;; if not username, roles, or auth-cookie is passed in, that means we run it in admin mode.
-           (and (nil? username) (nil? roles) (nil? auth-cookie)))
-     (try
-       (let [couch-resp (couch-request db :get id {} {} auth-cookie)]
-         couch-resp)
-       (catch Exception e
-         {}))
-     nil)))
+                  (and (nil? username) (nil? roles) (nil? auth-cookie)))
+            real-doc
+            nil))
+        (catch Exception e
+          {}))
+   ;; (if (or (get-hook-fn id username roles)
+   ;;         ;; if not username, roles, or auth-cookie is passed in, that means we run it in admin mode.
+   ;;         (and (nil? username) (nil? roles) (nil? auth-cookie)))
+   ;;   (try
+   ;;     (let [couch-resp (couch-request db :get id {} {} auth-cookie)]
+   ;;       couch-resp)
+   ;;     (catch Exception e
+   ;;       {}))
+   ;;   nil)
+   ))
 
 (defn get-doc-handler [db get-hook-fn req username roles]
   (let [doc (get-body req)
         auth-cookie (get-auth-cookie req)
-        put-resp (get-doc db get-hook-fn (:_id doc) username roles auth-cookie)]
-    (if put-resp
-      (json-response put-resp)
+        get-resp (get-doc db get-hook-fn (:_id doc) username roles auth-cookie)]
+    (println "get-resp: " get-resp)
+    (if get-resp
+      (json-response get-resp)
       (not-authorized-response))))
 
 (defn put-doc

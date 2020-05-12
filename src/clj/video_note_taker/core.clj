@@ -79,7 +79,11 @@
       (json/read-str)
       (keywordize-keys)))
 
-(defn get-hook-fn [doc username roles]
+(defn video-hook-fn [real-doc username roles]
+  true)
+
+(defn get-hook-fn [real-doc username roles]
+;  (println "calling get-hook-fn: " real-doc username roles)
   ;; TODO add access checks
   true
   )
