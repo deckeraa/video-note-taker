@@ -185,14 +185,6 @@
         couch-resp (db/put-doc my-db put-hook-fn doc username roles (db/get-auth-cookie req))]
     (json-response couch-resp)))
 
-(defn delete-doc-handler [req username roles]
-  (let [doc (get-body req)
-;        resp (db/)
-        resp (couch/delete-document db doc)
-        ]
-    (println "delete-doc-handler: " resp)
-    (json-response resp)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; _design/videos/_view/by_user
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
