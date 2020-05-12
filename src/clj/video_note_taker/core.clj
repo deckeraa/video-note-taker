@@ -118,9 +118,10 @@
                {:last-editor username})))
     :else doc))
 
-(defn delete-hook-fn [doc username roles]
-  "TODO add checks into this"
-  true)
+(defn delete-hook-fn [real-doc req-doc username roles]
+  (case (:type req-doc)
+    "video" (= username (:uploaded-by real-doc))
+    false))
 
 ;; (defn get-doc [id]
 ;;   (couch/get-document db id)
@@ -351,13 +352,9 @@
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
         video (get-doc video-id nil nil nil)]
-    (cond
-      ;; check that the user has access to the video
-      (not (= username (:uploaded-by video)))
+    (if (not (db/delete-doc my-db delete-hook-fn doc username roles (db/get-auth-cookie req)))
       (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
              :status 403)
-      ;; otherwise, do the delete
-      :else
       (do
         ;; delete all notes related to the video
         (couch/bulk-update
@@ -372,13 +369,11 @@
         ;; but they will be left sitting around, so either we need to do something here
         ;; or make a view that can clean up orphaned notes periodically.
         
-        ;; delete the video document
-        (couch/delete-document db video)
         ;; delete the actual video file
         (io/delete-file (str "./resources/private/" (:file-name video)))
         ;; return the response
-        (json-response {:success true})))
-    ))
+        (json-response {:success true}))
+      )))
 
 (defn search-text-handler [req username roles]
   (let [params (get-body req)
