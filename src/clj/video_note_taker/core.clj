@@ -79,6 +79,11 @@
       (json/read-str)
       (keywordize-keys)))
 
+(defn get-hook-fn [doc username roles]
+  ;; TODO add access checks
+  true
+  )
+
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
   put-hook-fn will be called so that you can modify the document (for example, adding timestamps)
@@ -106,12 +111,16 @@
   "TODO add checks into this"
   true)
 
-(defn get-doc [id]
-  (couch/get-document db id))
+;; (defn get-doc [id]
+;;   (couch/get-document db id)
+;;   ;(db/)
+;;   )
 
-(defn get-doc-handler [req username roles]
-  (let [doc (get-body req)]
-    (json-response (get-doc (:_id doc)))))
+(def get-doc (partial db/get-doc my-db get-hook-fn))
+
+;; (defn get-doc-handler [req username roles]
+;;   (let [doc (get-body req)]
+;;     (json-response (get-doc (:_id doc)))))
 
 (defn bulk-get [req query]
   (let [cookie-value (get-in req [:cookies "AuthSession" :value])]
@@ -223,7 +232,7 @@
   (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
         notes     (couch/get-view db "notes" "by_video"
                                   {:key (:video-id query-map) :include_docs true})
-        video     (get-doc (:video-id query-map))]
+        video     (get-doc (:video-id query-map) username roles (db/get-auth-cookie))]
     (as-> notes $
       (map :doc $) ; pull out the docs
       (sort-by :time $) ; sort
@@ -238,7 +247,7 @@
       (response/response $)
       (content-type $ "text/csv"))))
 
-(defn import-note-spreadsheet-line [notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username]
+(defn import-note-spreadsheet-line [notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles auth-cookie]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
   (when (not (get-in @notes-by-video [video-key])) 
     (as-> (get-notes video-key) $
@@ -246,7 +255,7 @@
              time) ; grab the time associated with the note returned by the view
            $)
       (swap! notes-by-video assoc video-key $)))
-  (let [video (get-doc video-key)]
+  (let [video (get-doc video-key username roles auth-cookie)]
     (if (not (= (:display-name video)
                 video-display-name))
       (swap! failed-imports conj {:line line :reason (str "The video display name " video-display-name " does not match with video key: " video-key ". Use the 'Download starter spreadsheet' button to download a spreadsheet with the mapping of video key to video display name.")})
@@ -292,7 +301,7 @@
     (doall (map (fn [[video-key video-display-name time-in-seconds note-text :as line]]
                   (let [time-in-seconds (edn/read-string time-in-seconds)]
                     (if (number? time-in-seconds) ; filter out the title row, if present
-                      (import-note-spreadsheet-line notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username)
+                      (import-note-spreadsheet-line notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles (db/get-auth-cookie req))
                       (swap! failed-imports conj {:line line :reason "time-in-seconds not a number"}))))
                 lines))
     (json-response {:didnt-import @failed-imports :successfully-imported @success-imports-counter})))
@@ -330,7 +339,7 @@
 (defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
-        video (get-doc video-id)]
+        video (get-doc video-id nil nil nil)]
     (cond
       ;; check that the user has access to the video
       (not (= username (:uploaded-by video)))
@@ -398,7 +407,7 @@
 (defn update-video-permissions-handler [req username roles]
   (try
     (let [video (get-body req)
-          current-video (get-doc (:_id video))
+          current-video (get-doc (:_id video) nil nil nil)
           listed-users (set (:users video))
           group-users (get-users-from-groups req (:groups video))
           all-users (clojure.set/union listed-users group-users)]
@@ -436,7 +445,7 @@
 
 (defn videos-handler [req username roles]
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
-        video (get-doc video-id)
+        video (get-doc video-id nil nil nil)
         filename (:file-name video)]
     (if (user-has-access-to-video username video)
       (file-response filename {:root "resources/private/"})
@@ -444,7 +453,7 @@
 
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
-        ["get-doc" (wrap-cookie-auth get-doc-handler)]
+        ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler my-db get-hook-fn))]
         ["bulk-get-doc" (wrap-cookie-auth bulk-get-doc-handler)]
         ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler my-db put-hook-fn))]
         ["get-notes" (wrap-cookie-auth get-notes-handler)]

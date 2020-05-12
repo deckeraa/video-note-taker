@@ -41,7 +41,7 @@
                                 {:json-params {:_id id}
                                  :with-credentials false}
                                 ))]
-        (toast-server-error-if-needed resp nil)
+        (toast-server-error-if-needed resp id)
         (when (and
                (= 200 (:status resp))
                (:body resp)

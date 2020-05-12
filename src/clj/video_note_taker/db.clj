@@ -25,6 +25,14 @@
       (json/read-str)
       (keywordize-keys)))
 
+(defn text-type [v]
+  (response/content-type v "text/html"))
+
+(defn not-authorized-response []
+  (assoc 
+   (text-type (response/response "Not authorized"))
+   :status 401))
+
 (defn get-auth-cookie [req]
   (get-in req [:cookies "AuthSession" :value]))
 
@@ -45,11 +53,31 @@
              :form-params form-params
              }
             (if auth-cookie
-                                        ; if we have a user cookie, use the user cookie
+              ;; if we have a user cookie, use the user cookie
               {:headers {"Cookie" (str "AuthSession=" auth-cookie)}}
-                                        ; otherwise, run as admin
+              ;; otherwise, run as admin
               {:basic-auth [(:username db) (:password db)]})
             http-options)))))
+
+(defn get-doc
+  ([db get-hook-fn id username roles auth-cookie]
+   (if (or (get-hook-fn id username roles)
+           ;; if not username, roles, or auth-cookie is passed in, that means we run it in admin mode.
+           (and (nil? username) (nil? roles) (nil? auth-cookie)))
+     (try
+       (let [couch-resp (couch-request db :get id {} {} auth-cookie)]
+         couch-resp)
+       (catch Exception e
+         {}))
+     nil)))
+
+(defn get-doc-handler [db get-hook-fn req username roles]
+  (let [doc (get-body req)
+        auth-cookie (get-auth-cookie req)
+        put-resp (get-doc db get-hook-fn (:_id doc) username roles auth-cookie)]
+    (if put-resp
+      (json-response put-resp)
+      (not-authorized-response))))
 
 (defn put-doc
   ([db put-hook-fn doc username roles]
@@ -88,6 +116,7 @@
     (println "search stats for " query  " : "(get-in results [:execution_stats]))
     results))
 
+;; TODO this contains video-note-taker-specifc logic and should be moved to a different file.
 (defn install-views [db req username roles]
   (if (contains? (set roles) "_admin")
     (do
