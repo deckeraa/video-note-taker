@@ -80,7 +80,7 @@
 (defn delete-doc-handler [db delete-hook-fn req username roles]
   (let [doc (get-body req)
         auth-cookie (get-auth-cookie req)
-        resp (delete-doc db delete-hook-fn doc username roles auth-cookie)]x
+        resp (delete-doc db delete-hook-fn doc username roles auth-cookie)]
     (json-response resp)))
 
 (defn run-mango-query [query auth-cookie]

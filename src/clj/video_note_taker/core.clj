@@ -55,6 +55,13 @@
      :username "admin"
      :password (or password "test")}))
 
+(def users-url "http://localhost:5984/_users")
+(def users-db
+  (let [password (System/getenv "VNT_DB_PASSWORD")]
+    {:url users-url
+     :username "admin"
+     :password (or password "test")}))
+
 (defn text-type [v]
   (content-type v "text/html"))
 
@@ -426,7 +433,7 @@
 
 (defn get-connected-users-handler [req username roles]
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
-  (let [resp (couchdb-request :get (url/url db "/_users/_all_docs"))]
+  (let [resp (db/couch-request users-db :get "_all_docs" {} {} (db/get-auth-cookie req))]
     (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
               (:rows resp))
          (remove nil?)
