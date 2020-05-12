@@ -7,9 +7,7 @@
             [ring.util.response :as response]
             [ring.util.json-response :refer [json-response]]
             [clj-http.client :as http]
-            [com.ashafa.clutch :as couch]
-            [com.ashafa.clutch.utils :as utils]
-            [com.ashafa.clutch.http-client :refer [couchdb-request]]))
+))
 
 (def couch-url "http://localhost:5984/video-note-taker")
 
@@ -68,17 +66,7 @@
             real-doc
             nil))
         (catch Exception e
-          {}))
-   ;; (if (or (get-hook-fn id username roles)
-   ;;         ;; if not username, roles, or auth-cookie is passed in, that means we run it in admin mode.
-   ;;         (and (nil? username) (nil? roles) (nil? auth-cookie)))
-   ;;   (try
-   ;;     (let [couch-resp (couch-request db :get id {} {} auth-cookie)]
-   ;;       couch-resp)
-   ;;     (catch Exception e
-   ;;       {}))
-   ;;   nil)
-   ))
+          {}))))
 
 (defn get-doc-handler [db get-hook-fn req username roles]
   (let [doc (get-body req)
@@ -117,9 +105,7 @@
                                      (map #(put-hook-fn % username roles)
                                           docs))))]
     (let [couch-resp (couch-request db :post "_bulk_docs" {:docs docs} {} auth-cookie)]
-      (println "couch-resp: " couch-resp)
-      couch-resp)
-    ))
+      couch-resp)))
 
 (defn put-doc
   ([db put-hook-fn doc username roles]
