@@ -139,14 +139,15 @@
     (fn []
       [:div {:class "flex flex-column"}
        ;; List out the current selections
-       ;[:div (str @selected-data-atm)]
        [:div {} caption]
        [:ul
         (doall (map (fn [option]
                       ^{:key option}
                       [:li {:class "flex items-center justify-center"}
                        (get option name-key)
-                       (when (or (nil? can-delete-option-fn) (can-delete-option-fn option))
+                       (when (and (or (nil? can-delete-option-fn)
+                                      (can-delete-option-fn option))
+                                  (get @option-list-atm (str (:_id option))))
                          [svg/x {:class "ma2 dim"
                                  :on-click (fn []
                                              (swap! selected-data-atm disj option))}
