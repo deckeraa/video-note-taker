@@ -58,15 +58,44 @@
            (when (not (and is-creator? is-last-editor? sufficiently-recent?))
              {:last-editor username}))))
 
+(defn video-put-hook [real-doc req-doc username roles]
+  (let [users (apply clojure.set/union
+                     (map :users (db/get-view
+                                  db get-hook-fn "groups" "by_user"
+                                  {:key username :include_docs true}
+                                  username roles
+                                  nil)))]
+    (println "video-put-hook users: " users)
+    ;;pull out any users that the user isn't allowed to share with. Only do this for non-admins.
+    (if (contains? (set roles) "_admin")
+      req-doc
+      (update-in req-doc [:users] (fn [req-users]
+                                    ;; TODO avoid stripping off already-existing users in :users that the user putting the doc doesn't have rights to add or remove.
+                                    (println "req-users " (set req-users))
+                                    (println "users" (set (conj users username)))
+                                    (println "intersection "
+                                             (clojure.set/intersection
+                                              (set (conj users username))
+                                              (set (conj req-users username))))
+                                    (vec (clojure.set/intersection
+                                          (set (conj users username))
+                                          (set (conj req-users username))))
+                                    )))
+    ))
+
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
   put-hook-fn will be called so that you can modify the document (for example, adding timestamps)
   before it gets sent to CouchDB. Returns nil if the user doesn't have permission to modify the doc."
   [doc username roles]
-  (let [real-doc (db/couch-request db :get (:_id doc) {} {} nil)]
+  (let [real-doc (try
+                   (db/couch-request db :get (:_id doc) {} {} nil)
+                   (catch Exception e
+                     {}))]
     ;; TODO make sure types match
     (case (:type real-doc)
       "note" (note-put-hook real-doc doc username roles)
+      "video" (video-put-hook real-doc doc username roles)
       doc)))
 
 (defn delete-hook-fn [real-doc req-doc username roles]

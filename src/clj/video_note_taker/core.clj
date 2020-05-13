@@ -104,7 +104,7 @@
                          [{"users"
                            {"$elemMatch"
                             {"$eq" username}}}
-                          {"groups"
+                          {"groups" ;; TODO $in yields true when groups is empty, but only on CouchDB 3.0.0? More investigation needed.
                            {"$elemMatch"
                             {"$in" groups}}}]}]}
                "execution_stats" true}
