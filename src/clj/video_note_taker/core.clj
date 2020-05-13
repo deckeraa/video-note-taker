@@ -192,9 +192,10 @@
                          [{"users"
                            {"$elemMatch"
                             {"$eq" username}}}
-                          {"groups"
-                           {"$elemMatch"
-                            {"$in" groups}}}]}]}
+                          (when (not (empty? groups))
+                            {"groups"
+                             {"$elemMatch"
+                              {"$in" groups}}})]}]}
                "execution_stats" true}
         videos (run-mango-query req query)]
     (json-response (vec (:docs videos)))))
