@@ -14,8 +14,7 @@
            caption
            ok-fn
            cancel-fn
-           save-to-cursor-delegate-atom
-           name-key]}
+           save-to-cursor-delegate-atom]}
    ]
   (let [selected-data-atm (reagent/atom (set @data-cursor))
         user-input-atm (reagent/atom "")
@@ -41,9 +40,7 @@
         (doall (map (fn [option]
                       ^{:key option}
                       [:li {:class "flex items-center justify-center"}
-                       (if name-key
-                         (str option)
-                           option)
+                       option
                        (when (and (or (nil? can-delete-option-fn)
                                       (can-delete-option-fn option))
                                   (contains? @option-list-atm option))
@@ -62,18 +59,10 @@
                                (reset! user-input-atm "")
                                )}
          (doall
-          (if name-key
-            (map (fn [item]
-                   ^{:key item}
-                   [:option {:value (or item "")}
-                    (if (= item "")
-                      "-- Select option --"
-                      (:name item))])
-                 (conj (clojure.set/difference @option-list-atm @selected-data-atm) ""))
-            (map (fn [name]
-                       ^{:key name}
-                       [:option {:value name} (if (= name "") "-- Select option --" name)])
-                     (conj (clojure.set/difference @option-list-atm @selected-data-atm) ""))))]]
+          (map (fn [name]
+                 ^{:key name}
+                 [:option {:value name} (if (= name "") "-- Select option --" name)])
+               (conj (clojure.set/difference @option-list-atm @selected-data-atm) "")))]]
        ;; Cancel and OK buttons
        [:div {:class "flex mt2 mh2"}
         (when cancel-fn
