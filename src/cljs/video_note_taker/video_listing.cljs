@@ -42,7 +42,13 @@
                          (swap! atoms/screen-cursor conj :video))
              :on-mouse-over (fn [e] (reset! hover-atm true))
              :on-mouse-out  (fn [e] (reset! hover-atm false))}
-       [:p (when @hover-atm {:class "b"}) (str (:display-name video))]
+                                        ;[:p (when @hover-atm {:class "b"}) (str (:display-name video))]
+       [editable-field (:display-name video)
+        (fn [new-val done-fn]
+          (swap! video-cursor assoc :display-name new-val)
+          (db/put-doc @video-cursor (fn [new-val]
+                                      (done-fn)
+                                      (load-video-listing video-listing-cursor))))]
        (when @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
          [svg/trash {:on-click
                      (fn [e]

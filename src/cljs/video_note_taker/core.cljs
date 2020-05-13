@@ -35,7 +35,8 @@
                                (listing/load-video-listing atoms/video-listing-cursor)))}
        [svg/chevron-left {} "#357edd" "24px"]])
     (when (= :video (peek @screen-cursor))
-      [:div {:class ""} (:display-name @video-cursor)])
+      [:div {:class ""} (:display-name @video-cursor)]
+      )
     (when (= :settings (peek @screen-cursor))
       [:div {:class "b ma2"} "Settings"])]
    ;; right side
