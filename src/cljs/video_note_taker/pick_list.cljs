@@ -44,7 +44,9 @@
                        (if name-key
                          (str option)
                            option)
-                       (when (or (nil? can-delete-option-fn) (can-delete-option-fn option))
+                       (when (and (or (nil? can-delete-option-fn)
+                                      (can-delete-option-fn option))
+                                  (contains? @option-list-atm option))
                          [svg/x {:class "ma2 dim"
                                  :on-click (fn []
                                              (swap! selected-data-atm disj option))}
