@@ -49,7 +49,7 @@
           (db/put-doc @video-cursor (fn [new-val]
                                       (done-fn)
                                       (load-video-listing video-listing-cursor))))]
-       (when @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
+       (if @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
          [svg/trash {:on-click
                      (fn [e]
                        (.stopPropagation e) ;; prevent this click from registing as a click on the video
@@ -67,6 +67,9 @@
                                           (toaster-oven/add-toast (str "Couldn't delete video. " (get-in resp [:body :reason])) svg/x "red" nil)
                                           ))))}))}
           "gray" "24px"]
+         [:div {:style {:width "24px"}}
+          ;; empty div to reserve space for the trash can on hover
+          ]
          )
        ])))
 
