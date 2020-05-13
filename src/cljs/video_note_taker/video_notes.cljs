@@ -28,7 +28,7 @@
                                 ))]
         (db/toast-server-error-if-needed resp nil)
         (when (= 200 (:status resp))
-          (reset! notes-cursor (vec (sort-by :time (mapv :doc (:body resp)))))))))
+          (reset! notes-cursor (vec (sort-by :time (:body resp))))))))
 
 (defn update-note!
   "Updates a given note in the list of notes. Sorts the list by time."
@@ -108,69 +108,6 @@
                                {}))
             users (set (:body resp))]
         (reset! user-list-atm users))))
-
-(defn share-dialog-old
-  "Dialog that allows a user to share the video with other users."
-  [remove-delegate-atm video-cursor notes-cursor]
-  (let [selected-users-atm (reagent/atom (set (:users @video-cursor)))
-        groups-cursor (reagent/cursor video-cursor [:groups])
-        user-input-atm (reagent/atom "")
-        user-list-atm  (reagent/atom #{})
-        _ (load-connected-users user-list-atm)
-        ]
-    (fn [remove-delegate-atm video-cursor notes-cursor]
-      [:div {:class "flex flex-column"}
-       ;; List out the current usres who selected to be on the video
-       [:div {} "Share with:"]
-       [:ul
-        (doall (map (fn [user]
-                      ^{:key user}
-                      [:li {:class "flex items-center justify-center"}
-                       user
-                       (when (not (= user (:uploaded-by @video-cursor)))
-                         [svg/x {:class "ma2 dim"
-                                 :on-click (fn []
-                                             (swap! selected-users-atm disj user))}
-                          "red" "12px"])])
-                    @selected-users-atm))]
-       ;; A selection box for adding new users
-       [:div {:class "flex br3"}
-        [:select {:type :text
-                  :class "bn"
-                  :value @user-input-atm
-                  :on-change (fn [e]
-                               (swap! selected-users-atm conj (-> e .-target .-value))
-                               (reset! user-input-atm "")
-                               )}
-         (doall (map (fn [name]
-                       ^{:key name}
-                       [:option {:value name} (if (= name "") "- Select user -" name)])
-                     (conj (clojure.set/difference @user-list-atm @selected-users-atm) "")))]]
-       ;; [pick-list/pick-list
-       ;;  {
-       ;;   :data-cursor           groups-cursor
-       ;;   :option-load-fn        groups/load-groups
-       ;;   :caption               "Select a group:"
-       ;;   :remove-delegate-atom  (reagent/atom (fn [] nil))
-       ;;   }]
-       ;; Cancel and OK buttons
-       [:div {:class "flex mt2 mh2"}
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
-         "Cancel"]
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e]
-                              (@remove-delegate-atm) ; closes the dialog
-                              (go (let [resp (<! (http/post
-                                                  (db/resolve-endpoint "update-video-permissions")
-                                                  {:json-params (assoc @video-cursor
-                                                                       :users (vec @selected-users-atm))
-                                                   :with-credentials true}))]
-                                    (db/toast-server-error-if-needed resp nil)
-                                    (reset! video-cursor (:body resp))
-                                    (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
-                                    (load-notes notes-cursor video-cursor))))}
-         "Ok"]]])))
 
 (defn share-dialog
   "Dialog that allows a user to share the video with other users."

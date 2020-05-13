@@ -42,8 +42,13 @@
                          (swap! atoms/screen-cursor conj :video))
              :on-mouse-over (fn [e] (reset! hover-atm true))
              :on-mouse-out  (fn [e] (reset! hover-atm false))}
-       [:p (when @hover-atm {:class "b"}) (str (:display-name video))]
-       (when @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
+                                        ;[:p (when @hover-atm {:class "b"}) (str (:display-name video))]
+       [editable-field (:display-name video)
+        (fn [new-val done-fn]
+          (db/put-doc (assoc video :display-name new-val) (fn [new-doc]
+                                 (done-fn)
+                                 (load-video-listing video-listing-cursor))))]
+       (if @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
          [svg/trash {:on-click
                      (fn [e]
                        (.stopPropagation e) ;; prevent this click from registing as a click on the video
@@ -61,6 +66,9 @@
                                           (toaster-oven/add-toast (str "Couldn't delete video. " (get-in resp [:body :reason])) svg/x "red" nil)
                                           ))))}))}
           "gray" "24px"]
+         [:div {:style {:width "24px"}}
+          ;; empty div to reserve space for the trash can on hover
+          ]
          )
        ])))
 

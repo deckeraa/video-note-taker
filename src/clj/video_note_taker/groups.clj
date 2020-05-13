@@ -1,37 +1,42 @@
 (ns video-note-taker.groups
   (:require
-   [com.ashafa.clutch :as couch]
-   [video-note-taker.auth :refer [db]]
    [ring.util.json-response :refer [json-response]]
+   [video-note-taker.db :as db]
+   [video-note-taker.access :as access]
    [video-note-taker.util :as util]))
 
-;; groups -> by_user
-;; function (doc) {
-;;   if(doc.type === "group") {
-;;     emit(doc["created-by"],doc._id)
-;;     for(var idx in doc.users) {
-;;             emit(doc.users[idx], doc._id)
-;;     }
-;;   }
-;; }
+(def couch-url "http://localhost:5984/video-note-taker")
+
+(def db
+  (let [password (System/getenv "VNT_DB_PASSWORD")]
+    {:url couch-url
+     :username "admin"
+     :password (or password "test")}))
 
 (defn get-groups-handler [req username roles]
-  (let [groups (couch/get-view db "groups" "by_user"
-                               {:key username :include_docs true})]
-    (json-response (vec (map :doc groups)))))
+  (let [groups (db/get-view db access/get-hook-fn
+                            "groups" "by_user"
+                            {:key username :include_docs true}
+                            username roles (db/get-auth-cookie req))]
+    (json-response groups)))
 
 (defn delete-group-handler [req username roles]
   (let [req-group   (util/get-body req)
-        saved-group (couch/get-document db (:_id req-group))]
+        saved-group (db/get-doc db access/get-hook-fn (:_id req-group)
+                                username roles (db/get-auth-cookie req))]
     (if (= (:created-by saved-group) username)
-      (couch/delete-document db saved-group)
+      (db/delete-doc db access/delete-hook-fn saved-group
+                     username roles (db/get-auth-cookie req))
       (util/not-authorized-response))))
 
 (defn group-handler [req username roles]
   (let [req-group   (util/get-body req)
-        saved-group (couch/get-document db (:_id req-group))]
+        saved-group (db/get-doc db access/get-hook-fn (:_id req-group)
+                                username roles (db/get-auth-cookie req))]
     (if saved-group
       (if (= (:created-by saved-group) username)
-        (json-response (couch/put-document db req-group))
+        (json-response (db/put-doc db access/put-hook-fn req-group
+                                   username roles (db/get-auth-cookie req)))
         (util/not-authorized-response))
-      (json-response (couch/put-document db (merge req-group {:type "group" :created-by username :users []}))))))
+      (json-response (db/put-doc db access/put-hook-fn (merge req-group {:type "group" :created-by username :users []})
+                                 username roles (db/get-auth-cookie req))))))
