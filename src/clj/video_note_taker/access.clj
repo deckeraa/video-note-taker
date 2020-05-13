@@ -1,5 +1,6 @@
 (ns video-note-taker.access
   (:require
+   [clojure.test :refer [deftest is run-tests]]
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
    [video-note-taker.db :as db]))
@@ -58,6 +59,21 @@
            (when (not (and is-creator? is-last-editor? sufficiently-recent?))
              {:last-editor username}))))
 
+(defn update-users
+  "Used to update :users on an incoming video to avoid users adding or removing users that they
+  shouldn't be."
+  [real-users req-users users-users username roles]
+  (let [real-users  (set real-users) ;; users on the current document
+        req-users   (set req-users)  ;; users on the requested update to the document
+        users-users (set users-users) ;; users that the given user is allow to add or remove
+        existing-users-they-cant-remove (clojure.set/difference real-users users-users)
+        requested-users-they-can-add (clojure.set/intersection req-users users-users)]
+    (clojure.set/union #{username} requested-users-they-can-add existing-users-they-cant-remove)))
+
+(deftest test-update-users
+  (is (= (update-users ["charlie" "golf" "hotel" "foxtrot"] ["echo" "india" "foxtrot"] ["charlie" "golf" "echo" "foxtrot"] "charlie" "")
+         #{"charlie" "hotel" "echo" "foxtrot"})))
+
 (defn video-put-hook [real-doc req-doc username roles]
   (let [users (apply clojure.set/union
                      (map :users (db/get-view
@@ -70,18 +86,8 @@
     (if (contains? (set roles) "_admin")
       req-doc
       (update-in req-doc [:users] (fn [req-users]
-                                    ;; TODO avoid stripping off already-existing users in :users that the user putting the doc doesn't have rights to add or remove.
-                                    (println "req-users " (set req-users))
-                                    (println "users" (set (conj users username)))
-                                    (println "intersection "
-                                             (clojure.set/intersection
-                                              (set (conj users username))
-                                              (set (conj req-users username))))
-                                    (vec (clojure.set/intersection
-                                          (set (conj users username))
-                                          (set (conj req-users username))))
-                                    )))
-    ))
+                                    (vec (update-users (:users real-doc) req-users users username roles))
+                                    )))))
 
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
