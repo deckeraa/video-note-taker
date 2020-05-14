@@ -22,6 +22,7 @@
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [ring-partial-content "1.0.0"]
                  [cljc.java-time "0.1.8"]
+                 [com.stronganchortech/couchdb-auth-for-ring "0.1.0-SNAPSHOT"]
                  ]
 
   :min-lein-version "2.5.3"

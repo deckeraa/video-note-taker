@@ -33,7 +33,8 @@
    [video-note-taker.db :as db]
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]]
    [video-note-taker.upload-progress :as upload-progress]
-   [video-note-taker.auth :as auth :refer [wrap-cookie-auth]]
+   [com.stronganchortech.couchdb-auth-for-ring :as auth :refer [wrap-cookie-auth]]
+;   [video-note-taker.auth :as auth :refer [wrap-cookie-auth]]
    [video-note-taker.groups :as groups]
    [video-note-taker.access :as access])
   (:gen-class))
