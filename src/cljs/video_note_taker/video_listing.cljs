@@ -175,8 +175,9 @@
                                                    {:multipart-params
                                                     (vec (map (fn [idx]
                                                                 ["file" (aget (.-files file-input) idx)])
-                                                          (range (alength (.-files file-input)))))
+                                                              (range (alength (.-files file-input)))))
                                                     }))]
+                                     (println "Upload resp: " resp)
                                      (if (= 200 (:status resp))
                                        (do
                                          (toaster-oven/add-toast "Video uploaded" svg/check "green" nil)

@@ -440,7 +440,7 @@
       (wrap-params)
       (wrap-cookies)
       (wrap-partial-content)
-      (wrap-multipart-params {:progress-fn upload-progress/upload-progress-fn})
+      (wrap-multipart-params {:progress-fn (partial upload-progress/upload-progress-fn db)})
       (wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]
