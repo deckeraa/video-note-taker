@@ -5,7 +5,7 @@
                  [reagent "0.7.0"]
                  [devcards "0.2.4" :exclusions [cljsjs/react]]
                  [bidi "2.1.6"]
-                 [ring "1.7.1"]
+                 [ring "1.8.1"]
                  [ring-cors "0.1.12"]
                  [ring/ring-json "0.4.0"]
                  [ring/ring-defaults "0.3.2"]
@@ -22,7 +22,7 @@
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [ring-partial-content "1.0.0"]
                  [cljc.java-time "0.1.8"]
-                 [com.stronganchortech/couchdb-auth-for-ring "0.1.0-SNAPSHOT"]
+                 [com.stronganchortech/couchdb-auth-for-ring "1.0.1"]
                  ]
 
   :min-lein-version "2.5.3"
