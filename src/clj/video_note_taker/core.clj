@@ -340,6 +340,12 @@
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
+(defn wrap-login [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (println "Login for " (get-in resp [:body]))
+      resp)))
+
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
         ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler db access/get-hook-fn))]
@@ -355,7 +361,7 @@
         ["upload-video" (wrap-cookie-auth upload-video-handler)]
         ["get-upload-progress" (wrap-cookie-auth upload-progress/get-upload-progress)]
         ["delete-video" (wrap-cookie-auth delete-video-handler)]
-        ["login" auth/login-handler]
+        ["login" (wrap-login auth/login-handler)]
         ["create-user" (wrap-cookie-auth auth/create-user-handler)]
         ["change-password" (wrap-cookie-auth auth/change-password-handler)]
         ["logout" (wrap-cookie-auth auth/logout-handler)]
