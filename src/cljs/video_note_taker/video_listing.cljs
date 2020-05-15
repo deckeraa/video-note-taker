@@ -173,8 +173,9 @@
                                (go (let [resp (<! (http/post
                                                    (db/resolve-endpoint "upload-video")
                                                    {:multipart-params
-                                                    [["file" (aget (.-files file-input) 0)]
-                                                     ["file" (aget (.-files file-input) 1)]]
+                                                    (vec (map (fn [idx]
+                                                                ["file" (aget (.-files file-input) idx)])
+                                                          (range (alength (.-files file-input)))))
                                                     }))]
                                      (if (= 200 (:status resp))
                                        (do

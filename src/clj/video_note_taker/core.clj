@@ -225,6 +225,7 @@
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
 (defn upload-video-handler [req username roles]
+  (println req)
   (println (get-in req [:params]))
   ;;; Sometimes params looks like
   ;; {file [{:filename foo.mp3,
@@ -244,35 +245,8 @@
   (let [file-array (if (vector? (get-in req [:params "file"]))
                      (get-in req [:params "file"])
                      [(get-in req [:params "file"])])]
-    (println "file-array: " file-array)
-    (json-response (map (partial single-video-upload req username roles) file-array)))
-  
-  ;; (let [id (uuid/to-string (uuid/v4))
-  ;;       filename (get-in req [:params "file" :filename])
-  ;;       file-ext (last (clojure.string/split filename #"\."))
-  ;;       tempfile (get-in req [:params "file" :tempfile])
-  ;;       new-short-filename (str id "." file-ext)]
-  ;;   (println "filename: " filename)
-  ;;   (println "username " username)
-  ;;   ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
-  ;;   (io/copy (get-in req [:params "file" :tempfile])
-  ;;            (io/file (str "./resources/private/" new-short-filename)))
-  ;;   ;; delete the temp file -- this happens automatically by Ring, but takes an hour, so this frees up space sooner
-  ;;   (io/delete-file (get-in req [:params "file" :tempfile]))
-  ;;   ;; put some video metadata into Couch
-  ;;   (let [video-doc (db/put-doc
-  ;;                    db access/put-hook-fn
-  ;;                    {:_id id
-  ;;                     :type "video"
-  ;;                     :display-name filename
-  ;;                     :file-name new-short-filename
-  ;;                     :users [username]
-  ;;                     :uploaded-by username
-  ;;                     :uploaded-datetime (.toString (new java.util.Date))}
-  ;;                    username
-  ;;                    roles (db/get-auth-cookie req))]
-  ;;     (json-response video-doc)))
-  )
+    (println "file-array: " (remove nil? file-array) file-array)
+    (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 
 (defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
