@@ -121,7 +121,9 @@
         (cond
           ;; Case 1: Video has finished uploading
           (= bytes-read content-length)
-          [:div {:class "flex items-center"} [svg/check {:class "ma2"} "green" "18px"] "Finished uploading."]
+          [:div {:class "flex items-center"}
+           [svg/check {:class "ma2"} "green" "26px"]
+           "Finished uploading. Video listing will refresh shortly."]
           ;; Case 2: Video is uploading and we have progress information
           (and bytes-read content-length)
           (str "Uploading: "
