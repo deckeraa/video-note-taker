@@ -158,7 +158,7 @@
        [:input {:id "file-upload"
                 :name "file"
                 :type "file"
-                :multiple false
+                :multiple true
                 :class "dn"
                 :ref (fn [el]
                        (reset! file-input-ref-el el))
@@ -173,7 +173,8 @@
                                (go (let [resp (<! (http/post
                                                    (db/resolve-endpoint "upload-video")
                                                    {:multipart-params
-                                                    [["file" (aget (.-files file-input) 0)]]
+                                                    [["file" (aget (.-files file-input) 0)]
+                                                     ["file" (aget (.-files file-input) 1)]]
                                                     }))]
                                      (if (= 200 (:status resp))
                                        (do
