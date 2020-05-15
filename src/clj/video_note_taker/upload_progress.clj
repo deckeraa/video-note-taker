@@ -23,5 +23,4 @@
     (swap! file-upload-progress-atom assoc username {:bytes-read bytes-read :content-length content-length})))
 
 (defn get-upload-progress [req username roles]
-  (println "get-upload-progress " @file-upload-progress-atom)
   (json-response (get @file-upload-progress-atom username)))
