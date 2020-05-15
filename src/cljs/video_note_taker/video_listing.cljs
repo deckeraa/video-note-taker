@@ -175,20 +175,23 @@
                                (toaster-oven/add-toast
                                 [upload-toast remove-delegate-atm]
                                 remove-delegate-atm
-                                atoms/toaster-cursor))
-                             (when-let [file-input @file-input-ref-el]
-                               (go (let [resp (<! (http/post
-                                                   (db/resolve-endpoint "upload-video")
-                                                   {:multipart-params
-                                                    (vec (map (fn [idx]
-                                                                ["file" (aget (.-files file-input) idx)])
-                                                              (range (alength (.-files file-input)))))
-                                                    }))]
-                                     (println "Upload resp: " resp)
-                                     (if (= 200 (:status resp))
-                                       (load-video-listing video-listing-cursor)
-                                       (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" nil))
-                                     ))))}]])))
+                                atoms/toaster-cursor)
+                               (when-let [file-input @file-input-ref-el]
+                                 (go (let [resp (<! (http/post
+                                                     (db/resolve-endpoint "upload-video")
+                                                     {:multipart-params
+                                                      (vec (map (fn [idx]
+                                                                  ["file" (aget (.-files file-input) idx)])
+                                                                (range (alength (.-files file-input)))))
+                                                      }))]
+
+                                       (if (= 200 (:status resp))
+                                         (load-video-listing video-listing-cursor)
+                                         (do
+                                           (println "Upload resp: " resp)
+                                           (@remove-delegate-atm) ; close the upload progress dialog
+                                           (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))
+                                       )))))}]])))
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
   [:div
