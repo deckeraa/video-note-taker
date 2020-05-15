@@ -88,9 +88,9 @@
          (reset! progress-atm progress)
          (when (and progress
                     repeat?
-                    (<= (:bytes-read progress)
-                        (:content-length progress)))
-           (js/setTimeout (partial upload-progress-updater progress-atm true) 750))))))
+                    (< (:bytes-read progress)
+                       (:content-length progress)))
+           (js/setTimeout (partial upload-progress-updater progress-atm true) 1000))))))
 
 (defcard-rg test-upload-progress-updater
   "Tests /get-upload-progress. You will need a cookie associate with a file upload for this to return anything."
