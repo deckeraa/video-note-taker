@@ -115,10 +115,15 @@
   When called with 1-arity, initializes an updater that gets status updates from the server."
   ([remote-delegate-atom upload-progress]
    (fn [remove-delegate-atm upload-progress]
-     [:div {}
+     [:div {:class "flex items-center"}
       (let [bytes-read     (:bytes-read upload-progress)
             content-length (:content-length upload-progress)]
-        (if (and bytes-read content-length)
+        (cond
+          ;; Case 1: Video has finished uploading
+          (= bytes-read content-length)
+          [:div {:class "flex items-center"} [svg/check {:class "ma2"} "green" "18px"] "Finished uploading."]
+          ;; Case 2: Video is uploading and we have progress information
+          (and bytes-read content-length)
           (str "Uploading: "
                (let [percent
                      (Math/round (* (/ bytes-read content-length) 100))]
@@ -130,6 +135,8 @@
                 " of "
                 (display-in-megabytes content-length)
                 ")"))
+          ;; Case 3: Video is uploading and we don't have progress information
+          :default
           (str "Uploading...")))
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))}
@@ -179,9 +186,7 @@
                                                     }))]
                                      (println "Upload resp: " resp)
                                      (if (= 200 (:status resp))
-                                       (do
-                                         (toaster-oven/add-toast "Video uploaded" svg/check "green" nil)
-                                         (load-video-listing video-listing-cursor))
+                                       (load-video-listing video-listing-cursor)
                                        (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" nil))
                                      ))))}]])))
 
