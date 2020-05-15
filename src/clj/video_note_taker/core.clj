@@ -39,20 +39,15 @@
    [video-note-taker.access :as access])
   (:gen-class))
 
-(def couch-url "http://localhost:5984/video-note-taker")
-
 (def db
-  (let [password (System/getenv "VNT_DB_PASSWORD")]
-    {:url couch-url
-     :username "admin"
-     :password (or password "test")}))
+     {:url (str auth/couch-url "/video-note-taker")
+      :username (or auth/couch-username "admin")
+      :password (or auth/couch-password "test")})
 
-(def users-url "http://localhost:5984/_users")
 (def users-db
-  (let [password (System/getenv "VNT_DB_PASSWORD")]
-    {:url users-url
-     :username "admin"
-     :password (or password "test")}))
+  {:url (str auth/couch-url "/_users")
+   :username (or auth/couch-username "admin")
+   :password (or auth/couch-password "test")})
 
 (defn text-type [v]
   (content-type v "text/html"))
