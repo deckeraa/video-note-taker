@@ -135,7 +135,7 @@
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
   (when (not (get-in @notes-by-video [video-key])) 
     (as-> (get-notes video-key username roles auth-cookie) $
-      (map (fn [{{time :time} :doc}]
+      (map (fn [{time :time}]
              time) ; grab the time associated with the note returned by the view
            $)
       (swap! notes-by-video assoc video-key $)))
@@ -144,7 +144,7 @@
                 video-display-name))
       (swap! failed-imports conj {:line line :reason (str "The video display name " video-display-name " does not match with video key: " video-key ". Use the 'Download starter spreadsheet' button to download a spreadsheet with the mapping of video key to video display name.")})
                                         ; Check that the passed-in video-key matches an actual video. If the lookup failed in the previous step, then the video does not exist in the db.
-      (if (empty? (get-in @notes-by-video [video-key]))
+      (if (nil? (get-in @notes-by-video [video-key]))
         (swap! failed-imports conj {:line line :reason (str "A video with the id: " video-key " is not in the database.")})
                                         ; Next, validate that there isn't another note already close to the timestamp
                                         ; This will prevent duplicate notes in case a spreadsheet is uploaded multiple times
