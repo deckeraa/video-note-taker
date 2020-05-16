@@ -112,7 +112,7 @@
                     :elide-asserts   true
                     :closure-defines {goog.DEBUG false}
                     :pretty-print    false
-                    :source-map      nil}}
+                    :source-map      "resources/public/js/main.js.map"}}
 
     {:id           "test"
      :source-paths ["src/cljs" "test/cljs"]
