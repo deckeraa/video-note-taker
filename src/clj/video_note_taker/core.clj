@@ -103,7 +103,8 @@
                             {"groups"
                              {"$elemMatch"
                               {"$in" groups}}})]}]}
-               "execution_stats" true}
+               "execution_stats" true
+               "limit" 125}
         videos (db/run-mango-query query (db/get-auth-cookie req))]
     (json-response (vec (:docs videos)))))
 

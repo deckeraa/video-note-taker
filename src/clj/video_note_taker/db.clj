@@ -155,10 +155,13 @@
         (vec (map :doc (:rows couch-resp))))
       (:rows couch-resp))))
 
-(defn run-mango-query [query auth-cookie]
-  (let [results (couch-request db :post "_find" query {} auth-cookie)]
-    (println "search stats for " query  " : "(get-in results [:execution_stats]))
-    results))
+(defn run-mango-query
+  ([query auth-cookie]
+   (run-mango-query query auth-cookie {}))
+  ([query auth-cookie options]
+   (let [results (couch-request db :post "_find" query {:query-params options} auth-cookie)]
+     (println "search stats for " query  " : "(get-in results [:execution_stats]))
+     results)))
 
 ;; TODO this contains video-note-taker-specifc logic and should be moved to a different file.
 (defn install-views [db req username roles]
