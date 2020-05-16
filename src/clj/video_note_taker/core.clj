@@ -322,7 +322,7 @@
                 affected-notes (get-notes (:_id video) username roles (db/get-auth-cookie req))]
             ;; now update the denormalized user permissions stored on the notes
             (db/bulk-update
-             db access/put-hook-fn
+             db nil
              (vec (map #(assoc % :users (vec all-users)) affected-notes))
              username roles (db/get-auth-cookie req))
             ;; TODO the bulk update could fail to update certain notes.

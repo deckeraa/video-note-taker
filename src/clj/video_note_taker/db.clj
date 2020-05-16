@@ -98,7 +98,9 @@
 (defn bulk-update [db put-hook-fn docs username roles auth-cookie]
   (let [audited-docs (if (or username roles auth-cookie)
                         (vec (remove nil? 
-                                     (map #(put-hook-fn % username roles)
+                                     (map #(if put-hook-fn
+                                             (put-hook-fn % username roles)
+                                             %)
                                           docs))))]
     (let [couch-resp (couch-request db :post "_bulk_docs" {:docs docs} {} auth-cookie)]
       couch-resp)))
