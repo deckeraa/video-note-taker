@@ -158,7 +158,10 @@
                            :time time-in-seconds
                            :text note-text
                            :users (:users video)
-                           :created-by username}
+                           :created-by username
+                           :last-edit (zd/format
+                                       (zd/now)
+                                       java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
                           username roles auth-cookie)
               (swap! notes-by-video #(assoc % video-key
                                             (conj (get % video-key) time-in-seconds)))
