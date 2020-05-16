@@ -111,7 +111,8 @@
                     :output-dir      "resources/public/js/min"
                     :elide-asserts   true
                     :closure-defines {goog.DEBUG false}
-                    :pretty-print    false}}
+                    :pretty-print    false
+                    :source-map      false}}
 
     {:id           "test"
      :source-paths ["src/cljs" "test/cljs"]
