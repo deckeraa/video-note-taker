@@ -134,7 +134,7 @@
 (defn import-note-spreadsheet-line [notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles auth-cookie]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
   (when (not (get-in @notes-by-video [video-key])) 
-    (as-> (get-notes video-key) $
+    (as-> (get-notes video-key username roles auth-cookie) $
       (map (fn [{{time :time} :doc}]
              time) ; grab the time associated with the note returned by the view
            $)
