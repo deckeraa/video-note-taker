@@ -48,10 +48,12 @@
         is-last-editor? (if (:last-editor req-doc)
                           (= username (:last-editor req-doc))
                           (= username (:created-req-by req-doc)))
-        sufficiently-recent? (dur/is-negative
-                              (dur/minus-minutes
-                               (dur/between (zd/parse (:last-edit req-doc)) (zd/now))
-                               3))]
+        sufficiently-recent? (and
+                              (:last-edit req-doc) ;; some really old docs don't have a :last-edit, causing a NullPointerException on zd/parse. This will avoid that.
+                              (dur/is-negative
+                               (dur/minus-minutes
+                                (dur/between (zd/parse (:last-edit req-doc)) (zd/now))
+                                3)))]
     (merge req-doc
            {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
            ;; when a note is created, we'd expect the user to edit it write away,
