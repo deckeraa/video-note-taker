@@ -12,6 +12,7 @@
    [ring.middleware.content-type :refer [wrap-content-type]]
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+   [ring.middleware.multipart-params.temp-file :refer [temp-file-store]]
    [ring.middleware.file :refer [wrap-file]]
    [ring.middleware.cookies :refer [cookies-request wrap-cookies]]
    [ring.middleware.session.store :refer [read-session write-session]]
@@ -444,7 +445,8 @@
       (wrap-params)
       (wrap-cookies)
       (wrap-partial-content)
-      (wrap-multipart-params {:progress-fn (partial upload-progress/upload-progress-fn db)})
+      (wrap-multipart-params {:store (temp-file-store {:expires-in (* 24 3600)})
+                              :progress-fn (partial upload-progress/upload-progress-fn db)})
       (wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]
