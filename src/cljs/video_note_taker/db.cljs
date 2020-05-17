@@ -5,6 +5,8 @@
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
    [cljs.test :include-macros true :refer-macros [testing is]]
    [devcards.core :refer-macros [defcard deftest]]
+   [video-note-taker.atoms :as atoms]
+   [video-note-taker.auth :as auth]
    [video-note-taker.svg :as svg]
    [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
@@ -31,17 +33,27 @@
 (defcard show-resolve-endpoint
   (resolve-endpoint "foo"))
 
-(defn toast-server-error-if-needed [resp doc]
-  (when (not (= 200 (:status resp)))
-    (toaster-oven/add-toast (str "Server error: " resp doc) svg/x "red"
-                            {:ok-fn    (fn [] nil)})))
+(defn toast-server-error-if-needed
+  ([resp doc]
+   (toast-server-error-if-needed resp doc nil))
+  ([resp doc login-cursor]
+   (when (not (= 200 (:status resp)))
+     ;; if we got passed the login cursor and the user needs an auth cookie and it's a 401 Not Authorized, then we'll increment the login cursor, causing the login screen to be shown rather than show
+     ;; the user the toast message.
+     (if (and login-cursor (= 401 (:status resp)) (auth/needs-auth-cookie))
+       (swap! login-cursor inc)
+       ;; otherwise, log a message in the console and show the user the toast message.
+       (do
+         (println "Server error: " resp doc login-cursor)
+         (toaster-oven/add-toast "Uh oh, couldn't read from the server :(" svg/x "red"
+                                 {:ok-fn    (fn [] nil)}))))))
 
 (defn get-doc [id success-fn fail-fn]
   (go (let [resp (<! (http/post (resolve-endpoint "get-doc")
                                 {:json-params {:_id id}
                                  :with-credentials false}
                                 ))]
-        (toast-server-error-if-needed resp id)
+        (toast-server-error-if-needed resp id atoms/login-cursor)
         (when (and
                (= 200 (:status resp))
                (:body resp)
@@ -60,7 +72,7 @@
                                 {:json-params doc
                                  :with-credentials false}
                                 ))]
-        (toast-server-error-if-needed resp doc)
+        (toast-server-error-if-needed resp doc atoms/login-cursor)
         (println resp)
         (println (:body resp))
         (handler-fn (:body resp) resp))))
@@ -70,7 +82,7 @@
                                 {:json-params doc
                                  :with-credentials true}
                                 ))]
-        (toast-server-error-if-needed resp doc)
+        (toast-server-error-if-needed resp doc atoms/login-cursor)
         (println resp)
         (println (:body resp))
         (handler-fn (:body resp) resp))))
@@ -79,20 +91,23 @@
   (go (let [resp (<! (http/post (resolve-endpoint endpoint)
                                 {:json-params params
                                  :with-credentials true}))]
-        (toast-server-error-if-needed resp nil)
+        (toast-server-error-if-needed resp nil atoms/login-cursor)
         (when (= 200 (:status resp))
           (reset! data-atom (:body resp))))))
 
 (defn post-to-endpoint
   ([endpoint params]
-   (post-to-endpoint endpoint params nil nil))
+   (post-to-endpoint endpoint params nil nil atoms/login-cursor))
   ([endpoint params success-fn]
-   (post-to-endpoint endpoint params success-fn nil))
+   (post-to-endpoint endpoint params success-fn nil atoms/login-cursor))
   ([endpoint params success-fn fail-fn]
+   (post-to-endpoint endpoint params success-fn fail-fn atoms/login-cursor))
+  ([endpoint params success-fn fail-fn login-cursor]
+   (println "calling post-to-endpoint with login-cursor: " login-cursor)
    (go (let [resp (<! (http/post (resolve-endpoint endpoint)
                                  {:json-params params
                                   :with-credentials true}))]
-         (toast-server-error-if-needed resp nil)
+         (toast-server-error-if-needed resp nil login-cursor)
          (if (= 200 (:status resp))
            (when success-fn (success-fn (:body resp) resp))
            (when fail-fn (fail-fn (:body resp) resp)))))))

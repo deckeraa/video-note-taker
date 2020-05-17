@@ -17,13 +17,9 @@
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn load-video-listing [video-listing-cursor]
-  (go (let [resp (<! (http/post (db/resolve-endpoint "get-video-listing")
-                                {:json-params {}
-                                 :with-credentials false}
-                                ))]
-        (db/toast-server-error-if-needed resp nil)
-        (when (= 200 (:status resp))
-          (reset! video-listing-cursor (sort-by :display-name (:body resp)))))))
+  (db/post-to-endpoint "get-video-listing" {}
+                       (fn [video-listing]
+                         (reset! video-listing-cursor (sort-by :display-name video-listing)))))
 
 (defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
   (let [hover-atm (reagent/atom false)]
