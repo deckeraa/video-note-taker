@@ -11,6 +11,8 @@
 (defn upload-progress-fn [db req bytes-read content-length item-count]
   (let [req (cookies-request req)
         cookie-value (get-in req [:cookies "AuthSession" :value])
+        upload-id (when-let [query-string (:query-string req)]
+                    (second (clojure.string/split query-string #"="))) 
         username (get (swap! cookie-mapping-atom
                              (fn [cookie-map]
                                (if (get cookie-map cookie-value) ; if the cookie is already mapped ...
@@ -20,7 +22,9 @@
                                    (assoc cookie-map cookie-value
                                           (:name (first cookie-check-val)))))))
                       cookie-value)]
-    (swap! file-upload-progress-atom assoc username {:bytes-read bytes-read :content-length content-length})))
+    (swap! file-upload-progress-atom assoc-in [username upload-id] {:bytes-read bytes-read :content-length content-length})))
 
 (defn get-upload-progress [req username roles]
-  (json-response (get @file-upload-progress-atom username)))
+  (let [upload-id (when-let [query-string (:query-string req)]
+                    (second (clojure.string/split query-string #"=")))]
+    (json-response (get-in @file-upload-progress-atom [username upload-id]))))

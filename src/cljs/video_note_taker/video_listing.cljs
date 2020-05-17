@@ -76,25 +76,27 @@
 (defn upload-progress-updater
   "Gets the current status of the file upload from the server. Uses a timeout to keep
   updating itself until the load is complete if 'repeat?' is true."
-  ([progress-atm]
-   (upload-progress-updater progress-atm true))
-  ([progress-atm repeat?]
-   (go (let [resp (<! (http/get (db/resolve-endpoint "get-upload-progress")))
+  ([progress-atm upload-id]
+   (upload-progress-updater progress-atm upload-id true))
+  ([progress-atm upload-id repeat?]
+   (go (let [resp (<! (http/get (db/resolve-endpoint "get-upload-progress")
+                                {:query-params {:id upload-id}}))
              progress (:body resp)]
          (reset! progress-atm progress)
+         (println "resp: " resp)
          (when (and progress
                     repeat?
                     (< (:bytes-read progress)
                        (:content-length progress)))
-           (js/setTimeout (partial upload-progress-updater progress-atm true) 1000))))))
+           (js/setTimeout (partial upload-progress-updater progress-atm upload-id true) 1000))))))
 
-(defcard-rg test-upload-progress-updater
-  "Tests /get-upload-progress. You will need a cookie associate with a file upload for this to return anything."
-  (let [progress-atom (reagent/atom {})]
-    (fn []
-      [:div
-       [:p "Progress atom: " @progress-atom]
-       [:button {:on-click #(upload-progress-updater progress-atom false)} "Update once"]])))
+;; (defcard-rg test-upload-progress-updater
+;;   "Tests /get-upload-progress. You will need a cookie associate with a file upload for this to return anything."
+;;   (let [progress-atom (reagent/atom {})]
+;;     (fn []
+;;       [:div
+;;        [:p "Progress atom: " @progress-atom]
+;;        [:button {:on-click #(upload-progress-updater progress-atom false)} "Update once"]])))
 
 (defn- display-in-megabytes [bytes]
   (if (>= bytes 1000000)
@@ -108,15 +110,15 @@
 
 (defn upload-toast
   "Toast message that displays the current upload progress.
-  When called with 1-arity, initializes an updater that gets status updates from the server."
-  ([remote-delegate-atom upload-progress]
-   (fn [remove-delegate-atm upload-progress]
+  When called with 2-arity, initializes an updater that gets status updates from the server."
+  ([remote-delegate-atom upload-id upload-progress]
+   (fn [remove-delegate-atm upload-id upload-progress]
      [:div {:class "flex items-center"}
       (let [bytes-read     (:bytes-read upload-progress)
             content-length (:content-length upload-progress)]
         (cond
           ;; Case 1: Video has finished uploading
-          (= bytes-read content-length)
+          (and bytes-read content-length (= bytes-read content-length))
           [:div {:class "flex items-center"}
            [svg/check {:class "ma2"} "green" "26px"]
            "Finished uploading. Video listing will refresh shortly."]
@@ -139,11 +141,11 @@
         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
                   :on-click (fn [e] (@remove-delegate-atm))}
          "Ok"]]))
-  ([remove-delegate-atm]
+  ([remove-delegate-atm upload-id]
    (let [upload-progress-atom (reagent/atom {})
-         _timer (upload-progress-updater upload-progress-atom)]
+         _timer (upload-progress-updater upload-progress-atom upload-id)]
      (fn []
-       [upload-toast remove-delegate-atm @upload-progress-atom])
+       [upload-toast remove-delegate-atm upload-id @upload-progress-atom])
      )))
 
 (defcard-rg upload-toast-card
@@ -169,9 +171,10 @@
                        (reset! file-input-ref-el el))
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
-                             (let [remove-delegate-atm (reagent/atom (fn [] nil))]
+                             (let [remove-delegate-atm (reagent/atom (fn [] nil))
+                                   upload-id (uuid/uuid-string (uuid/make-random-uuid))]
                                (toaster-oven/add-toast
-                                [upload-toast remove-delegate-atm]
+                                [upload-toast remove-delegate-atm upload-id]
                                 remove-delegate-atm
                                 atoms/toaster-cursor)
                                (when-let [file-input @file-input-ref-el]
@@ -181,6 +184,7 @@
                                                       (vec (map (fn [idx]
                                                                   ["file" (aget (.-files file-input) idx)])
                                                                 (range (alength (.-files file-input)))))
+                                                      :query-params {:id upload-id}
                                                       }))]
 
                                        (if (= 200 (:status resp))
