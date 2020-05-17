@@ -432,9 +432,14 @@
     (let [resp (handler req)]
       (if resp
         resp
-        (do
-          (println "Sending 404 to " (:remote-addr req) " for " (:uri req))
-          (response/not-found "Not found"))))))
+        (response/not-found "Not found")))))
+
+(defn wrap-log-abnormal-responses [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (when (not (= 200 (:status resp)))
+        (println "Sending" (:status resp) "to" (:remote-addr req) "for" (:uri req)))
+      resp)))
 
 (def app
   (-> (make-handler api-routes)
@@ -442,6 +447,7 @@
       (wrap-file "resources/public" {:prefer-handler? true})
       (wrap-content-type)
       (wrap-not-found)
+      (wrap-log-abnormal-responses)
       (wrap-params)
       (wrap-cookies)
       (wrap-partial-content)
