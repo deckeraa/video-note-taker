@@ -22,13 +22,9 @@
    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn load-notes [notes-cursor video-cursor]
-  (go (let [resp (<! (http/post (db/resolve-endpoint "get-notes")
-                                {:json-params {:video-key (:_id @video-cursor)}
-                                 :with-credentials false}
-                                ))]
-        (db/toast-server-error-if-needed resp nil)
-        (when (= 200 (:status resp))
-          (reset! notes-cursor (vec (sort-by :time (:body resp))))))))
+  (db/post-to-endpoint "get-notes" {:video-key (:_id @video-cursor)}
+                       (fn [notes]
+                         (reset! notes-cursor (vec (sort-by :time notes))))))
 
 (defn update-note!
   "Updates a given note in the list of notes. Sorts the list by time."

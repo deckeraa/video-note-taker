@@ -73,8 +73,6 @@
                                  :with-credentials false}
                                 ))]
         (toast-server-error-if-needed resp doc atoms/login-cursor)
-        (println resp)
-        (println (:body resp))
         (handler-fn (:body resp) resp))))
 
 (defn delete-doc [doc handler-fn]
@@ -83,8 +81,6 @@
                                  :with-credentials true}
                                 ))]
         (toast-server-error-if-needed resp doc atoms/login-cursor)
-        (println resp)
-        (println (:body resp))
         (handler-fn (:body resp) resp))))
 
 (defn put-endpoint-in-atom [endpoint params data-atom]
@@ -103,7 +99,6 @@
   ([endpoint params success-fn fail-fn]
    (post-to-endpoint endpoint params success-fn fail-fn atoms/login-cursor))
   ([endpoint params success-fn fail-fn login-cursor]
-   (println "calling post-to-endpoint with login-cursor: " login-cursor)
    (go (let [resp (<! (http/post (resolve-endpoint endpoint)
                                  {:json-params params
                                   :with-credentials true}))]
@@ -121,9 +116,6 @@
    (post-to-endpoint "bulk-get-doc" {:docs (vec (map (fn [id] {:id id}) ids))} success-fn fail-fn)))
 
 (defn bulk-lookup-to-atom [ids atom]
-  (println "ids: " ids)
   (bulk-lookup ids (fn [resp]
-                     (println "bulk-lookup-to-atom resp: " resp)
                      (reset! atom resp)
-                     (println "bulk-lookup-to-atom: " atom)
                      )))
