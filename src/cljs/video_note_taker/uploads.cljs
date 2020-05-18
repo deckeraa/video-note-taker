@@ -38,6 +38,22 @@
   (is (= (is-upload-complete? {:bytes-read 100 :content-length 200}) false))
   (is (= (is-upload-complete? {:bytes-read 200 :content-length 200}) true)))
 
+(defn uploads-in-progress? [uploads]
+  (not (empty? (remove (fn [[k v]] (is-upload-complete? (:progress v))) uploads))))
+
+(deftest test-uploads-in-progress
+  (is (= (uploads-in-progress? {"a3sd2" {:files ["foo.mp3"] :progress {:bytes-read 200 :content-length 200}}}) false))
+  (is (= (uploads-in-progress? {"a3sd2" {:files ["foo.mp3"] :progress {:bytes-read 200 :content-length 400}}}) true)))
+
+(defn number-of-in-progress-uploads [uploads]
+  (count (remove (fn [[k v]] (is-upload-complete? (:progress v))) uploads)))
+
+(defn number-of-finished-uploads [uploads]
+  (count (filter (fn [[k v]] (is-upload-complete? (:progress v))) uploads)))
+
+(defn uploads-this-session? [uploads]
+  (not (empty? uploads)))
+
 (defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
   (when-let [files (file-objects file-input-ref-atom)]
     (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
@@ -129,11 +145,30 @@
    ])
 
 (defn upload-display [uploads-cursor]
-  (fn []
-    [:div {}
-     [:h1 "Uploads"]
-     [:ul {:class "list"}
-      (doall (map (fn [[k v]] (single-upload-card k v)) @uploads-cursor))]]))
+  (let [expanded? (reagent/atom false)]
+    (fn []
+      [:div
+       (when (uploads-this-session? @uploads-cursor)
+         [:div {:class "fixed bg-white w4 h4 br-100 shadow-3 bottom-1 right-1 flex flex-column items-center justify-center grow"
+                :on-click #(swap! expanded? not)}
+          (let [in-progress (number-of-in-progress-uploads @uploads-cursor)]
+            (if (> in-progress 0)
+              [:<>
+               [:div {:class "f2"} in-progress]
+               [:div {:class "f5"} "running"]
+               [:div {:class "f5"} "uploads"]]
+              [:<>
+               [:div {:class "f2 flex items-center"}
+                [svg/check {:class "mr2"} "green" "24px"]
+                (number-of-finished-uploads @uploads-cursor)]
+               [:div {:class "f5"} "finished"]
+               [:div {:class "f5"} "uploads"]]
+              ))])
+       (when @expanded?
+           [:div {:class "fixed bg-white br3 shadow-3 w-80 bottom-2 right-2"}
+            [:h1 "Uploads"]
+            [:ul {:class "list"}
+             (doall (map (fn [[k v]] (single-upload-card k v)) @uploads-cursor))]])])))
 
 (defcard-rg test-upload-display
   (let [uploads-cursor (reagent/atom {"dfh4" {:files ["foo.mp3" "bar.mp3" "a_really_really_long_file_name_123456789012334567890123456789012334567890123456789012334567890.mp4"] :progress {:bytes-read 100 :content-length 200}}
@@ -159,7 +194,7 @@
        [:input {:id "file-upload"
                 :name "file"
                 :type "file"
-                :multiple "true"
+                :multiple true
                 :ref (fn [el]
                        (reset! file-input-ref-atom el))}]
        [:button {:on-click

@@ -2,6 +2,7 @@
   "Video Note Taker is a web-based collaborative video annotation app."
   (:require
    [reagent.core :as reagent]
+   [reagent.dom]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
    [cljs.test :include-macros true :refer-macros [testing is]]
@@ -17,7 +18,8 @@
    [video-note-taker.auth :as auth]
    [video-note-taker.auth-util :as auth-util]
    [video-note-taker.video :as video :refer [video]]
-   [video-note-taker.search :as search])
+   [video-note-taker.search :as search]
+   [video-note-taker.uploads :as uploads])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -83,6 +85,7 @@
            (when (:show-app-state @atoms/settings-cursor)
              [:p (str @ratom)])
            [toaster-oven/toaster-control]
+           [uploads/upload-display atoms/uploads-cursor]
            ])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,7 +100,7 @@
     ))
 
 (defn reload []
-  (reagent/render [page atoms/app-state]
+  (reagent.dom/render [page atoms/app-state]
                   (.getElementById js/document "app")))
 
 (defn ^:export main []

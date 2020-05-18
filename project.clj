@@ -2,7 +2,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.946"]
                  [javax.xml.bind/jaxb-api "2.2.11"]
-                 [reagent "0.7.0"]
+                 [reagent "1.0.0-alpha2"]
                  [devcards "0.2.4" :exclusions [cljsjs/react]]
                  [bidi "2.1.6"]
                  [ring "1.8.1"]
