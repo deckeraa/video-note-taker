@@ -42,7 +42,7 @@
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
        [:h2 "Import & Export"]
        [:a {:class "b--black-10 ba br3 pa3 dim link ma1"
-        :href (str (db/get-server-url) "download-starter-spreadsheet")}
+            :href (str (db/get-server-url) "download-starter-spreadsheet")}
         "Download starter spreadsheet"]
        [:label {:for "spreadsheet-upload"
                 :class "b--black-10 ba br3 pa3 ma1"}

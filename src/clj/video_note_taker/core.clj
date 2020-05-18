@@ -131,7 +131,9 @@
       (conj $ "video key,video display name,time in seconds,note text")
       (clojure.string/join "\n" $)
       (response/response $)
-      (content-type $ "text/csv"))))
+      (content-type $ "text/csv")
+      (response/header $ "Content-Disposition"
+                       (str  "attachment; filename=\"" (:display-name video)  "_notes.csv\"")))))
 
 (defn import-note-spreadsheet-line [notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles auth-cookie]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
@@ -184,8 +186,8 @@
       (conj $ "video key,video display name,time in seconds,note text")
       (clojure.string/join "\n" $)
       (response/response $)
-      (content-type $ "text/csv"))
-    ))
+      (content-type $ "text/csv")
+      (response/header $ "Content-Disposition" "attachment; filename=\"starter_spreadsheet.csv\""))))
 
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
