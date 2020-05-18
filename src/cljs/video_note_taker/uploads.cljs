@@ -167,7 +167,7 @@
        (when @expanded?
          [:div {:class "fixed bg-white br3 shadow-3 w-80"
                 :style {:bottom "10rem" :right "10%"}}
-          [:h1 "Uploads"]
+          [:div {:class "f1 ma2"} "Recent Uploads"]
           [:ul {:class "list"}
            (doall (map (fn [[k v]] (single-upload-card k v)) @uploads-cursor))]])])))
 
