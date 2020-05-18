@@ -31,3 +31,4 @@
 (defonce video-options-cursor    (reagent/cursor app-state [:video-options]))
 (defonce login-cursor     (reagent/cursor app-state [:login-atm]))
 (defonce user-cursor      (reagent/cursor app-state [:user]))
+(defonce uploads-cursor   (reagent/cursor app-state [:uploads]))

@@ -11,7 +11,8 @@
    [video-note-taker.db :as db]
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.video-notes :as notes]
-   [video-note-taker.editable-field :refer [editable-field]])
+   [video-note-taker.editable-field :refer [editable-field]]
+   [video-note-taker.uploads :as uploads])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
