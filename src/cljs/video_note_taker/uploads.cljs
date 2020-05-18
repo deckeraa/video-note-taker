@@ -37,7 +37,7 @@
   (is (= (is-upload-complete? {:bytes-read 100 :content-length 200}) false))
   (is (= (is-upload-complete? {:bytes-read 200 :content-length 200}) true)))
 
-(defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint]
+(defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
   (when-let [files (file-objects file-input-ref-atom)]
     (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
       ;; Send the POST to the upload endpoint
@@ -50,6 +50,9 @@
                            ;;           (range (alength (.-files file-input)))))
                            :query-params {:id upload-id}
                            }))]
+            (if (= 200 (:status resp))
+              (when success-fn (success-fn (:body resp) resp))
+              (when fail-fn    (fail-fn    (:body resp) resp)))
             ;; nothing to do here, since file upload progress is tracked separately
             ))
       ;; Add in this upload to the uploads cursor.
@@ -59,20 +62,27 @@
 (defn upload-progress-updater
   ([uploads-cursor repeat?]
    (let [in-progress-uploads
-         (remove (fn [k v] (is-upload-complete? {:progress v})) @uploads-cursor)
+         (remove (fn [[k v]] (is-upload-complete? (:progress v))) @uploads-cursor)
          ;; response-counter (atom (count in-progress-uploads))
          ;; db-resp-fn (fn (when (and (= 0 (swap! response-counter dec))
          ;;                           repeat?)
          ;;                  (js/setTimeout )))
          ]
      (println in-progress-uploads)
-     (map (fn [upload-id]
-            (db/post-to-endpoint
-             (db/resolve-endpoint "get-upload-progress")
-             {:query-params {:id upload-id}}
-             (fn [updated-progress]
-               (swap! uploads-cursor assoc-in [upload-id :progress] updated-progress))))
-          (keys in-progress-uploads))
+     (println (map (fn [[k v]] [(:progress v)]) in-progress-uploads))
+     ;(println "keys: " (keys in-progress-uploads))
+     (doall (map (fn [upload-id]
+                   (println "Sending message to endpoint: " upload-id)
+                   (go (let [resp (<! (http/post
+                                       (db/resolve-endpoint "get-upload-progress")
+                                       {:query-params {:id upload-id}}))
+                             updated-progress (:body resp)]
+                         (if (= 200 (:status resp))
+                           (do
+                             (println "Got updated progress: " updated-progress)
+                             (swap! uploads-cursor assoc-in [upload-id :progress] updated-progress))                         
+                           ("upload progress update failed: " resp)))))
+                 (keys in-progress-uploads)))
      (js/setTimeout (partial upload-progress-updater uploads-cursor repeat?) 3000)))
   ([uploads-cursor]
    (upload-progress-updater uploads-cursor true)))
