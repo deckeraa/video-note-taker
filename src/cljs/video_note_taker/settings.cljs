@@ -34,13 +34,13 @@
   [:div {}
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
 
-(defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
+(defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         success-import-counter (reagent/atom nil)
         import-issues     (reagent/atom [])]
     (fn [settings-cursor]
       [:div {:class "w-100 pa3 flex flex-column items-start"}
-       [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
+       [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
        [:h2 "Import & Export"]
        (if (uploads/uploads-in-progress?)
          [:div {:class "white bg-light-blue bn br3 pa3 link ma1"

@@ -197,7 +197,7 @@
 
 (defn manage-identity
   "Reagent component used in the Settings screen that allows a user do various profile edit activites such as changing a password or logging out."
-  [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor]
+  [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
   [:div
    [:h2 "Manage Identity"]
    [:div {} "Hello " (:name @atoms/user-cursor) "."]
@@ -214,6 +214,7 @@
                             (reset! video-listing-cursor nil)
                             (reset! video-cursor {})
                             (reset! screen-cursor [:video-selection])
+                            (reset! uploads-cursor {})
                             ;; redraw core page
                             (swap! logged-in-atm inc))))}
     "Log out"]
