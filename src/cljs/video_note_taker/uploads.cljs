@@ -93,7 +93,7 @@
                          (if (= 200 (:status resp))
                            (do
                              (swap! uploads-cursor assoc-in [upload-id :progress] updated-progress))                         
-                           ("upload progress update failed: " resp)))))
+                           (println "upload progress update failed: " resp)))))
                  (keys in-progress-uploads)))
      (js/setTimeout (partial upload-progress-updater uploads-cursor repeat?) 3000)))
   ([uploads-cursor]
