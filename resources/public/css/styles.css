@@ -10,3 +10,16 @@
       bottom: 2rem;
   }
 }
+
+.upload-details-rise-from-bottom {
+  animation: upload-details-rise-from-bottom-anim 0.3s ease-out 1;
+}
+
+@keyframes upload-details-rise-from-bottom-anim {
+  0% {
+      bottom: -8rem;
+  }
+  100% {
+      bottom: 10rem;
+  }
+}

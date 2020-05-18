@@ -168,7 +168,7 @@
                [:div {:class "f5"} "uploads"]]
               ))])
        (when @expanded?
-         [:div {:class "fixed bg-white br3 shadow-3 w-80"
+         [:div {:class "fixed bg-white br3 shadow-3 w-80 upload-details-rise-from-bottom"
                 :style {:bottom "10rem" :right "10%"}}
           [:div {:class "f2 ma2"} "Recent Uploads"]
           [:ul {:class "list"}
