@@ -152,7 +152,7 @@
     (fn []
       [:div
        (when (uploads-this-session? @uploads-cursor)
-         [:div {:class "fixed bg-white w4 h4 br-100 shadow-3 bottom-1 right-1 flex flex-column items-center justify-center grow"
+         [:div {:class "fixed bg-white w4 h4 br-100 shadow-3 bottom-1 right-1 flex flex-column items-center justify-center grow rise-from-bottom"
                 :on-click #(swap! expanded? not)}
           (let [in-progress (number-of-in-progress-uploads @uploads-cursor)]
             (if (> in-progress 0)

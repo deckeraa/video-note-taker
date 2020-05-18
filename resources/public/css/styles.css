@@ -1,0 +1,12 @@
+.rise-from-bottom {
+  animation: rise-from-bottom-anim 0.5s 1;
+}
+
+@keyframes rise-from-bottom-anim {
+  0% {
+      bottom: -8rem;
+  }
+  100% {
+      bottom: 2rem;
+  }
+}
