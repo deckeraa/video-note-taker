@@ -83,7 +83,6 @@
                                 {:query-params {:id upload-id}}))
              progress (:body resp)]
          (reset! progress-atm progress)
-         (println "resp: " resp)
          (when (and progress
                     repeat?
                     (< (:bytes-read progress)

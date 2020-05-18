@@ -6,7 +6,7 @@
    [cljs.test :include-macros true :refer-macros [testing is]]
    [devcards.core :refer-macros [defcard deftest]]
    [video-note-taker.atoms :as atoms]
-   [video-note-taker.auth :as auth]
+   [video-note-taker.auth-util :as auth-util]
    [video-note-taker.svg :as svg]
    [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
@@ -40,7 +40,7 @@
    (when (not (= 200 (:status resp)))
      ;; if we got passed the login cursor and the user needs an auth cookie and it's a 401 Not Authorized, then we'll increment the login cursor, causing the login screen to be shown rather than show
      ;; the user the toast message.
-     (if (and login-cursor (= 401 (:status resp)) (auth/needs-auth-cookie))
+     (if (and login-cursor (= 401 (:status resp)) (auth-util/needs-auth-cookie))
        (swap! login-cursor inc)
        ;; otherwise, log a message in the console and show the user the toast message.
        (do

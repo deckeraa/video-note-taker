@@ -15,6 +15,7 @@
    [video-note-taker.video-listing :as listing]
    [video-note-taker.settings :as settings]
    [video-note-taker.auth :as auth]
+   [video-note-taker.auth-util :as auth-util]
    [video-note-taker.video :as video :refer [video]]
    [video-note-taker.search :as search])
   (:require-macros
@@ -51,7 +52,7 @@
         ]
     (fn []
       @atoms/login-cursor ; referenced so that this component refreshes when the login-cursor changes
-      (if (auth/needs-auth-cookie)
+      (if (auth-util/needs-auth-cookie)
         ;; Show login screen if needed
         [auth/login atoms/login-cursor]
         ;; Otherwise, render the app

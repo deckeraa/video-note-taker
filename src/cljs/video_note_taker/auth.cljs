@@ -13,17 +13,6 @@
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn needs-auth-cookie
-  "Determines whether the user needs to log by examing the presence of the authorization cookie."
-  []
-  (as-> js/document $
-    (.-cookie $)
-    (clojure.string/split $ "; ")
-    (map #(clojure.string/split % "=") $)
-    (filter #(and (= (first %) "AuthSession")
-                  (not (nil? (second %)))) $)
-    (empty? $)))
-
 (defn run-cookie-renewer
   "Creates a recurring call to the server to refresh the authorization cookie."
   []
