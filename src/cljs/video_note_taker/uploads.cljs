@@ -165,10 +165,11 @@
                [:div {:class "f5"} "uploads"]]
               ))])
        (when @expanded?
-           [:div {:class "fixed bg-white br3 shadow-3 w-80 bottom-2 right-2"}
-            [:h1 "Uploads"]
-            [:ul {:class "list"}
-             (doall (map (fn [[k v]] (single-upload-card k v)) @uploads-cursor))]])])))
+         [:div {:class "fixed bg-white br3 shadow-3 w-80"
+                :style {:bottom "10rem" :right "10%"}}
+          [:h1 "Uploads"]
+          [:ul {:class "list"}
+           (doall (map (fn [[k v]] (single-upload-card k v)) @uploads-cursor))]])])))
 
 (defcard-rg test-upload-display
   (let [uploads-cursor (reagent/atom {"dfh4" {:files ["foo.mp3" "bar.mp3" "a_really_really_long_file_name_123456789012334567890123456789012334567890123456789012334567890.mp4"] :progress {:bytes-read 100 :content-length 200}}
