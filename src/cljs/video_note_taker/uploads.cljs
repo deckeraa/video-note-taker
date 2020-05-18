@@ -140,8 +140,11 @@
       ;; Case 3: Video is uploading and we don't have progress information
       :default
       (str "Uploading..."))
-    [:div {:class "f4" :style {:overflow-wrap :anywhere}} (interpose ", " (:files upload))]]
-;   [:div {} (str (:progress upload))]
+    [:ul {:class "list" :style {}}
+     (doall (map (fn [filename]
+                   ^{:key filename}
+                   [:li {:class "f4 mv1" :style {:overflow-wrap :anywhere}} filename])
+                 (:files upload)))]]
    ])
 
 (defn upload-display [uploads-cursor]
@@ -167,7 +170,7 @@
        (when @expanded?
          [:div {:class "fixed bg-white br3 shadow-3 w-80"
                 :style {:bottom "10rem" :right "10%"}}
-          [:div {:class "f1 ma2"} "Recent Uploads"]
+          [:div {:class "f2 ma2"} "Recent Uploads"]
           [:ul {:class "list"}
            (doall (map (fn [[k v]] (single-upload-card k v)) @uploads-cursor))]])])))
 
