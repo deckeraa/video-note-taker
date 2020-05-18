@@ -16,7 +16,8 @@
    [video-note-taker.editable-field :refer [editable-field]]
    [video-note-taker.auth]
    [video-note-taker.pick-list :as pick-list]
-   [video-note-taker.groups :as groups])
+   [video-note-taker.groups :as groups]
+   [video-note-taker.uploads :as uploads])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -265,8 +266,12 @@
               [note note-cursor notes-cursor video-ref-atm video-options-cursor]))
           (range 0 (count @notes-cursor))))]
    ;; Link to download notes as a spreadsheet
-   [:a {:class "b--black-10 ba br3 ma2 pa3 dim link"
-        :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
-    "Download notes as spreadsheet"]])
+   (if (uploads/uploads-in-progress?)
+     [:div {:class "black-50 b--black-10 ba br3 ma2 pa3 link"
+            :title "Cannot download spreadsheet while file upload is in progress."}
+      "Download notes as spreadsheet"]
+     [:a {:class "black b--black-10 ba br3 ma2 pa3 dim link"
+          :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
+      "Download notes as spreadsheet"])])
 
 

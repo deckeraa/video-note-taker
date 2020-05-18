@@ -38,8 +38,11 @@
   (is (= (is-upload-complete? {:bytes-read 100 :content-length 200}) false))
   (is (= (is-upload-complete? {:bytes-read 200 :content-length 200}) true)))
 
-(defn uploads-in-progress? [uploads]
-  (not (empty? (remove (fn [[k v]] (is-upload-complete? (:progress v))) uploads))))
+(defn uploads-in-progress?
+  ([]
+   (uploads-in-progress? @atoms/uploads-cursor))
+  ([uploads]
+   (not (empty? (remove (fn [[k v]] (is-upload-complete? (:progress v))) uploads)))))
 
 (deftest test-uploads-in-progress
   (is (= (uploads-in-progress? {"a3sd2" {:files ["foo.mp3"] :progress {:bytes-read 200 :content-length 200}}}) false))

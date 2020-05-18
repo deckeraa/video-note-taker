@@ -7,7 +7,8 @@
    [video-note-taker.auth :as auth]
    [video-note-taker.video-notes :as video-notes]
    [video-note-taker.groups :as groups]
-   [video-note-taker.listing :as listing])
+   [video-note-taker.listing :as listing]
+   [video-note-taker.uploads :as uploads])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -41,11 +42,15 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor]
        [:h2 "Import & Export"]
-       [:a {:class "b--black-10 ba br3 pa3 dim link ma1"
-            :href (str (db/get-server-url) "download-starter-spreadsheet")}
-        "Download starter spreadsheet"]
+       (if (uploads/uploads-in-progress?)
+         [:div {:class "white bg-light-blue bn br3 pa3 link ma1"
+                :title "Cannot download spreadsheet while file upload is in progress."}
+          "Download starter spreadsheet"]
+         [:a {:class "white bg-blue bn br3 pa3 dim link ma1"
+              :href (str (db/get-server-url) "download-starter-spreadsheet")}
+          "Download starter spreadsheet"])
        [:label {:for "spreadsheet-upload"
-                :class "b--black-10 ba br3 pa3 ma1"}
+                :class "white bg-blue bn br3 pa3 ma1"}
         "Import spreadsheet "]
        [:input {:id "spreadsheet-upload"
                 :name "file"
