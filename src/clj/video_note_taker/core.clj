@@ -38,23 +38,13 @@
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
    [clojure.data.csv :refer [read-csv write-csv]]
-   [video-note-taker.db :as db]
+   [video-note-taker.db :as db :refer [db users-db]]
    [video-note-taker.search-shared :as search-shared :refer [construct-search-regex]]
    [video-note-taker.upload-progress :as upload-progress]
    [com.stronganchortech.couchdb-auth-for-ring :as auth :refer [wrap-cookie-auth]]
    [video-note-taker.groups :as groups]
    [video-note-taker.access :as access])
   (:gen-class))
-
-(def db
-     {:url (str auth/couch-url "/video-note-taker")
-      :username (or auth/couch-username "admin")
-      :password (or auth/couch-password "test")})
-
-(def users-db
-  {:url (str auth/couch-url "/_users")
-   :username (or auth/couch-username "admin")
-   :password (or auth/couch-password "test")})
 
 (defonce timbre-syslogger
   (timbre/merge-config!

@@ -7,19 +7,22 @@
             [ring.util.response :as response]
             [ring.util.json-response :refer [json-response]]
             [clj-http.client :as http]
+            [com.stronganchortech.couchdb-auth-for-ring :as auth]
             [taoensso.timbre :as timbre
              :refer [log  trace  debug  info  warn  error  fatal  report
                      logf tracef debugf infof warnf errorf fatalf reportf
                      spy get-env]]
 ))
 
-(def couch-url "http://localhost:5984/video-note-taker")
-
 (def db
-  (let [password (System/getenv "VNT_DB_PASSWORD")]
-    {:url couch-url
-     :username "admin"
-     :password (or password "test")}))
+     {:url (str auth/couch-url "/video-note-taker")
+      :username (or auth/couch-username "admin")
+      :password (or auth/couch-password "test")})
+
+(def users-db
+  {:url (str auth/couch-url "/_users")
+   :username (or auth/couch-username "admin")
+   :password (or auth/couch-password "test")})
 
 (defn get-body [req]
   (-> req
