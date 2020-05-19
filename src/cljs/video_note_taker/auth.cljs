@@ -8,6 +8,7 @@
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
+   [video-note-taker.auth-util :as auth-util]
    [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
@@ -32,6 +33,7 @@
         pass-atm (reagent/atom "")
         pass-rpt-atm (reagent/atom "")
         login-failed-atm (reagent/atom false)
+        can't-set-cookie-atm (reagent/atom false)
         creating-new-user? (reagent/atom false)
         allow-new-user-creation? false]
     (fn []
@@ -71,6 +73,7 @@
           [:button {:class "f2 br3 white bg-blue bn pa3 mv2 dim tc w5"
                  :on-click (fn []
                              (reset! login-failed-atm false)
+                             (reset! can't-set-cookie-atm false)
                              (go (let [resp (<! (http/post (db/resolve-endpoint "login")
                                                            {:json-params {:user @user-atm
                                                                           :pass @pass-atm}
@@ -79,9 +82,11 @@
                                    (println "login response: " resp)
                                    (swap! logged-in-atm inc)
                                    (if (:body resp)
-                                     (do
-                                       (reset! atoms/user-cursor (:body resp))
-                                       (js/setTimeout #(swap! logged-in-atm inc) 200))
+                                     (if (auth-util/needs-auth-cookie)
+                                         (reset! can't-set-cookie-atm true)
+                                         (do
+                                           (reset! atoms/user-cursor (:body resp))
+                                           (js/setTimeout #(swap! logged-in-atm inc) 200)))
                                      (reset! login-failed-atm true)))))}
            "Login"])
         (when allow-new-user-creation?
@@ -96,7 +101,11 @@
           [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
            (if @creating-new-user?
              "Couldn't create new user :("
-             "Login failed :(")])]])))
+             "Login failed :(")])
+        (when @can't-set-cookie-atm
+          [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
+           "Sucessfully logged in but could not set the authorization cookie.
+            Please enable cookies."])]])))
 
 (defcard-rg user-creation-card
   "Can be used to set the cookie."
