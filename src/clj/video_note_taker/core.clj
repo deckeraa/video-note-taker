@@ -18,6 +18,7 @@
    [ring.middleware.session.store :refer [read-session write-session]]
    [ring.middleware.session.memory]
    [ring.middleware.partial-content :refer [wrap-partial-content]]
+   [ring.middleware.ssl :refer [wrap-ssl-redirect]]
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
    [ring.logger :as logger]
@@ -449,7 +450,7 @@
         (warn "Sending" (:status resp) "to" (:remote-addr req) "for" (:uri req)))
       resp)))
 
-(def app
+(defn app [use-ssl?]
   (-> (make-handler api-routes)
       (wrap-index)
       (wrap-file "resources/public" {:prefer-handler? true})
@@ -466,8 +467,11 @@
        :access-control-allow-methods [:get :put :post :delete]
        :access-control-allow-credentials ["true"]
        :access-control-allow-headers ["X-Requested-With","Content-Type","Cache-Control"])
+;;      (wrap-ssl-redirect)
       (logger/wrap-with-logger {:log-fn (fn [{:keys [level throwable message]}]
                                           (timbre/log level throwable message))})))
+
+(def hook-for-lein-ring-plugin (app false))
 
 (defn -main [& args]
   (let [http-port (try (Integer/parseInt (first args))
@@ -480,7 +484,7 @@
     (info http-port " " https-port)
     (info "use-ssl? " use-ssl?)
     (run-jetty
-     app
+     (app use-ssl?)
      (merge {:port http-port
              }
             (if use-ssl?

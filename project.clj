@@ -35,7 +35,7 @@
   :plugins [[lein-cljsbuild "1.1.4"]
             [lein-ring "0.12.5"]]
 
-  :ring {:handler video-note-taker.core/app}
+  :ring {:handler video-note-taker.core/hook-for-lein-ring-plugin}
 
   :clean-targets ^{:protect false} ["resources/public/js"
                                     "target"
