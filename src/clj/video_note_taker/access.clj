@@ -83,7 +83,6 @@
                                   {:key username :include_docs true}
                                   username roles
                                   nil)))]
-    (println "video-put-hook users: " users)
     ;;pull out any users that the user isn't allowed to share with. Only do this for non-admins.
     (if (contains? (set roles) "_admin")
       req-doc

@@ -385,7 +385,7 @@
     (let [resp (handler req)]
       (if (= (:body resp) "false")
         (warn "Unsuccessful login attempt from" (:remote-addr req))
-        (println "Successful login for" (get-in resp [:body]) "at" (:remote-addr req))
+        (info "Successful login for" (get-in resp [:body]) "at" (:remote-addr req))
 )
       resp)))
 
@@ -434,7 +434,7 @@
   [handler caption]
   (fn [req]
     (let [resp (handler req)]
-      (println caption resp)
+      (info caption resp)
       resp)))
 
 (defn wrap-print-req
@@ -442,7 +442,7 @@
   [handler caption]
   (fn [req]
     (let [resp (handler req)]
-      (println caption req)
+      (info caption req)
       resp)))
 
 (defn wrap-not-found [handler]
@@ -456,7 +456,7 @@
   (fn [req]
     (let [resp (handler req)]
       (when (not (= 200 (:status resp)))
-        (println "Sending" (:status resp) "to" (:remote-addr req) "for" (:uri req)))
+        (warn "Sending" (:status resp) "to" (:remote-addr req) "for" (:uri req)))
       resp)))
 
 (def app
@@ -487,8 +487,8 @@
                        (catch Exception ex
                          443))
         use-ssl? (.exists (io/file "./keystore"))]
-    (println http-port " " https-port)
-    (println "use-ssl? " use-ssl?)
+    (info http-port " " https-port)
+    (info "use-ssl? " use-ssl?)
     (run-jetty
      app
      (merge {:port http-port
