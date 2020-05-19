@@ -15,9 +15,9 @@
 ))
 
 (def db
-     {:url (str auth/couch-url "/video-note-taker")
-      :username (or auth/couch-username "admin")
-      :password (or auth/couch-password "test")})
+  {:url (str auth/couch-url "/" (or (System/getenv "VNT_DB_OVERRIDE") "video-note-taker"))
+   :username (or auth/couch-username "admin")
+   :password (or auth/couch-password "test")})
 
 (def users-db
   {:url (str auth/couch-url "/_users")
