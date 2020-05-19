@@ -370,7 +370,10 @@
 (defn wrap-login [handler]
   (fn [req]
     (let [resp (handler req)]
-      (println "Login for " (get-in resp [:body]))
+      (if (= (:body resp) "false")
+        (println "Unsuccessful login attempt from" (:remote-addr req))
+        (println "Successful login for" (get-in resp [:body]) "at" (:remote-addr req))
+)
       resp)))
 
 (def api-routes
