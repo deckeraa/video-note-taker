@@ -7,6 +7,10 @@
             [ring.util.response :as response]
             [ring.util.json-response :refer [json-response]]
             [clj-http.client :as http]
+            [taoensso.timbre :as timbre
+             :refer [log  trace  debug  info  warn  error  fatal  report
+                     logf tracef debugf infof warnf errorf fatalf reportf
+                     spy get-env]]
 ))
 
 (def couch-url "http://localhost:5984/video-note-taker")
@@ -116,7 +120,7 @@
          couch-resp
          (couch-request db :post "" audited-doc {} auth-cookie)]
      (when (not (:ok couch-resp))
-       (println "Putting " couch-resp " failed: " couch-resp "."))
+       (warn "Putting " couch-resp " failed: " couch-resp "."))
      ;; couch-resp will be in the form {:ok true, :id ..., :rev ...}
      ;; Thus we need to lookup the created doc
      (couch-request db :get (:id couch-resp) {} {} auth-cookie))))
@@ -160,7 +164,7 @@
    (run-mango-query query auth-cookie {}))
   ([query auth-cookie options]
    (let [results (couch-request db :post "_find" query {:query-params options} auth-cookie)]
-     (println "search stats for " query  " : "(get-in results [:execution_stats]))
+     (info "search stats for " query  " : "(get-in results [:execution_stats]))
      results)))
 
 ;; TODO this contains video-note-taker-specifc logic and should be moved to a different file.
@@ -182,7 +186,7 @@
                   :language "javascript"}
                  username roles)
         (catch Exception e
-          (println "Didn't install _design/videos")))
+          (error "Didn't install _design/videos")))
       (try
         (put-doc db (fn [doc _ _] doc)
                  {:_id "_design/groups"
@@ -199,7 +203,7 @@
                   :language "javascript"}
                  username roles)
         (catch Exception e
-          (println "Didn't install _design/groups")))
+          (error "Didn't install _design/groups")))
       (try
         (put-doc db (fn [doc _ _] doc)
                  {:_id "_design/notes"
@@ -213,6 +217,6 @@
                   :language "javascript"}
                  username roles)
         (catch Exception e
-          (println "Didn't install _design/notes")))
+          (error "Didn't install _design/notes")))
       (json-response true))
     (json-response false)))

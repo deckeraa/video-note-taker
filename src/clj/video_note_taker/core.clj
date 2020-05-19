@@ -21,6 +21,12 @@
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
    [ring.logger :as logger]
+   [taoensso.timbre :as timbre
+      :refer [log  trace  debug  info  warn  error  fatal  report
+              logf tracef debugf infof warnf errorf fatalf reportf
+              spy get-env]]
+   [taoensso.timbre.appenders.core :as appenders]
+   [taoensso.timbre.appenders.3rd-party.syslog-appender :as syslog-appender]
    [clojure.edn :as edn]
    [clojure.walk :refer [keywordize-keys]]
    [cemerick.url :as url]
@@ -49,6 +55,15 @@
   {:url (str auth/couch-url "/_users")
    :username (or auth/couch-username "admin")
    :password (or auth/couch-password "test")})
+
+(defonce timbre-syslogger
+  (timbre/merge-config!
+   {:appenders
+    {:syslog-appender
+     (taoensso.timbre.appenders.3rd-party.syslog-appender/syslog-appender
+      {:ident "video-note-taker"
+       :syslog-options (byte 0x03)
+       :facility :log-user})}}))
 
 (defn text-type [v]
   (content-type v "text/html"))
@@ -209,8 +224,8 @@
   (let [id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)]
-    (println "filename: " filename)
-    (println "username " username)
+    (info "filename: " filename)
+    (info "username " username)
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy tempfile
              (io/file (str "./resources/private/" new-short-filename)))
@@ -233,8 +248,8 @@
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
 (defn upload-video-handler [req username roles]
-  (println req)
-  (println (get-in req [:params]))
+  (info req)
+  (info (get-in req [:params]))
   ;;; Sometimes params looks like
   ;; {file [{:filename foo.mp3,
   ;;         :content-type audio/mpeg,
@@ -253,7 +268,7 @@
   (let [file-array (if (vector? (get-in req [:params "file"]))
                      (get-in req [:params "file"])
                      [(get-in req [:params "file"])])]
-    (println "file-array: " (remove nil? file-array) file-array)
+    (info "file-array: " (remove nil? file-array) file-array)
     (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 
 (defn delete-video-handler [req username roles]
@@ -296,7 +311,6 @@
                  "execution_stats" true}
           resp (db/run-mango-query query (db/get-auth-cookie req))
           ]
-      (println "search stats for " (:text params)  " : "(get-in resp [:execution_stats]))
       (json-response (assoc resp
                             :search-string (:text params))))))
 
@@ -341,7 +355,7 @@
         (not-authorized-response))
       )
     (catch Exception e
-      (println "update-video-permissions-handler e: " e))))
+      (error "update-video-permissions-handler e: " e))))
 
 (defn get-connected-users-handler [req username roles]
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
@@ -356,8 +370,6 @@
     (let [groups (db/get-view db access/get-hook-fn "groups" "by_user" {:key username :include_docs true}
                               username roles (db/get-auth-cookie req))
           users (apply clojure.set/union (map :users groups))]
-      (println "groups: " groups)
-      (println "users: " users)
       (json-response (vec users)))))
 
 (defn videos-handler [req username roles]
@@ -372,7 +384,7 @@
   (fn [req]
     (let [resp (handler req)]
       (if (= (:body resp) "false")
-        (println "Unsuccessful login attempt from" (:remote-addr req))
+        (warn "Unsuccessful login attempt from" (:remote-addr req))
         (println "Successful login for" (get-in resp [:body]) "at" (:remote-addr req))
 )
       resp)))
@@ -464,7 +476,8 @@
        :access-control-allow-methods [:get :put :post :delete]
        :access-control-allow-credentials ["true"]
        :access-control-allow-headers ["X-Requested-With","Content-Type","Cache-Control"])
-      (logger/wrap-with-logger)))
+      (logger/wrap-with-logger {:log-fn (fn [{:keys [level throwable message]}]
+                                          (timbre/log level throwable message))})))
 
 (defn -main [& args]
   (let [http-port (try (Integer/parseInt (first args))
