@@ -20,6 +20,7 @@
    [ring.middleware.partial-content :refer [wrap-partial-content]]
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.util.codec :as codec]
+   [ring.logger :as logger]
    [clojure.edn :as edn]
    [clojure.walk :refer [keywordize-keys]]
    [cemerick.url :as url]
@@ -462,7 +463,8 @@
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :put :post :delete]
        :access-control-allow-credentials ["true"]
-       :access-control-allow-headers ["X-Requested-With","Content-Type","Cache-Control"])))
+       :access-control-allow-headers ["X-Requested-With","Content-Type","Cache-Control"])
+      (logger/wrap-with-logger)))
 
 (defn -main [& args]
   (let [http-port (try (Integer/parseInt (first args))
