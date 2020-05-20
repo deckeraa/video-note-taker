@@ -104,3 +104,23 @@
     [:circle {:cx "18" :cy "19" :r "3"}]
     [:line   {:x1  "8.59" :y1 "13.51" :x2 "15.42" :y2 "17.49"}]
     [:line   {:x1 "15.41" :y1  "6.51" :x2  "8.59" :y2 "10.49"}]]])
+
+
+;; I chose to import svg via img instead. See /resources/public/video-download.svg
+;; (defn video-download
+;;   "My (Aaron Decker's) own creation. Feel free to use this icon under MIT license."
+;;   [style color size]
+;;   [:div style
+;;    [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 24 24"
+;;           :fill "none" :stroke "currentColor" :stroke-width "2" :stroke-linecap "round"
+;;           :stroke-linejoin "round"}
+;;     [:g {:transform "translate(0,-290.65)"}
+;;      [:path 
+;;       {:d "M 1.3094806,295.08652 H 0.79404482 c -0.36137628,0 -0.65230375,-0.29093 -0.65230375,-0.6523 v -1.70739 c 0,-0.36138 0.29092747,-0.65231 0.65230375,-0.65231 H 3.7062342 c 0.3613763,0 0.6523037,0.29093 0.6523037,0.65231 v 1.70739 c 0,0.36137 -0.2909274,0.6523 -0.6523037,0.6523 H 3.0667751"}]
+;;      [:path
+;;       {:d "m 2.1733631,294.4841 v 2.12611"}]
+;;      [:path
+;;       {:d "m 1.0941347,295.85993 1.0792284,0.75028 1.1424496,-0.74193"}]
+;;      [:path
+;;       {:d "m 4.4851166,293.55473 1.7484496,-1.09867 -0.012528,2.21786 z"}]]
+;;     ]])

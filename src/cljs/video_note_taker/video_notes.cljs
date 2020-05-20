@@ -251,12 +251,19 @@
                                           (vec (concat [(:body resp)] notes)))))))))}
      [:div {:class "f2 b white"} "Add note"]]
     ;; The "Share" button
-    [:button {:class "bn pa2 br3 dim bg-gray"
-              :title "Share"
-              :on-click (fn [e]
-                          (let [remove-delegate-atm (reagent/atom (fn [] nil))]
-                            (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
-     [svg/share-graph {:class "white"} "white" "32px"]]]
+    [:div {:class ""}
+     [:button {:class "bn pa2 ma2 br3 dim bg-gray"
+               :title "Share"
+               :on-click (fn [e]
+                           (let [remove-delegate-atm (reagent/atom (fn [] nil))]
+                             (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
+      [svg/share-graph {:class "white"} "white" "32px"]]
+     [:button {:class "bn pa2 ma2 br3 dim bg-gray"
+               :title "Download video"
+               :on-click (fn [e]
+                           "TODO")}
+      [:img {:src "./video-download.svg" :class "white" :color "white" :width "32px"}]
+      ]]]
    ;; List out the notes
    [:div {:class "flex flex-column"}
     (doall
