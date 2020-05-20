@@ -258,16 +258,19 @@
                            (let [remove-delegate-atm (reagent/atom (fn [] nil))]
                              (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
       [svg/share-graph {:class "white"} "white" "32px"]]
-     [:button {:class "bn pa2 ma2 br3 dim bg-gray"
-               :title "Download video"
-               :on-click (fn [e]
-                           "TODO")}
+     [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray"}
+                (if (uploads/uploads-in-progress?)
+                  {:title "Cannot download video while upload is in progress."}
+                  {:title "Download video"})
+               )
       [:img {:src "./video-download-2.svg" :class "white" :color "white" :width "32px"}]
       ]
-     [:button {:class "bn pa2 ma2 br3 dim bg-gray"
-               :title "Download spreadsheet of notes"
-               :on-click (fn [e]
-                           "TODO")}
+     [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
+                (if (uploads/uploads-in-progress?)
+                  {:title "Cannot download spreadsheet of notes while upload is in progress."
+                   }
+                  {:title "Download spreadsheet of notes"
+                   :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}))
       [:img {:src "./spreadsheet-download.svg" :class "white" :color "white" :width "32px"}]
       ]]]
    ;; List out the notes
@@ -277,15 +280,6 @@
             (let [note-cursor (reagent/cursor notes-cursor [idx])]
               ^{:key (get-in @note-cursor [:_id])}
               [note note-cursor notes-cursor video-ref-atm video-options-cursor]))
-          (range 0 (count @notes-cursor))))]
-   ;; Link to download notes as a spreadsheet
-   ;; (if (uploads/uploads-in-progress?)
-   ;;   [:div {:class "black-50 b--black-10 ba br3 ma2 pa3 link"
-   ;;          :title "Cannot download spreadsheet while file upload is in progress."}
-   ;;    "Download notes as spreadsheet"]
-   ;;   [:a {:class "black b--black-10 ba br3 ma2 pa3 dim link"
-   ;;        :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
-   ;;    "Download notes as spreadsheet"])
-   ])
+          (range 0 (count @notes-cursor))))]])
 
 
