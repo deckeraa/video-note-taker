@@ -25,7 +25,7 @@
 (defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
   (let [hover-atm (reagent/atom false)]
     (fn [video video-cursor notes-cursor screen-cursor video-listing-cursor]
-      [:div {:class "br3 shadow-4 pa2 flex justify-between items-center"
+      [:div {:class "br3 shadow-4 ma2 pa2 flex justify-between items-center"
              :on-click (fn []
                          ;; clear out the notes cursor if a different video was selected than before
                          (when (not (= (:_id @video-cursor) (:_id video)))
