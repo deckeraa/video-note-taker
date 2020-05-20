@@ -91,3 +91,16 @@
   [:div style
    [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 8 8" :fill color}
     [:path {:d "M5 0v2c-4 0-5 2.05-5 5 .52-1.98 2-3 4-3h1v2l3-3.16-3-2.84z"}]]])
+
+(defn share-graph
+  "Licensed under MIT license from https://feathericons.com/"
+  [style color size]
+  [:div style
+   [:svg {:xmlns "http://www.w3.org/2000/svg" :width size :height size :viewBox "0 0 24 24"
+          :fill "none" :stroke "currentColor" :stroke-width "2" :stroke-linecap "round"
+          :stroke-linejoin "round" :class "feather feather-share-2"}
+    [:circle {:cx "18" :cy  "5" :r "3"}]
+    [:circle {:cx  "6" :cy "12" :r "3"}]
+    [:circle {:cx "18" :cy "19" :r "3"}]
+    [:line   {:x1  "8.59" :y1 "13.51" :x2 "15.42" :y2 "17.49"}]
+    [:line   {:x1 "15.41" :y1  "6.51" :x2  "8.59" :y2 "10.49"}]]])
