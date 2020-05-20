@@ -250,7 +250,7 @@
                                         (fn [notes]
                                           (vec (concat [(:body resp)] notes)))))))))}
      [:div {:class "f2 b white"} "Add note"]]
-    ;; The "Share" button
+    ;; The share and download buttons
     [:div {:class ""}
      [:button {:class "bn pa2 ma2 br3 dim bg-gray"
                :title "Share"
@@ -258,13 +258,12 @@
                            (let [remove-delegate-atm (reagent/atom (fn [] nil))]
                              (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
       [svg/share-graph {:class "white"} "white" "32px"]]
-     [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray"}
+     [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
                 (if (uploads/uploads-in-progress?)
                   {:title "Cannot download video while upload is in progress."}
-                  {:title "Download video"})
-               )
-      [:img {:src "./video-download-2.svg" :class "white" :color "white" :width "32px"}]
-      ]
+                  {:title "Download video"
+                   :href (str (db/get-server-url) "download-video?video-id=" (:_id @video-cursor))}))
+      [:img {:src "./video-download-2.svg" :class "white" :color "white" :width "32px"}]]
      [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
                 (if (uploads/uploads-in-progress?)
                   {:title "Cannot download spreadsheet of notes while upload is in progress."

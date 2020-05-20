@@ -142,6 +142,25 @@
       (response/header $ "Content-Disposition"
                        (str  "attachment; filename=\"" (:display-name video)  "_notes.csv\"")))))
 
+(defn ensure-file-extension [file-name file-ext]
+  (let [file-name-without-extension (or (second (re-matches #"(.*)\.\w*" file-name))
+                                        file-name)]
+    (str file-name-without-extension "." file-ext)))
+
+(deftest test-ensure-file-extension
+  (is (= (ensure-file-extension "foo.mp4" "mp4") "foo.mp4"))
+  (is (= (ensure-file-extension "foo" "mp4") "foo.mp4"))
+  (is (= (ensure-file-extension "evil.txt" "exe") "evil.exe")))
+
+(defn download-video-handler [req username roles]
+  (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
+        video (get-doc (:video-id query-map) username roles (db/get-auth-cookie req))
+        file-name (:file-name video)
+        file-ext  (last (clojure.string/split file-name #"\."))
+        display-name (ensure-file-extension (:display-name video) file-ext)]
+    (-> (file-response (str "./resources/private/" file-name))
+        (response/header "Content-Disposition" (str  "attachment; filename=\"" display-name "\"")))))
+
 (defn import-note-spreadsheet-line [notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles auth-cookie]
     ;; if the video's notes haven't been loaded into our cache, go ahead and load them in
   (when (not (get-in @notes-by-video [video-key])) 
@@ -391,6 +410,7 @@
         ["get-video-listing" (wrap-cookie-auth get-video-listing-handler)]
         ["download-starter-spreadsheet" (wrap-cookie-auth download-starter-spreadsheet)]
         ["get-notes-spreadsheet" (wrap-cookie-auth get-notes-spreadsheet-handler)]
+        ["download-video" (wrap-cookie-auth download-video-handler)]
         ["upload-spreadsheet" (wrap-cookie-auth upload-spreadsheet-handler)]
         ["upload-video" (wrap-cookie-auth upload-video-handler)]
         ["get-upload-progress" (wrap-cookie-auth upload-progress/get-upload-progress)]
