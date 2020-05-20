@@ -450,6 +450,11 @@
         (warn "Sending" (:status resp) "to" (:remote-addr req) "for" (:uri req)))
       resp)))
 
+(defn wrap-ssl-redirect-sometimes [handler use-ssl?]
+  (if use-ssl?
+    (wrap-ssl-redirect handler)
+    handler))
+
 (defn app [use-ssl?]
   (-> (make-handler api-routes)
       (wrap-index)
@@ -467,7 +472,7 @@
        :access-control-allow-methods [:get :put :post :delete]
        :access-control-allow-credentials ["true"]
        :access-control-allow-headers ["X-Requested-With","Content-Type","Cache-Control"])
-;;      (wrap-ssl-redirect)
+      (wrap-ssl-redirect-sometimes use-ssl?)
       (logger/wrap-with-logger {:log-fn (fn [{:keys [level throwable message]}]
                                           (timbre/log level throwable message))})))
 
