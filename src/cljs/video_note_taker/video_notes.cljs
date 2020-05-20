@@ -262,7 +262,13 @@
                :title "Download video"
                :on-click (fn [e]
                            "TODO")}
-      [:img {:src "./video-download.svg" :class "white" :color "white" :width "32px"}]
+      [:img {:src "./video-download-2.svg" :class "white" :color "white" :width "32px"}]
+      ]
+     [:button {:class "bn pa2 ma2 br3 dim bg-gray"
+               :title "Download spreadsheet of notes"
+               :on-click (fn [e]
+                           "TODO")}
+      [:img {:src "./spreadsheet-download.svg" :class "white" :color "white" :width "32px"}]
       ]]]
    ;; List out the notes
    [:div {:class "flex flex-column"}
@@ -273,12 +279,13 @@
               [note note-cursor notes-cursor video-ref-atm video-options-cursor]))
           (range 0 (count @notes-cursor))))]
    ;; Link to download notes as a spreadsheet
-   (if (uploads/uploads-in-progress?)
-     [:div {:class "black-50 b--black-10 ba br3 ma2 pa3 link"
-            :title "Cannot download spreadsheet while file upload is in progress."}
-      "Download notes as spreadsheet"]
-     [:a {:class "black b--black-10 ba br3 ma2 pa3 dim link"
-          :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
-      "Download notes as spreadsheet"])])
+   ;; (if (uploads/uploads-in-progress?)
+   ;;   [:div {:class "black-50 b--black-10 ba br3 ma2 pa3 link"
+   ;;          :title "Cannot download spreadsheet while file upload is in progress."}
+   ;;    "Download notes as spreadsheet"]
+   ;;   [:a {:class "black b--black-10 ba br3 ma2 pa3 dim link"
+   ;;        :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}
+   ;;    "Download notes as spreadsheet"])
+   ])
 
 
