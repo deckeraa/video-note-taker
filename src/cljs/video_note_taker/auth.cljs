@@ -127,7 +127,7 @@
   (let [user-atm (reagent/atom "")
         pass-atm (reagent/atom "")
         pass-rpt-atm (reagent/atom "")
-        creation-failed-atm (reagent/atom false)]
+        creation-failed-atm (reagent/atom nil)]
     (fn []
       [:div {:class "flex flex-column items-center justify-center"}
        [:div {:class "flex flex-column items-center justify-center w-80"}
@@ -151,21 +151,27 @@
                                  ))
                   :on-click (fn []
                               (reset! creation-failed-atm false)
-                              (if (= @pass-atm @pass-rpt-atm)
-                                (go (let [resp (<! (http/post (db/resolve-endpoint "create-user")
-                                                              {:json-params {:user @user-atm
-                                                                             :pass @pass-atm}
-                                                               :with-credentials false} ;; no need to pass cookies while logging in -- the user shouldn't have our cookie at this point
-                                                              ))]
-                                      (if (and (:body resp) (= 200 (:status resp)))
-                                        (println "User created!")
-                                        ;(js/setTimeout #(swap! logged-in-atm inc) 200)
-                                        (reset! creation-failed-atm true))))
-                                (reset! creation-failed-atm true)))}
+                              (when (= @pass-atm @pass-rpt-atm)
+                                (db/post-to-endpoint
+                                 "create-user"
+                                 {:user @user-atm
+                                  :pass @pass-atm}
+                                 (fn [body]
+                                   (println "User created!"))
+                                 (fn [body raw]
+                                   (println "Couldn't create user:" raw)
+                                   (reset! creation-failed-atm true)
+                                   ))
+                                ))}
          "Create user"]
-        (when @creation-failed-atm
+        (case @creation-failed-atm
+          true
+          [:div {:class "f3 br1 white bg-green b tc pa3 ma3"}
+           "Created new user :)"]
+          false
           [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
-           "Couldn't create new user :("])]])))
+           "Couldn't create new user :("]
+          [:div])]])))
 
 (defcard-rg user-creation-card
   "If you have the cookie set this will actually create new users."
