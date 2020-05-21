@@ -26,6 +26,7 @@
                  [ring-partial-content "1.0.0"]
                  [cljc.java-time "0.1.8"]
                  [com.stronganchortech/couchdb-auth-for-ring "1.0.1"]
+                 [org.martinklepsch/s3-beam "0.6.0-alpha5"]
                  ]
 
   :min-lein-version "2.5.3"

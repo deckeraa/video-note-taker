@@ -174,11 +174,16 @@
                        (reset! file-input-ref-el el))
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
-                             (uploads/upload-files
-                              atoms/uploads-cursor file-input-ref-el "upload-video"
-                              #(load-video-listing video-listing-cursor)
+                             (db/post-to-endpoint
+                              "spaces-upload"
+                              {:file-name "spaces-test.mp4" :mime-type "video/mp4"}
                               (fn [body]
-                                (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))
+                                (println body)))
+                             ;; (uploads/upload-files
+                             ;;  atoms/uploads-cursor file-input-ref-el "upload-video"
+                             ;;  #(load-video-listing video-listing-cursor)
+                             ;;  (fn [body]
+                             ;;    (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))
                              )}]])))
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]

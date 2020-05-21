@@ -45,7 +45,8 @@
    [com.stronganchortech.couchdb-auth-for-ring :as auth :refer [wrap-cookie-auth]]
    [video-note-taker.groups :as groups]
    [video-note-taker.access :as access]
-   [video-note-taker.access-shared :as access-shared])
+   [video-note-taker.access-shared :as access-shared]
+   [s3-beam.handler :as s3b])
   (:gen-class))
 
 (defonce timbre-syslogger
@@ -56,6 +57,10 @@
       {:ident "video-note-taker"
        :syslog-options (byte 0x03)
        :facility :log-user})}}))
+
+(def bucket (System/getenv "VNT_BUCKET"))
+(def access-key (System/getenv "VNT_SPACES_ACCESS_KEY"))
+(def secret-key (System/getenv "VNT_SPACES_SECRET_KEY"))
 
 (defn text-type [v]
   (content-type v "text/html"))
@@ -412,6 +417,13 @@
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
+(defn spaces-upload-handler [req username roles]
+  (info "s3 req:" req)
+  (let [params (get-body req)]
+    (info "params" params)
+    ((s3b/s3-sign bucket nil access-key secret-key "nyc3.digitaloceanspaces.com")
+     {:params params})))
+
 (defn wrap-login [handler]
   (fn [req]
     (let [resp (handler req)]
@@ -449,6 +461,7 @@
         ["group" (wrap-cookie-auth groups/group-handler)]
         ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
         ["install-views" (wrap-cookie-auth (partial db/install-views db))]
+        ["spaces-upload" (wrap-cookie-auth spaces-upload-handler)]
         ]])
 
 (defn wrap-index
