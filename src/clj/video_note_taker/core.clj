@@ -305,27 +305,29 @@
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
         video (get-doc video-id nil nil nil)]
-    (if (not (db/delete-doc db access/delete-hook-fn doc username roles (db/get-auth-cookie req)))
-      (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
-             :status 403)
-      (do
-        ;; delete all notes related to the video
-        (db/bulk-update
-             db access/put-hook-fn
-             (vec (map
-                   #(assoc % :_deleted true)
-                   (get-notes (:_id video) username roles (db/get-auth-cookie req))))
-             username roles (db/get-auth-cookie req))
-        ;; Currently this doesn't handle bulk update conflicts.
-        ;; Notes not deleted because of a conflict will be rare and  won't cause a problem,
-        ;; but they will be left sitting around, so either we need to do something here
-        ;; or make a view that can clean up orphaned notes periodically.
-        
-        ;; delete the actual video file
-        (io/delete-file (str "./resources/private/" (:file-name video)))
-        ;; return the response
-        (json-response {:success true}))
-      )))
+    (if (access-shared/can-delete-videos roles)
+      (if (not (db/delete-doc db access/delete-hook-fn doc username roles (db/get-auth-cookie req)))
+        (assoc (json-response {:success false :reason "You cannot delete a video that you did not upload."})
+               :status 403)
+        (do
+          ;; delete all notes related to the video
+          (db/bulk-update
+           db access/put-hook-fn
+           (vec (map
+                 #(assoc % :_deleted true)
+                 (get-notes (:_id video) username roles (db/get-auth-cookie req))))
+           username roles (db/get-auth-cookie req))
+          ;; Currently this doesn't handle bulk update conflicts.
+          ;; Notes not deleted because of a conflict will be rare and  won't cause a problem,
+          ;; but they will be left sitting around, so either we need to do something here
+          ;; or make a view that can clean up orphaned notes periodically.
+          
+          ;; delete the actual video file
+          (io/delete-file (str "./resources/private/" (:file-name video)))
+          ;; return the response
+          (json-response {:success true}))
+        )
+      (not-authorized-response))))
 
 (defn search-text-handler [req username roles]
   (let [params (get-body req)

@@ -46,7 +46,7 @@
           (db/put-doc (assoc video :display-name new-val) (fn [new-doc]
                                  (done-fn)
                                  (load-video-listing video-listing-cursor))))]
-       (if @hover-atm ;; portion of the card that only appears on hover (such as the trash can)
+       (if (and @hover-atm (auth/can-delete-videos)) ;; portion of the card that only appears on hover (such as the trash can)
          [svg/trash {:on-click
                      (fn [e]
                        (.stopPropagation e) ;; prevent this click from registing as a click on the video

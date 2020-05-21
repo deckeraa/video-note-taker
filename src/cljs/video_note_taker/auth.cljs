@@ -237,6 +237,6 @@
     "Log out"]
    [password-changer]])
 
-(defn can-upload []
-  (access/can-upload (set (:roles @atoms/user-cursor))))
+(defn can-upload []         (access/can-upload        (set (:roles @atoms/user-cursor))))
+(defn can-delete-videos [] (access/can-delete-videos (set (:roles @atoms/user-cursor))))
 
