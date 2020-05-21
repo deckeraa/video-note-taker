@@ -9,7 +9,8 @@
    [video-note-taker.svg :as svg]
    [video-note-taker.db :as db]
    [video-note-taker.auth-util :as auth-util]
-   [video-note-taker.toaster-oven :as toaster-oven])
+   [video-note-taker.toaster-oven :as toaster-oven]
+   [video-note-taker.access-shared :as access])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -235,3 +236,7 @@
                             (swap! logged-in-atm inc))))}
     "Log out"]
    [password-changer]])
+
+(defn can-upload []
+  (access/can-upload (set (:roles @atoms/user-cursor))))
+

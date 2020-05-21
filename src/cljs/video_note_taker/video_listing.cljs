@@ -12,7 +12,8 @@
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.video-notes :as notes]
    [video-note-taker.editable-field :refer [editable-field]]
-   [video-note-taker.uploads :as uploads])
+   [video-note-taker.uploads :as uploads]
+   [video-note-taker.auth :as auth])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -184,4 +185,5 @@
           ^{:key (:_id video)}
           [single-video-listing video video-cursor notes-cursor screen-cursor video-listing-cursor])
         @video-listing-cursor)
-   [upload-card video-listing-cursor]])
+   (when (auth/can-upload)
+     [upload-card video-listing-cursor])])

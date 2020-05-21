@@ -44,7 +44,8 @@
    [video-note-taker.upload-progress :as upload-progress]
    [com.stronganchortech.couchdb-auth-for-ring :as auth :refer [wrap-cookie-auth]]
    [video-note-taker.groups :as groups]
-   [video-note-taker.access :as access])
+   [video-note-taker.access :as access]
+   [video-note-taker.access-shared :as access-shared])
   (:gen-class))
 
 (defonce timbre-syslogger
@@ -292,11 +293,13 @@
   ;;        :tempfile #object[java.io.File 0x7d710f13 /tmp/ring-multipart-6750941438243826845.tmp],
   ;;        :size 225667}}
   ;;;; Therefore, we'll ensure that it's a vector.
-  (let [file-array (if (vector? (get-in req [:params "file"]))
-                     (get-in req [:params "file"])
-                     [(get-in req [:params "file"])])]
-    (info "file-array: " (remove nil? file-array) file-array)
-    (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
+  (if (access-shared/can-upload roles)
+    (let [file-array (if (vector? (get-in req [:params "file"]))
+                       (get-in req [:params "file"])
+                       [(get-in req [:params "file"])])]
+      (info "file-array: " (remove nil? file-array) file-array)
+      (json-response (map (partial single-video-upload req username roles) (remove nil? file-array))))
+    (not-authorized-response)))
 
 (defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
