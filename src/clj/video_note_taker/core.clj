@@ -121,26 +121,43 @@
     (str "\"" (clojure.string/escape s {\" "\"\""}) "\"")
     nil))
 
-(defn get-notes-spreadsheet-handler [req username roles]
-  (let [query-map (keywordize-keys (codec/form-decode (:query-string req)))
-        notes     (db/get-view db access/get-hook-fn "notes" "by_video"
-                               {:key (:video-id query-map) :include_docs true}
-                               username roles (db/get-auth-cookie req))
-        video     (get-doc (:video-id query-map) username roles (db/get-auth-cookie req))]
+(defn generate-spreadsheet-line [note]
+  (str (escape-csv-field (:video note)) ","
+       (escape-csv-field (:video-display-name note)) ","
+       (float (/ (Math/round (float (* 100 (:time note)))) 100)) ","
+       (escape-csv-field (:text note))))
+
+(defn get-notes-spreadsheet-handler
+  "Generates a spreadsheet of video notes. Pass ?video-id=<your video id> to get notes for a specific
+  video, omit the query string altogether to get all of your user's notes."
+  [req username roles]
+  (let [query-map (as-> (:query-string req) $
+                    (if $
+                      (keywordize-keys (codec/form-decode $))
+                      $))
+        notes     (if (:video-id query-map)
+                    (db/get-view db access/get-hook-fn "notes" "by_video"
+                                 {:key (:video-id query-map) :include_docs true}
+                                 username roles (db/get-auth-cookie req))
+                    (db/get-view db access/get-hook-fn "notes" "by_user"
+                                 {:key username :include_docs true}
+                                 username roles (db/get-auth-cookie req)))
+        file-name (str
+                   (if (:video-id query-map) ;; if they requested a specific video ...
+                     (:video-display-name (first notes)) ;; name it after the video
+                     "all" ;; otherwise name it "all"
+                     )
+                   "_notes.csv"
+                   )]
     (as-> notes $
       (sort-by :time $) ; sort
-      (map (fn [note]
-             (str (escape-csv-field (:video note)) ","
-                  (escape-csv-field (:display-name video)) ","
-                  (float (/ (Math/round (float (* 100 (:time note)))) 100)) ","
-                  (escape-csv-field (:text note))))
-           $)
+      (map generate-spreadsheet-line $)
       (conj $ "video key,video display name,time in seconds,note text")
       (clojure.string/join "\n" $)
       (response/response $)
       (content-type $ "text/csv")
       (response/header $ "Content-Disposition"
-                       (str  "attachment; filename=\"" (:display-name video)  "_notes.csv\"")))))
+                       (str  "attachment; filename=\"" file-name  "\"")))))
 
 (defn ensure-file-extension [file-name file-ext]
   (let [file-name-without-extension (or (second (re-matches #"(.*)\.\w*" file-name))

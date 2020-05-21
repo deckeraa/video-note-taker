@@ -216,6 +216,14 @@
                       if(doc.type === \"note\" && \"video\" in doc) {
                          emit(doc.video, doc._id);
                       }
+                    }"}
+                   :by_user
+                   {:map "function (doc) {
+                      if(doc.type === \"note\") {
+                         for(var idx in doc.users) {
+                            emit(doc.users[idx], doc._id);
+                         }
+                      }
                     }"}}
                   :language "javascript"}
                  username roles)

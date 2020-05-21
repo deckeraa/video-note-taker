@@ -42,6 +42,16 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
        [:h2 "Import & Export"]
+       [:a (merge {:style {:text-align :center}}
+                (if (uploads/uploads-in-progress?)
+                  {:title "Cannot download spreadsheet of notes while upload is in progress."
+                   :class "white bg-light-blue bn br3 pa3 link ma1 flex items-center"
+                   }
+                  {:title "Download spreadsheet of all notes"
+                   :href (str (db/get-server-url) "get-notes-spreadsheet")
+                   :class "white bg-blue bn br3 pa3 dim link ma1 flex items-center"}))
+        [:img {:src "./spreadsheet-download.svg" :class "white" :color "white" :width "32px"}]
+        [:div {:class "ml2"} "Download spreadsheet of all notes"]]
        (if (uploads/uploads-in-progress?)
          [:div {:class "white bg-light-blue bn br3 pa3 link ma1"
                 :title "Cannot download spreadsheet while file upload is in progress."}
