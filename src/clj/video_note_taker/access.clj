@@ -3,7 +3,8 @@
    [clojure.test :refer [deftest is run-tests]]
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
-   [video-note-taker.db :as db]))
+   [video-note-taker.db :as db]
+   [video-note-taker.access-shared :as access-shared]))
 
 (def couch-url "http://localhost:5984/video-note-taker")
 
@@ -76,6 +77,23 @@
   (is (= (update-users ["charlie" "golf" "hotel" "foxtrot"] ["echo" "india" "foxtrot"] ["charlie" "golf" "echo" "foxtrot"] "charlie" "")
          #{"charlie" "hotel" "echo" "foxtrot"})))
 
+(defn audit-video-key-display-name
+  "Put-hook middleware that audits the :display-name key. Returns an updated version of req-doc."
+  [real-doc req-doc username roles]
+  (if (access-shared/can-change-video-display-name roles)
+    req-doc
+    (assoc req-doc :display-name (:display-name real-doc))))
+
+(defn audit-video-key-users
+  [real-doc req-doc username roles users]
+  ;;pull out any users that the user isn't allowed to share with. Only do this for non-admins.
+  (if (contains? (set roles) "_admin")
+      req-doc
+      (update-in req-doc [:users] (fn [req-users]
+                                    (vec (update-users (:users real-doc) req-users users username roles))
+                                    )))
+  )
+
 (defn video-put-hook [real-doc req-doc username roles]
   (let [users (apply clojure.set/union
                      (map :users (db/get-view
@@ -83,12 +101,9 @@
                                   {:key username :include_docs true}
                                   username roles
                                   nil)))]
-    ;;pull out any users that the user isn't allowed to share with. Only do this for non-admins.
-    (if (contains? (set roles) "_admin")
-      req-doc
-      (update-in req-doc [:users] (fn [req-users]
-                                    (vec (update-users (:users real-doc) req-users users username roles))
-                                    )))))
+    (as-> req-doc $
+      (audit-video-key-display-name real-doc $ username roles)
+      (audit-video-key-users real-doc $ username roles users))))
 
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
