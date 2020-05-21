@@ -7,7 +7,8 @@
    [cljs.core.async :refer [<! >! chan close! timeout put!] :as async]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.db :as db]
-   [video-note-taker.svg :as svg])
+   [video-note-taker.svg :as svg]
+   [s3-beam.client :refer [s3-pipe]])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -56,6 +57,15 @@
 
 (defn uploads-this-session? [uploads]
   (not (empty? uploads)))
+
+(defn upload-files-to-s3 [file-input-ref-atom]
+  (let [uploaded (chan)
+        upload-queue (s3-pipe uploaded {:server-url (db/resolve-endpoint "spaces-upload")})]
+    (when-let [files (file-objects file-input-ref-atom)]
+      (println "files" files)
+      (println "(get files 0)" (get files 0))
+      (put! upload-queue (get files 0))
+      (go (println "From upload-queu: " (<! uploaded))))))
 
 (defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
   (when-let [files (file-objects file-input-ref-atom)]

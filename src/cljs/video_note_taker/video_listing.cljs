@@ -158,7 +158,7 @@
    [upload-toast (fn [] nil) {:bytes-read 1000000 :content-length 3000000}]])
 
 (defn upload-card [video-listing-cursor]
-  (let [file-input-ref-el (reagent/atom nil)]
+  (let [file-input-ref-atom (reagent/atom nil)]
     (fn [video-listing-cursor]
       [:div {:class "br3 shadow-4 dim mt3 flex"
              :style {:position :relative}}
@@ -171,16 +171,17 @@
                 :multiple true
                 :class "dn"
                 :ref (fn [el]
-                       (reset! file-input-ref-el el))
+                       (reset! file-input-ref-atom el))
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
-                             (db/post-to-endpoint
-                              "spaces-upload"
-                              {:file-name "spaces-test.mp4" :mime-type "video/mp4"}
-                              (fn [body]
-                                (println body)))
+                             ;; (db/post-to-endpoint
+                             ;;  "spaces-upload"
+                             ;;  {:file-name "spaces-test.mp4" :mime-type "video/mp4"}
+                             ;;  (fn [body]
+                             ;;    (println body)))
+                             (uploads/upload-files-to-s3 file-input-ref-atom)
                              ;; (uploads/upload-files
-                             ;;  atoms/uploads-cursor file-input-ref-el "upload-video"
+                             ;;  atoms/uploads-cursor file-input-ref-atom "upload-video"
                              ;;  #(load-video-listing video-listing-cursor)
                              ;;  (fn [body]
                              ;;    (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))

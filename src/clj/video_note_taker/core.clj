@@ -417,12 +417,14 @@
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
-(defn spaces-upload-handler [req username roles]
+(defn spaces-upload-handler [req]
   (info "s3 req:" req)
-  (let [params (get-body req)]
-    (info "params" params)
-    ((s3b/s3-sign bucket nil access-key secret-key "nyc3.digitaloceanspaces.com")
-     {:params params})))
+  ;; (let [params (get-body req)])
+  ;; (info "params" params)
+  ((s3b/s3-sign bucket nil access-key secret-key "https://vnt-spaces-0.nyc3.digitaloceanspaces.com")
+   {:params (keywordize-keys (:params req))}
+                                        ;{:params params}
+   ))
 
 (defn wrap-login [handler]
   (fn [req]
@@ -461,7 +463,7 @@
         ["group" (wrap-cookie-auth groups/group-handler)]
         ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
         ["install-views" (wrap-cookie-auth (partial db/install-views db))]
-        ["spaces-upload" (wrap-cookie-auth spaces-upload-handler)]
+        ["spaces-upload" spaces-upload-handler]
         ]])
 
 (defn wrap-index
