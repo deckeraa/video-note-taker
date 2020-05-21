@@ -127,7 +127,7 @@
   (let [user-atm (reagent/atom "")
         pass-atm (reagent/atom "")
         pass-rpt-atm (reagent/atom "")
-        creation-failed-atm (reagent/atom nil)]
+        creation-report-atm (reagent/atom nil)]
     (fn []
       [:div {:class "flex flex-column items-center justify-center"}
        [:div {:class "flex flex-column items-center justify-center w-80"}
@@ -150,21 +150,22 @@
                                  "bg-light-blue"
                                  ))
                   :on-click (fn []
-                              (reset! creation-failed-atm false)
+                              (reset! creation-report-atm nil)
                               (when (= @pass-atm @pass-rpt-atm)
                                 (db/post-to-endpoint
                                  "create-user"
                                  {:user @user-atm
                                   :pass @pass-atm}
                                  (fn [body]
-                                   (println "User created!"))
+                                   (println "User created!")
+                                   (reset! creation-report-atm true))
                                  (fn [body raw]
                                    (println "Couldn't create user:" raw)
-                                   (reset! creation-failed-atm true)
+                                   (reset! creation-report-atm false)
                                    ))
                                 ))}
          "Create user"]
-        (case @creation-failed-atm
+        (case @creation-report-atm
           true
           [:div {:class "f3 br1 white bg-green b tc pa3 ma3"}
            "Created new user :)"]
