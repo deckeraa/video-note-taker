@@ -29,7 +29,7 @@
    ;; left side
    [:div {:class "flex items-center"}                             
     (if (= :video-selection (peek @screen-cursor))
-      [:div {:class "b ma2"} "ReminisceTogether"]
+      [:div {:class "b ma2"} "MemoryCloud"]
       [:div {:class "bg-white br-100 pa1 ma1 dim"
              :on-click (fn []
                          (swap! screen-cursor pop)
