@@ -65,12 +65,12 @@
                                         :progress-events? true})]
     (when-let [files (file-objects file-input-ref-atom)]
       (let [file (get files 0)]
-        (println "file" file upload-id)
+;;        (println "file" file upload-id)
         (put! upload-queue {:file file :identifier upload-id})
         (swap! uploads-cursor assoc upload-id (cursor-entry upload-id [file]))
         (go-loop []
           (let [update (<! uploaded)]
-            (println "From upload-queue: " update)
+ ;;           (println "From upload-queue: " update)
             (when (= :progress (:type update))
               (swap! uploads-cursor assoc-in [upload-id :progress]
                      ;; rename keys to match up with what we get through Ring's file progress fn

@@ -306,6 +306,37 @@
       (json-response (map (partial single-video-upload req username roles) (remove nil? file-array))))
     (not-authorized-response)))
 
+(defn spaces-upload-handler [req]
+  (info "s3 req:" req)
+  (let [params (keywordize-keys (:params req))
+        filename (:file-name params)
+        id (uuid/to-string (uuid/v4))
+        file-ext (last (clojure.string/split filename #"\."))
+        new-short-filename (str id "." file-ext)
+        params (assoc params :file-name new-short-filename)]
+    (info "filename: " filename)
+    (info "updated params: " params)
+    ;; put the video metadata into Couch
+    (let [video-doc (db/put-doc
+                     db access/put-hook-fn
+                     {:_id id
+                      :type "video"
+                      :display-name filename
+                      :file-name new-short-filename
+                      :users ["bravo"] ;; TODO
+                      :uploaded-by "bravo" ;; TODO
+                      :uploaded-datetime (.toString (new java.util.Date))}
+                     ;; TODO
+                     nil
+                     nil
+                     nil
+                     ;; username
+                     ;; roles
+                     ;; (db/get-auth-cookie req)
+                     )])
+    ((s3b/s3-sign bucket nil access-key secret-key "https://vnt-spaces-0.nyc3.digitaloceanspaces.com")
+     {:params params})))
+
 (defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
         video-id (get-in doc [:_id])
@@ -416,15 +447,6 @@
     (if (and video filename) ;; get-doc does the acess check for us
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
-
-(defn spaces-upload-handler [req]
-  (info "s3 req:" req)
-  ;; (let [params (get-body req)])
-  ;; (info "params" params)
-  ((s3b/s3-sign bucket nil access-key secret-key "https://vnt-spaces-0.nyc3.digitaloceanspaces.com")
-   {:params (keywordize-keys (:params req))}
-                                        ;{:params params}
-   ))
 
 (defn wrap-login [handler]
   (fn [req]
