@@ -3,6 +3,14 @@
    [clojure.test :refer [deftest is run-tests]]
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
+   [amazonica.aws.s3 :as s3]
+   [amazonica.aws.s3transfer]
+   [clj-time.core :as time]
+   [clj-time.coerce :as coerce]
+   [taoensso.timbre :as timbre
+      :refer [log  trace  debug  info  warn  error  fatal  report
+              logf tracef debugf infof warnf errorf fatalf reportf
+              spy get-env]]
    [video-note-taker.db :as db]
    [video-note-taker.access-shared :as access-shared]))
 
@@ -36,13 +44,34 @@
    (= username (:created-by group))
    (contains? (set (:users group)) username)))
 
+(defn is-video-stored-in-spaces? [video]
+  (and (not (nil? (:storage-location video)))
+       (not (=    (:storage-location video) "local"))))
+
+(defn insert-presigned-url-into-video [video]
+  (warn "is-video-stored-in-spaces?" (is-video-stored-in-spaces? video) video)
+  (if (is-video-stored-in-spaces? video)
+    (assoc video
+           :presigned-url
+           (.toString
+            (s3/generate-presigned-url
+             :bucket-name (:storage-location video)
+             :key (:file-name video)
+             :expiration (coerce/to-date (-> 3 time/days time/from-now))
+             :method "GET")))
+    video))
+
 (defn get-hook-fn [real-doc username roles]
+  (warn "get-hook-fn " real-doc)
   (case (:type real-doc)
-    "video" (user-has-access-to-video username real-doc)
-    "note"  (user-has-access-to-note  username real-doc)
-    "group" (user-has-access-to-group username real-doc)
-    "settings" true
-    false))
+    "video" (if (user-has-access-to-video username real-doc)
+              (-> real-doc
+                  (insert-presigned-url-into-video))
+              nil)
+    "note"  (if (user-has-access-to-note  username real-doc) real-doc nil)
+    "group" (if (user-has-access-to-group username real-doc) real-doc nil)
+    "settings" real-doc
+    nil))
 
 (defn note-put-hook [real-doc req-doc username roles]
   (let [is-creator? (= username (:created-by req-doc))

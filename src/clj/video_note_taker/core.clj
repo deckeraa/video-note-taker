@@ -50,7 +50,6 @@
    [amazonica.core :refer [with-credential defcredential]]
    [amazonica.aws.s3 :as s3]
    [amazonica.aws.s3transfer]
-   [aws-sig4.middleware :as aws-sig4]
    [clj-time.core :as time]
    [clj-time.coerce :as coerce]
    )
@@ -64,6 +63,8 @@
       {:ident "video-note-taker"
        :syslog-options (byte 0x03)
        :facility :log-user})}}))
+
+(timbre/set-level! :warn)
 
 (def bucket (System/getenv "VNT_BUCKET"))
 (def access-key (System/getenv "AWS_ACCESS_KEY_ID"))
@@ -128,7 +129,12 @@
                "execution_stats" true
                "limit" 125}
         videos (db/run-mango-query query (db/get-auth-cookie req))]
-    (json-response (vec (:docs videos)))))
+    (as-> (:docs videos) $
+        (map (fn [video] (access/get-hook-fn video username roles)) $)
+        (vec $)
+        (json-response $))
+;    (json-response (vec (:docs videos)))
+    ))
 
 (defn escape-csv-field [s]
   (if s ;; null check to prevent java.lang.NullPointerException from clojure.string/escape
@@ -506,9 +512,7 @@
                                 :bucket-name "vnt-spaces-0"
                                 :key "brick_building_falling_down.jpg"
                                 :expiration (coerce/to-date (-> 30 time/seconds time/from-now))
-                                ;;:expiration 5
                                 :method "GET"
-                                ;; :region "nyc3"
                                 ))))]
         ]])
 
