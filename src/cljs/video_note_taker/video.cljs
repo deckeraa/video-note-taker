@@ -44,12 +44,11 @@
    (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
      (let [src (if (:src-override options)
                  (db/resolve-endpoint filename)
-                 (let [storage-location (:storage-location @video-cursor)]
-                   ;; "storage-location": "vnt-spaces-0",
-                   (if (or (nil? storage-location)
-                           (= "private" storage-location))
-                     (db/resolve-endpoint (str "videos/" filename))
-                     (str "https://vnt-spaces-0.nyc3.digitaloceanspaces.com/" filename))))]
+                 (let [presigned-url (:presigned-url @video-cursor)]
+                   (if presigned-url
+                     presigned-url ;; TODO should add some way to check for presigned URLs that have expired (unlikely) and re-sign if needed
+                     (db/resolve-endpoint (str "videos/" filename))))
+                 )]
        [:video {:id "main-video"
                 :class "mb3"
                 :controls true
