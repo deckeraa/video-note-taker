@@ -51,6 +51,8 @@
    [amazonica.aws.s3 :as s3]
    [amazonica.aws.s3transfer]
    [aws-sig4.middleware :as aws-sig4]
+   [clj-time.core :as time]
+   [clj-time.coerce :as coerce]
    )
   (:gen-class))
 
@@ -500,7 +502,14 @@
         ["spaces-upload" spaces-upload-handler]
         ["hello" (fn [req]
                    (json-response
-                    (.toString (s3/generate-presigned-url :bucket-name "vnt-spaces-0" :key "brick_building_falling_down.jpg" :expires 5 :method "GET" :region "nyc3"))))]
+                    (.toString (s3/generate-presigned-url
+                                :bucket-name "vnt-spaces-0"
+                                :key "brick_building_falling_down.jpg"
+                                :expiration (coerce/to-date (-> 30 time/seconds time/from-now))
+                                ;;:expiration 5
+                                :method "GET"
+                                ;; :region "nyc3"
+                                ))))]
         ]])
 
 (defn wrap-index
