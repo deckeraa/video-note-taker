@@ -49,7 +49,9 @@
    [s3-beam.handler :as s3b]
    [amazonica.core :refer [with-credential defcredential]]
    [amazonica.aws.s3 :as s3]
-   [amazonica.aws.s3transfer])
+   [amazonica.aws.s3transfer]
+   [aws-sig4.middleware :as aws-sig4]
+   )
   (:gen-class))
 
 (defonce timbre-syslogger
@@ -496,6 +498,9 @@
         ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
         ["install-views" (wrap-cookie-auth (partial db/install-views db))]
         ["spaces-upload" spaces-upload-handler]
+        ["hello" (fn [req]
+                   (json-response
+                    (.toString (s3/generate-presigned-url :bucket-name "vnt-spaces-0" :key "brick_building_falling_down.jpg" :expires 5 :method "GET" :region "nyc3"))))]
         ]])
 
 (defn wrap-index

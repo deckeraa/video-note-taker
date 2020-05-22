@@ -32,6 +32,7 @@
                                                    com.fasterxml.jackson.core/jackson-core]]
                  [com.amazonaws/aws-java-sdk-core "1.11.788" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [com.amazonaws/aws-java-sdk-s3 "1.11.788" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+                 [org.sharetribe/aws-sig4 "0.1.4"]
                  ]
 
   :min-lein-version "2.5.3"
