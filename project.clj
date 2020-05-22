@@ -7,7 +7,7 @@
                  [bidi "2.1.6"]
                  [ring "1.8.1"]
                  [ring-cors "0.1.12"]
-                 [ring/ring-json "0.4.0"]
+                 [ring/ring-json "0.5.0"]
                  [ring/ring-defaults "0.3.2"]
                  [ring-json-response "0.2.0"]
                  [ring/ring-codec "1.1.1"]
@@ -27,6 +27,11 @@
                  [cljc.java-time "0.1.8"]
                  [com.stronganchortech/couchdb-auth-for-ring "1.0.1"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha5"]
+                 [amazonica "0.3.152" :exclusions [com.amazonaws/aws-java-sdk
+                                                   com.amazonaws/amazon-kinesis-client
+                                                   com.fasterxml.jackson.core/jackson-core]]
+                 [com.amazonaws/aws-java-sdk-core "1.11.788" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+                 [com.amazonaws/aws-java-sdk-s3 "1.11.788" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  ]
 
   :min-lein-version "2.5.3"

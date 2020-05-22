@@ -46,7 +46,10 @@
    [video-note-taker.groups :as groups]
    [video-note-taker.access :as access]
    [video-note-taker.access-shared :as access-shared]
-   [s3-beam.handler :as s3b])
+   [s3-beam.handler :as s3b]
+   [amazonica.core :refer [with-credential defcredential]]
+   [amazonica.aws.s3 :as s3]
+   [amazonica.aws.s3transfer])
   (:gen-class))
 
 (defonce timbre-syslogger
@@ -59,8 +62,9 @@
        :facility :log-user})}}))
 
 (def bucket (System/getenv "VNT_BUCKET"))
-(def access-key (System/getenv "VNT_SPACES_ACCESS_KEY"))
-(def secret-key (System/getenv "VNT_SPACES_SECRET_KEY"))
+(def access-key (System/getenv "AWS_ACCESS_KEY_ID"))
+(def secret-key (System/getenv "AWS_SECRET_ACCESS_KEY"))
+(defcredential access-key secret-key "https://nyc3.digitaloceanspaces.com")
 
 (defn text-type [v]
   (content-type v "text/html"))
@@ -360,7 +364,12 @@
           ;; or make a view that can clean up orphaned notes periodically.
           
           ;; delete the actual video file
-          (io/delete-file (str "./resources/private/" (:file-name video)))
+          (let [bucket (:storage-location video)]
+            (if (or (nil? bucket) (= :local bucket))
+              (io/delete-file (str "./resources/private/" (:file-name video)))
+              (s3/delete-object :bucket-name bucket :key (:file-name video))
+              ;; (s3/delete-object {:endpoint "https://nyc3.digitaloceanspaces.com"} :bucket-name bucket :key (:file-name video))
+              ))
           ;; return the response
           (json-response {:success true}))
         )
