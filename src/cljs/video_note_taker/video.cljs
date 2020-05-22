@@ -44,7 +44,12 @@
    (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
      (let [src (if (:src-override options)
                  (db/resolve-endpoint filename)
-                 (db/resolve-endpoint (str "videos/" filename)))]
+                 (let [storage-location (:storage-location @video-cursor)]
+                   ;; "storage-location": "vnt-spaces-0",
+                   (if (or (nil? storage-location)
+                           (= "private" storage-location))
+                     (db/resolve-endpoint (str "videos/" filename))
+                     (str "https://vnt-spaces-0.nyc3.digitaloceanspaces.com/" filename))))]
        [:video {:id "main-video"
                 :class "mb3"
                 :controls true

@@ -325,7 +325,8 @@
                       :file-name new-short-filename
                       :users ["bravo"] ;; TODO
                       :uploaded-by "bravo" ;; TODO
-                      :uploaded-datetime (.toString (new java.util.Date))}
+                      :uploaded-datetime (.toString (new java.util.Date))
+                      :storage-location bucket}
                      ;; TODO
                      nil
                      nil
