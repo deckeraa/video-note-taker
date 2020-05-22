@@ -14,7 +14,7 @@
                  [ring-logger "1.0.1"]
                  [net.java.dev.jna/jna "5.5.0"]
                  [com.taoensso/timbre "4.11.0-alpha1"]
-                 [clj-http "3.9.1"]
+                 [clj-http "3.10.1"]
                  [cljs-http "0.1.46"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
                  [danlentz/clj-uuid "0.1.9"]
