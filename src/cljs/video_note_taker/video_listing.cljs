@@ -179,7 +179,7 @@
                              ;;  {:file-name "spaces-test.mp4" :mime-type "video/mp4"}
                              ;;  (fn [body]
                              ;;    (println body)))
-                             (uploads/upload-files-to-s3 file-input-ref-atom)
+                             (uploads/upload-files-to-s3 atoms/uploads-cursor file-input-ref-atom)
                              ;; (uploads/upload-files
                              ;;  atoms/uploads-cursor file-input-ref-atom "upload-video"
                              ;;  #(load-video-listing video-listing-cursor)
