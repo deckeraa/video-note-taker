@@ -58,7 +58,7 @@
 (defn uploads-this-session? [uploads]
   (not (empty? uploads)))
 
-(defn upload-files-to-s3 [uploads-cursor file-input-ref-atom]
+(defn upload-files-to-s3 [uploads-cursor file-input-ref-atom success-fn]
   (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))
         uploaded (chan)
         upload-queue (s3-pipe uploaded {:server-url (db/resolve-endpoint "spaces-upload")
@@ -72,11 +72,14 @@
           (let [update (<! uploaded)]
  ;;           (println "From upload-queue: " update)
             (when (= :progress (:type update))
-              (swap! uploads-cursor assoc-in [upload-id :progress]
-                     ;; rename keys to match up with what we get through Ring's file progress fn
-                     (-> update
-                         (clojure.set/rename-keys {:bytes-sent :bytes-read :bytes-total :content-length})
-                         (select-keys [:bytes-read :content-length]))))
+              (let [processed-update
+                    (-> update
+                        ;; rename keys to match up with what we get through Ring's file progress fn
+                        (clojure.set/rename-keys {:bytes-sent :bytes-read :bytes-total :content-length})
+                        (select-keys [:bytes-read :content-length]))]
+                (swap! uploads-cursor assoc-in [upload-id :progress]
+                       processed-update)))
+            (when (and success-fn (= :success (:type update))) (success-fn))
             (recur)))))))
 
 (defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
