@@ -29,12 +29,14 @@
   (vec (map :id (db/get-view db nil "groups" "by_user" {:key username} nil nil nil))))
 
 (defn user-has-access-to-video [username video]
-  (let [groups (load-groups-for-user username)]
-    (or
-     ; Are they listed in the :users key?
-     (not (empty? (filter #(= username %) (:users video))))
-     ; Is one of the groups of which they are part listed in the :groups key?
-     (not (empty? (clojure.set/intersection (set groups) (set (:groups video))))))))
+  (if (nil? username) ;; since username is derived from the server-side of things, we can establish the convention that nil means to skip checks
+    true
+    (let [groups (load-groups-for-user username)]
+      (or
+                                        ; Are they listed in the :users key?
+       (not (empty? (filter #(= username %) (:users video))))
+                                        ; Is one of the groups of which they are part listed in the :groups key?
+       (not (empty? (clojure.set/intersection (set groups) (set (:groups video)))))))))
 
 (defn user-has-access-to-note [username note]
   (contains? (set (:users note)) username))
