@@ -22,9 +22,10 @@
                 (aget (.-files file-input) idx))
               (range (alength (.-files file-input)))))))
 
-(defn cursor-entry [upload-id files]
+(defn cursor-entry [upload-id files storage-location]
   {:files (mapv #(.-name %) files)
-   :progress nil})
+   :progress nil
+   :storage-location storage-location})
 
 (defn is-upload-complete? [progress]
   (let [bytes-read     (:bytes-read progress)
@@ -67,7 +68,7 @@
       (let [file (get files 0)]
 ;;        (println "file" file upload-id)
         (put! upload-queue {:file file :identifier upload-id})
-        (swap! uploads-cursor assoc upload-id (cursor-entry upload-id [file]))
+        (swap! uploads-cursor assoc upload-id (cursor-entry upload-id [file] :s3))
         (go-loop []
           (let [update (<! uploaded)]
  ;;           (println "From upload-queue: " update)
@@ -102,7 +103,7 @@
             ))
       ;; Add in this upload to the uploads cursor.
       ;; This enables the file upload progress tracker to 
-      (swap! uploads-cursor assoc upload-id (cursor-entry upload-id files)))))
+      (swap! uploads-cursor assoc upload-id (cursor-entry upload-id files :local)))))
 
 (defn upload-progress-updater
   ([uploads-cursor repeat?]
@@ -122,7 +123,10 @@
                            (do
                              (swap! uploads-cursor assoc-in [upload-id :progress] updated-progress))                         
                            (println "upload progress update failed: " resp)))))
-                 (keys in-progress-uploads)))
+                 (->> in-progress-uploads
+                      (filter (fn [[k v]] (= :local (:storage-location v))))
+                      (keys))
+                 ))
      (js/setTimeout (partial upload-progress-updater uploads-cursor repeat?) 3000)))
   ([uploads-cursor]
    (upload-progress-updater uploads-cursor true)))
@@ -176,10 +180,14 @@
    ])
 
 (defn upload-display [uploads-cursor]
-  (let [expanded? (reagent/atom false)]
+  (let [has-auto-expanded? (reagent/atom false)
+        expanded? (reagent/atom false)]
     (fn []
       [:div
        (when (uploads-this-session? @uploads-cursor)
+         (when (and (not @has-auto-expanded?) (not @expanded?))
+           (reset! has-auto-expanded? true)
+           (reset! expanded? true))
          [:div {:class "fixed bg-white w4 h4 br-100 shadow-3 bottom-1 right-1 flex flex-column items-center justify-center grow rise-from-bottom"
                 :on-click #(swap! expanded? not)}
           (let [in-progress (number-of-in-progress-uploads @uploads-cursor)]
@@ -216,7 +224,7 @@
    (swap! uploads-cursor assoc upload-id
           ;; {:files (mapv #(.-name %) (file-objects file-input-ref-atom))
           ;;  :progress nil}
-          (cursor-entry upload-id (file-objects file-input-ref-atom)))))
+          (cursor-entry upload-id (file-objects file-input-ref-atom) :local))))
 
 (defcard-rg test-add-to-atom
   (let [file-input-ref-atom (reagent/atom nil)
