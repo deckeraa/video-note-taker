@@ -349,8 +349,17 @@
                      ;; roles
                      ;; (db/get-auth-cookie req)
                      )])
-    ((s3b/s3-sign bucket nil access-key secret-key "https://vnt-spaces-0.nyc3.digitaloceanspaces.com")
-     {:params params})))
+    {:status 200
+     :body (pr-str
+            (s3b/sign-upload
+             params
+             {:bucket bucket
+              :aws-access-key access-key
+              :aws-secret-key secret-key
+              :acl "private"
+              :upload-url "https://vnt-spaces-0.nyc3.digitaloceanspaces.com"}))
+     :headers {"Content-Type" "application/edn"}}
+    ))
 
 (defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document
@@ -375,6 +384,7 @@
           
           ;; delete the actual video file
           (let [bucket (:storage-location video)]
+            (warn "deleting: " video bucket (nil? bucket) (= :local bucket) (= :local bucket))
             (if (or (nil? bucket) (= :local bucket))
               (io/delete-file (str "./resources/private/" (:file-name video)))
               (s3/delete-object :bucket-name bucket :key (:file-name video))
