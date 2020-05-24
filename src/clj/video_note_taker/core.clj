@@ -380,7 +380,7 @@
           
           ;; delete the actual video file
           (let [bucket (:storage-location video)]
-            (warn "deleting: " video bucket (nil? bucket) (= :local bucket) (= :local bucket))
+            (info "deleting: " video bucket (nil? bucket) (= :local bucket) (= :local bucket))
             (if (or (nil? bucket) (= :local bucket))
               (io/delete-file (str "./resources/private/" (:file-name video)))
               (s3/delete-object :bucket-name bucket :key (:file-name video))
