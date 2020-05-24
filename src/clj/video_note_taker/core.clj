@@ -290,11 +290,9 @@
                       :uploaded-datetime (.toString (new java.util.Date))}
                      username
                      roles (db/get-auth-cookie req))]
-       video-doc)))
+      video-doc)))
 
-;; to test this via cURL, do something like:
-;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
-(defn upload-video-handler [req username roles]
+(defn local-upload-handler [req username roles]
   (info req)
   (info (get-in req [:params]))
   ;;; Sometimes params looks like
@@ -312,13 +310,11 @@
   ;;        :tempfile #object[java.io.File 0x7d710f13 /tmp/ring-multipart-6750941438243826845.tmp],
   ;;        :size 225667}}
   ;;;; Therefore, we'll ensure that it's a vector.
-  (if (access-shared/can-upload roles)
-    (let [file-array (if (vector? (get-in req [:params "file"]))
-                       (get-in req [:params "file"])
-                       [(get-in req [:params "file"])])]
-      (info "file-array: " (remove nil? file-array) file-array)
-      (json-response (map (partial single-video-upload req username roles) (remove nil? file-array))))
-    (not-authorized-response)))
+  (let [file-array (if (vector? (get-in req [:params "file"]))
+                     (get-in req [:params "file"])
+                     [(get-in req [:params "file"])])]
+    (info "file-array: " (remove nil? file-array) file-array)
+    (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 
 (defn spaces-upload-handler [req username roles]
   (info "s3 req:" req)
@@ -356,6 +352,17 @@
               :upload-url "https://vnt-spaces-0.nyc3.digitaloceanspaces.com"}))
      :headers {"Content-Type" "application/edn"}}
     ))
+
+;; to test this via cURL, do something like:
+;; curl -X POST "http://localhost:3000/upload-video-handler" -F file=@my-video.mp4
+(defn upload-video-handler [req username roles]
+  (info req)
+  (info (get-in req [:params]))
+  (if (access-shared/can-upload roles)
+    (if (= (System/getenv "VNT_UPLOAD_TO_SPACES") "true")
+      (spaces-upload-handler req username roles)
+      (local-upload-handler req username roles))
+    (not-authorized-response)))
 
 (defn delete-video-handler [req username roles]
   (let [doc (get-body req) ; the doc should be a video CouchDB document

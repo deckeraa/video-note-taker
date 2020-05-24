@@ -63,6 +63,12 @@
              :method "GET")))
     video))
 
+(defn insert-upload-setting [settings-doc]
+  (assoc settings-doc :upload-location?
+         (case (System/getenv "VNT_UPLOAD_TO_SPACES")
+           "true" :spaces
+           :local)))
+
 (defn get-hook-fn [real-doc username roles]
   (warn "get-hook-fn " real-doc)
   (case (:type real-doc)
@@ -72,7 +78,7 @@
               nil)
     "note"  (if (user-has-access-to-note  username real-doc) real-doc nil)
     "group" (if (user-has-access-to-group username real-doc) real-doc nil)
-    "settings" real-doc
+    "settings" (insert-upload-setting real-doc)
     nil))
 
 (defn note-put-hook [real-doc req-doc username roles]

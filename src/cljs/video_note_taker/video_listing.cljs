@@ -160,10 +160,18 @@
 (defn upload-card [video-listing-cursor]
   (let [file-input-ref-atom (reagent/atom nil)]
     (fn [video-listing-cursor]
-      [:div {:class "br3 shadow-4 dim mt3 flex"
+      [:div {:class "br3 shadow-4 mt3 flex"
              :style {:position :relative}}
        [:label {:for "file-upload"
-                :class "f2 bg-green white b br3 dib pa2 w-100 tc"}
+                :class
+                (if (:upload-location? @atoms/settings-cursor)
+                  "f2 bg-green white b br3 dib pa2 w-100 tc dim"
+                  "f2 bg-light-green white b br3 dib pa2 w-100 tc")
+                :title
+                (if (:upload-location? @atoms/settings-cursor)
+                  ""
+                  "Upload location has not been set. This is something that FamilyMemoryStream must set, so if you can see this message, please file a support ticket."
+                  )}
         "Upload video"]
        [:input {:id "file-upload"
                 :name "file"
@@ -174,20 +182,20 @@
                        (reset! file-input-ref-atom el))
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
-                             ;; (db/post-to-endpoint
-                             ;;  "spaces-upload"
-                             ;;  {:file-name "spaces-test.mp4" :mime-type "video/mp4"}
-                             ;;  (fn [body]
-                             ;;    (println body)))
-                             (uploads/upload-files-to-s3
-                              atoms/uploads-cursor
-                              file-input-ref-atom
-                              #(load-video-listing video-listing-cursor))
-                             ;; (uploads/upload-files
-                             ;;  atoms/uploads-cursor file-input-ref-atom "upload-video"
-                             ;;  #(load-video-listing video-listing-cursor)
-                             ;;  (fn [body]
-                             ;;    (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))
+                             (case (keyword (:upload-location? @atoms/settings-cursor))
+                               :spaces
+                               (uploads/upload-files-to-s3
+                                atoms/uploads-cursor
+                                file-input-ref-atom
+                                #(load-video-listing video-listing-cursor))
+                               :local
+                               (uploads/upload-files
+                                atoms/uploads-cursor file-input-ref-atom "upload-video"
+                                #(load-video-listing video-listing-cursor)
+                                (fn [body]
+                                  (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))
+                               ;; default
+                               (println "Upload method has not been set."))
                              )}]])))
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
