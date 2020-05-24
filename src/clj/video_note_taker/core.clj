@@ -320,7 +320,7 @@
       (json-response (map (partial single-video-upload req username roles) (remove nil? file-array))))
     (not-authorized-response)))
 
-(defn spaces-upload-handler [req]
+(defn spaces-upload-handler [req username roles]
   (info "s3 req:" req)
   (let [params (keywordize-keys (:params req))
         filename (:file-name params)
@@ -337,17 +337,13 @@
                       :type "video"
                       :display-name filename
                       :file-name new-short-filename
-                      :users ["bravo"] ;; TODO
-                      :uploaded-by "bravo" ;; TODO
+                      :users [username]
+                      :uploaded-by username
                       :uploaded-datetime (.toString (new java.util.Date))
                       :storage-location bucket}
-                     ;; TODO
-                     nil
-                     nil
-                     nil
-                     ;; username
-                     ;; roles
-                     ;; (db/get-auth-cookie req)
+                     username
+                     roles
+                     (db/get-auth-cookie req)
                      )])
     {:status 200
      :body (pr-str
@@ -515,7 +511,7 @@
         ["group" (wrap-cookie-auth groups/group-handler)]
         ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
         ["install-views" (wrap-cookie-auth (partial db/install-views db))]
-        ["spaces-upload" spaces-upload-handler]
+        ["spaces-upload" (wrap-cookie-auth spaces-upload-handler)]
         ["hello" (fn [req]
                    (json-response
                     (.toString (s3/generate-presigned-url
