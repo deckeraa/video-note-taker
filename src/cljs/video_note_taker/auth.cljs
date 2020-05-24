@@ -39,7 +39,7 @@
         allow-new-user-creation? false]
     (fn []
       [:div {:class "flex flex-column items-center justify-center"}
-       [:div {:class "f1 blue b ma3"} "MemoryCloud"]
+       [:div {:class "f1 blue b ma3"} "FamilyMemoryStream"]
        [:div {:class "flex flex-column items-center justify-center w-80"}
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Username"]
