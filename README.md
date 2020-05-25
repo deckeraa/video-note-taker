@@ -77,7 +77,7 @@ A full set of instructions can be found at https://www.sorcerers-tower.net/artic
 
 ```
 cd /etc/letsencrypt/live/your-domain-name
-openssl pkcs12 -export -inkey privkey.pem -in fullchain.pem-out jetty.pkcs12 -passout 'pass:p'
+openssl pkcs12 -export -inkey privkey.pem -in fullchain.pem -out jetty.pkcs12 -passout 'pass:p'
 keytool -importkeystore -noprompt -srckeystore jetty.pkcs12 -srcstoretype PKCS12 -srcstorepass p -destkeystore keystore -deststorepass storep
 cp keystore /the/same/directory/as/this/readme/
 ```
