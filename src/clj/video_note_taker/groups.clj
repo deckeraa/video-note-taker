@@ -1,17 +1,9 @@
 (ns video-note-taker.groups
   (:require
    [ring.util.json-response :refer [json-response]]
-   [video-note-taker.db :as db]
+   [video-note-taker.db :as db :refer [db]]
    [video-note-taker.access :as access]
    [video-note-taker.util :as util]))
-
-(def couch-url "http://localhost:5984/video-note-taker")
-
-(def db
-  (let [password (System/getenv "VNT_DB_PASSWORD")]
-    {:url couch-url
-     :username "admin"
-     :password (or password "test")}))
 
 (defn get-groups-handler [req username roles]
   (let [groups (db/get-view db access/get-hook-fn
