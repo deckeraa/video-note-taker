@@ -11,16 +11,8 @@
       :refer [log  trace  debug  info  warn  error  fatal  report
               logf tracef debugf infof warnf errorf fatalf reportf
               spy get-env]]
-   [video-note-taker.db :as db]
+   [video-note-taker.db :as db :refer [db]]
    [video-note-taker.access-shared :as access-shared]))
-
-(def couch-url "http://localhost:5984/video-note-taker")
-
-(def db
-  (let [password (System/getenv "VNT_DB_PASSWORD")]
-    {:url couch-url
-     :username "admin"
-     :password (or password "test")}))
 
 (defn load-groups-for-user
   "Returns a list of group IDs, e.g.
