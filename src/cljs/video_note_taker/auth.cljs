@@ -40,8 +40,8 @@
     (fn []
       [:div {:class "flex flex-column items-center justify-center bg-white ma4 pa1 mt4 br3"
              :style {:background-color "#ffffffd0"}}
-       [:div {:class "f1 blue b"}
-        [:p {:class "ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]]
+       [:div {:class "f1 blue b tc"}
+        "Family" [:wbr] "Memory" [:wbr] "Stream"]
        [:div {:class "flex flex-column items-center justify-center w-80"}
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Username"]
