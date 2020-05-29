@@ -38,8 +38,9 @@
         creating-new-user? (reagent/atom false)
         allow-new-user-creation? false]
     (fn []
-      [:div {:class "flex flex-column items-center justify-center"}
-       [:div {:class "f1 blue b ma3"} "FamilyMemoryStream"]
+      [:div {:class "flex flex-column items-center justify-center bg-white ma4 pa1 mt4 br3"}
+       [:div {:class "f1 blue b"}
+        [:p {:class "ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]]
        [:div {:class "flex flex-column items-center justify-center w-80"}
         [:div {:class "flex items-center flex-wrap ma1"}
          [:div {:class ""} "Username"]
