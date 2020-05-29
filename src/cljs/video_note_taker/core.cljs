@@ -57,7 +57,7 @@
       (if (auth-util/needs-auth-cookie)
         ;; Show login screen if needed
         [:div {:style {:background "url('launch_screen.svg') no-repeat center 75%"}
-               :class "h-100 dib w-100"}
+               :class "h-100 dib w-100 flex justify-center items-center"}
          [auth/login atoms/login-cursor]]
         ;; Otherwise, render the app
         (do
