@@ -208,18 +208,20 @@
                                                      (zd/parse last-edit)))))]]]
    [:div {:class "flex items-center ml3"}
     [time-scrubber note-cursor notes-cursor video-ref-atm video-options-cursor]
-    [svg/trash {:class "dim ml3"
-                :on-click (fn []
-                            (toaster-oven/add-toast
-                             "Delete note?" nil nil
-                             {:cancel-fn (fn [] nil)
-                              :ok-fn (fn [] 
-                                       (db/delete-doc @note-cursor
-                                                   (fn [resp]
-                                                     (swap! notes-cursor (fn [notes]
-                                                                           (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
-                                                                                                               notes)))))))}))}
-     "gray" "32px"]]])
+    (if (or (auth/is-users-note @note-cursor) (auth/can-edit-others-notes))
+      [svg/trash {:class "dim ml3"
+                  :on-click (fn []
+                              (toaster-oven/add-toast
+                               "Delete note?" nil nil
+                               {:cancel-fn (fn [] nil)
+                                :ok-fn (fn [] 
+                                         (db/delete-doc @note-cursor
+                                                        (fn [resp]
+                                                          (swap! notes-cursor (fn [notes]
+                                                                                (vec (filter #(not (= (:_id @note-cursor) (:_id %)))
+                                                                                             notes)))))))}))}
+       "gray" "32px"]
+      [:div {:style {:width "32px"}}])]])
 
 (defcard-rg note-card
   "Controls not hooked up."
