@@ -94,7 +94,10 @@
                                (map :docs)
                                (flatten)
                                (map :ok)
-                               (filter (fn [doc] (get-hook-fn doc username roles)))
+                               (filter (fn [doc]
+                                         (if get-hook-fn
+                                           (get-hook-fn doc username roles)
+                                           doc)))
                                (vec)
                                )]
       filtered-docs)))
