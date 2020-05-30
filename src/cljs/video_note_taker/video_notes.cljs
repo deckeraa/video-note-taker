@@ -14,7 +14,7 @@
    [video-note-taker.video :as video :refer [try-set-video-time]]
    [video-note-taker.toaster-oven :as toaster-oven]
    [video-note-taker.editable-field :refer [editable-field]]
-   [video-note-taker.auth]
+   [video-note-taker.auth :as auth]
    [video-note-taker.pick-list :as pick-list]
    [video-note-taker.groups :as groups]
    [video-note-taker.uploads :as uploads])
@@ -252,12 +252,13 @@
      [:div {:class "f2 b white"} "Add note"]]
     ;; The share and download buttons
     [:div {:class ""}
-     [:button {:class "bn pa2 ma2 br3 dim bg-gray"
-               :title "Share"
-               :on-click (fn [e]
-                           (let [remove-delegate-atm (reagent/atom (fn [] nil))]
-                             (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
-      [svg/share-graph {:class "white"} "white" "32px"]]
+     (when (auth/can-change-video-share-settings)
+       [:button {:class "bn pa2 ma2 br3 dim bg-gray"
+                 :title "Share"
+                 :on-click (fn [e]
+                             (let [remove-delegate-atm (reagent/atom (fn [] nil))]
+                               (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
+        [svg/share-graph {:class "white"} "white" "32px"]])
      [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
                 (if (uploads/uploads-in-progress?)
                   {:title "Cannot download video while upload is in progress."}
@@ -268,7 +269,7 @@
                 (if (uploads/uploads-in-progress?)
                   {:title "Cannot download spreadsheet of notes while upload is in progress."
                    }
-                  {:title "Download spreadsheet of notes"
+                  {:title "Download notes as a spreadsheet"
                    :href (str (db/get-server-url) "get-notes-spreadsheet?video-id=" (:_id @video-cursor))}))
       [:img {:src "./spreadsheet-download.svg" :class "white" :color "white" :width "32px"}]
       ]]]

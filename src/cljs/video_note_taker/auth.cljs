@@ -242,6 +242,6 @@
 (defn can-upload []         (access/can-upload        (set (:roles @atoms/user-cursor))))
 (defn can-delete-videos [] (access/can-delete-videos (set (:roles @atoms/user-cursor))))
 (defn can-change-video-display-name [] (access/can-change-video-display-name (set (:roles @atoms/user-cursor))))
-
+(defn can-change-video-share-settings [] (access/can-change-video-share-settings (set (:roles @atoms/user-cursor))))
 
 

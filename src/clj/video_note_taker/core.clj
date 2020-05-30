@@ -437,7 +437,8 @@
           group-users (get-users-from-groups req (:groups video) username roles)
           all-users (clojure.set/union listed-users group-users)]
       ;; make sure that the user is already on the document
-      (if (access/user-has-access-to-video username current-video)
+      (if (and (access-shared/can-change-video-display-name roles)
+           (access/user-has-access-to-video username current-video))
         (do
           ;; update the document
           (let [updated-video (db/put-doc db access/put-hook-fn video
