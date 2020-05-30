@@ -111,7 +111,7 @@
   "Returns a list of group IDs, e.g.
   [\"6ad12c0291d9f043fb092d076a000cc1\" \"6ad12c0291d9f043fb092d076a006c04\"]"
   [username]
-  (vec (map :id (db/get-view db nil "groups" "by_user" {:key username} nil nil nil))))
+  (vec (map :id (db/get-view db nil "groups" "by_user_in_group" {:key username} nil nil nil))))
 
 (defn get-video-listing-handler [req username roles]
   (let [groups (load-groups-for-user username)

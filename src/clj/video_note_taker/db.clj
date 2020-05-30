@@ -206,7 +206,15 @@
                             emit(doc.users[idx],doc._id);
                          }
                       }
-                    }"}}
+                    }"}
+                   :by_user_in_group
+                   {:map "function (doc) {
+                      if(doc.type === \"group\") {
+                         for(var idx in doc.users) {
+                            emit(doc.users[idx],doc._id);
+                         }
+                      }
+                  }"}}
                   :language "javascript"}
                  username roles)
         (catch Exception e
