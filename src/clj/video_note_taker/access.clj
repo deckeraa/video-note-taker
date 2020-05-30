@@ -84,12 +84,14 @@
                                (dur/minus-minutes
                                 (dur/between (zd/parse (:last-edit req-doc)) (zd/now))
                                 3)))]
-    (merge req-doc
-           {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
-           ;; when a note is created, we'd expect the user to edit it write away,
-           ;; so give them a chance to edit it before we mark it as "edited".
-           (when (not (and is-creator? is-last-editor? sufficiently-recent?))
-             {:last-editor username}))))
+    (if (not (or is-creator? (access-shared/can-edit-others-notes roles)))
+      real-doc ;; user is not allowed to edit the note
+      (merge req-doc
+             {:last-edit (zd/format (zd/now) java.time.format.DateTimeFormatter/ISO_OFFSET_DATE_TIME)}
+             ;; when a note is created, we'd expect the user to edit it write away,
+             ;; so give them a chance to edit it before we mark it as "edited".
+             (when (not (and is-creator? is-last-editor? sufficiently-recent?))
+               {:last-editor username})))))
 
 (defn update-users
   "Used to update :users on an incoming video to avoid users adding or removing users that they

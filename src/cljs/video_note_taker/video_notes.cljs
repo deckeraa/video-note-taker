@@ -83,14 +83,18 @@
   (let [scrub-timer-count-atm (reagent/atom 0)]
     (fn [note-cursor notes-cursor video-ref-atm]
       [:div {:class "flex items-center"}
-       [svg/chevron-left {:class "ma2 dim"
-                          :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm -0.1)}
-        "gray" "32px"]
+       (if (or (auth/is-users-note @note-cursor) (auth/can-edit-others-notes))
+         [svg/chevron-left {:class "ma2 dim"
+                            :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm -0.1)}
+          "gray" "32px"]
+         [:div {:style {:width "32px"}}])
        [:div {:class "f3"}
         [:div (format-time (:time @note-cursor))]]
-       [svg/chevron-right {:class "ma2 dim"
-                           :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm 0.1)}
-        "gray" "32px"]])))
+       (if (or (auth/is-users-note @note-cursor) (auth/can-edit-others-notes))
+         [svg/chevron-right {:class "ma2 dim"
+                             :on-click (partial change-time-scrub note-cursor notes-cursor video-ref-atm video-options-cursor scrub-timer-count-atm 0.1)}
+          "gray" "32px"]
+         [:div {:style {:width "32px"}}])])))
 
 (defcard-rg time-scrubber-card
   "Controls not hooked up, time should read 12:45.2"
@@ -187,12 +191,14 @@
                                  (try-set-video-time video-ref-atm video-options-cursor (:time @note-cursor))
                                  )} "green" "32px"]
     [:div
-     [editable-field (:text @note-cursor)
-      (fn [new-val done-fn]
-        (db/put-doc (assoc @note-cursor :text new-val)
-                    (fn [new-doc]
-                      (update-note! notes-cursor new-doc)
-                      (done-fn))))]
+     (if (or (auth/is-users-note @note-cursor) (auth/can-edit-others-notes))
+       [editable-field (:text @note-cursor)
+        (fn [new-val done-fn]
+          (db/put-doc (assoc @note-cursor :text new-val)
+                      (fn [new-doc]
+                        (update-note! notes-cursor new-doc)
+                        (done-fn))))]
+       [:p (:text @note-cursor)])
      [:div {:class "i mid-gray"} (str (cond (:last-editor @note-cursor)
                                             (str "Edited by " (:last-editor @note-cursor))
                                             (:created-by @note-cursor)

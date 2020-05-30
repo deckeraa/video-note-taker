@@ -7,3 +7,4 @@
 (defn can-delete-videos [users-roles] (has-role? users-roles #{"_admin" "family_lead" "business_user"}))
 (defn can-change-video-display-name [users-roles] (has-role? users-roles #{"_admin" "family_lead" "business_user"}))
 (defn can-change-video-share-settings [user-roles] (has-role? user-roles #{"_admin" "family_lead" "business_user"}))
+(defn can-edit-others-notes [user-roles] (has-role? user-roles #{"_admin" "family_lead" "business_user"}))
