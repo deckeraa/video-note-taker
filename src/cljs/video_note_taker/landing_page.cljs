@@ -85,16 +85,21 @@
                              (db/post-to-endpoint
                               "check-username" {:username username}
                               (fn [resp]
-                                (if (= :available (keyword (:status resp)))
+                                (case (keyword (:status resp))
+                                  :available
                                   (do
                                     (reset! username-status :validated)
                                     (reset! validated-username-atom username))
-                                  (reset! username-status :taken))))))))
+                                  :taken
+                                  (reset! username-status :taken)
+                                  :invalid
+                                  (reset! username-status :invalid))))))))
                                    350)))}]
        (case @username-status
          :none      [:p {:class ""}      "Please pick a username"]
          :checking  [:p {:class ""}      "Checking username..."]
          :taken     [:p {:class "red"}   "Username is taken."]
+         :invalid   [:p {:class "red"}   "Username can only contain letters, numbers, and underscores."]
          :validated [:p {:class "green"} "Username is available."]
          nil)])))
 

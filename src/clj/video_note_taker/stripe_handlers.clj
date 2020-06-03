@@ -25,9 +25,12 @@
          "http://localhost:3450/?cancel=true"))))))
 
 (defn check-username-handler [req]
-  (let [body (get-body req)]
+  (let [body (get-body req)
+        username (:username body)]
     (println "check-username: " body)
-    (let [resp (db/get-doc users-db nil (str "org.couchdb.user:" (:username body)) nil nil nil)]
-      (if (empty? resp)
-        (json-response {:status :available})
-        (json-response {:status :taken})))))
+    (if (re-matches #"^\w*$" username)
+      (let [resp (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil)]
+        (if (empty? resp)
+          (json-response {:status :available})
+          (json-response {:status :taken})))
+      (json-response {:status :invalid}))))
