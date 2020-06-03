@@ -493,6 +493,7 @@
 
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
+        ["memories" (file-response "./memories.html")]
         ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler db access/get-hook-fn))]
         ["bulk-get-doc" (wrap-cookie-auth (partial db/bulk-get-doc-handler db access/get-hook-fn))]
         ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler db access/put-hook-fn))]
