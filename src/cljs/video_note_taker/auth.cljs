@@ -84,7 +84,8 @@
                                                            ))]
                                    (println "login response: " resp)
                                    (swap! logged-in-atm inc)
-                                   (if (:body resp)
+                                   (if (and (= 200 (:status resp))
+                                            (:body resp))
                                      (if (auth-util/needs-auth-cookie)
                                          (reset! can't-set-cookie-atm true)
                                          (do
