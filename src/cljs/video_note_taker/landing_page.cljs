@@ -64,24 +64,33 @@
       [:div {:class "flex"}
        [:p "User name: "]
        [:input {:type :text :value @username-atom
-                :on-change (fn [e]
-                             (let [username (-> e .-target .-value)]
-                               (if (empty? username)
-                                 (reset! username-status :none)
-                                 (reset! username-status nil))
-                               (reset! username-atom username)
-                               (reset! validated-username-atom nil)
-                               (swap! check-ctr inc)
-                               (js/setTimeout (fn []
-                                                (let [username @username-atom]
-                                                  (when (and
-                                                         (= 0 (swap! check-ctr dec))
-                                                         (not (empty? username)))
-                                                    (do
-                                                      (reset! username-status :checking)
-                                                      (println "username check TODO")
-                                                      (reset! validated-username-atom username)))))
-                                              350)))}]
+                :on-change
+                (fn [e]
+                  (let [username (-> e .-target .-value)]
+                    (if (empty? username)
+                      (reset! username-status :none)
+                      (reset! username-status nil))
+                    (reset! username-atom username)
+                    (reset! validated-username-atom nil)
+                    (swap! check-ctr inc)
+                    (js/setTimeout
+                     (fn []
+                       (let [username @username-atom]
+                         (when (and
+                                (= 0 (swap! check-ctr dec))
+                                (not (empty? username)))
+                           (do
+                             (reset! username-status :checking)
+                             (println "username check TODO" username)
+                             (db/post-to-endpoint
+                              "check-username" {:username username}
+                              (fn [resp]
+                                (if (= :available (keyword (:status resp)))
+                                  (do
+                                    (reset! username-status :validated)
+                                    (reset! validated-username-atom username))
+                                  (reset! username-status :taken))))))))
+                                   350)))}]
        (case @username-status
          :none      [:p {:class ""}      "Please pick a username"]
          :checking  [:p {:class ""}      "Checking username..."]

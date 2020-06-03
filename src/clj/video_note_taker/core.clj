@@ -523,6 +523,7 @@
         ["install-views" (wrap-cookie-auth (partial db/install-views db))]
         ["spaces-upload" (wrap-cookie-auth spaces-upload-handler)]
         ["create-checkout-session" stripe-handlers/create-checkout-session-handler]
+        ["check-username" stripe-handlers/check-username-handler]
         ["hello" (fn [req]
                    (json-response
                     (.toString (s3/generate-presigned-url
