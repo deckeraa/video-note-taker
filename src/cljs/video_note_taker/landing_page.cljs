@@ -57,8 +57,40 @@
              [:p {:class "f4"} "50 GB, up to 15 family members"]]
             [svg/chevron-right {} "white" "64px"]])])
 
+(defn user-name-picker [username-atom validated-username-atom]
+  (let [check-ctr (reagent/atom 0)
+        username-status (reagent/atom :none)]
+    (fn []
+      [:div {:class "flex"}
+       [:p "User name: "]
+       [:input {:type :text :value @username-atom
+                :on-change (fn [e]
+                             (let [username (-> e .-target .-value)]
+                               (if (empty? username)
+                                 (reset! username-status :none)
+                                 (reset! username-status nil))
+                               (reset! username-atom username)
+                               (reset! validated-username-atom nil)
+                               (swap! check-ctr inc)
+                               (js/setTimeout (fn []
+                                                (let [username @username-atom]
+                                                  (when (= 0 (swap! check-ctr dec))
+                                                    (do
+                                                      (reset! username-status :checking)
+                                                      (println "username check TODO")
+                                                      (reset! validated-username-atom username)))))
+                                              350)))}]
+       (case @username-status
+         :none      [:p {:class ""}      "Please pick a username"]
+         :checking  [:p {:class ""}      "Checking username..."]
+         :taken     [:p {:class "red"}   "Username is taken."]
+         :validated [:p {:class "green"} "Username is available."]
+         nil)])))
+
 (defn my-page []
-  (let [loading-stripe (reagent/atom false)]
+  (let [loading-stripe (reagent/atom false)
+        username-atom (reagent/atom "")
+        validated-username-atom (reagent/atom nil)]
     (fn []
       [:div {:class "h-100 flex flex-column"}
        [:div {:class "white bg-blue pl2-ns"}
@@ -77,7 +109,7 @@
          [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
        [:h2 {:class "f2 ml1"} "Get started"]
        [:h3 {:class "f3 ml1"} "Pick a user name"]
-       [:p {:class "ml1"} "TODO username picker goes here"]
+       [user-name-picker username-atom validated-username-atom]
        [:div
         [:input {:type :checkbox :name "TOS" :class "mr1"}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
