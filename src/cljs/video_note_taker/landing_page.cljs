@@ -26,7 +26,8 @@
 
 (def stripe-public-key "pk_test_SXM3FqTZVdax1V17XeTEgvCJ003ySTXbMq")
 
-(defn purchase-handler [plan e]
+(defn purchase-handler [loading-stripe-atom plan e]
+  (reset! loading-stripe-atom plan)
   (db/post-to-endpoint
    "create-checkout-session"
    {:plan plan}
@@ -40,41 +41,55 @@
      (println "Stripe endpoint failed: " raw-resp))))
 
 (defn my-page []
-  [:div {:class "h-100 flex flex-column"}
-   [:div {:class "white bg-blue pl2-ns"}
-    [:p  {:class "f1 ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]
-    [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
-   [:p  {:class "f4 ml1"} "When you host your family videos with FamilyMemoryStream, your family can:"]
-   [:ul {:class "f4"}
-    [:li
-     [:p {:class "f4"} "Stream the videos on-demand to their computer or mobile device."]
-     [:p {:class "f5 i"} "No need to pass around massive video files or DVDs."]]
-    [:li
-     [:p {:class "f4"} "Highlight their favorite memories by adding notes."]
-     [:p {:class "f5 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
-    [:li
-     [:p {:class "f4"} "Find memories with a built-in notes search."]
-     [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
-   [:h2 {:class "f2 ml1"} "Get started"]
-   [:h3 {:class "f3 ml1"} "Pick a user name"]
-   [:p {:class "ml1"} "TODO username picker goes here"]
-   [:div
-    [:input {:type :checkbox :name "TOS" :class "mr1"}]
-    [:label {:for "TOS" } "I agree with the TODO TOS."]]
-   [:div {:class "flex flex-row"}
-    [:button {:class "bn white bg-green pa3 ma2 dim flex items-center" :on-click (partial purchase-handler :a)}
-     [:div {:class "mr1"}
-      [:p {:class "f3 b"} "$15 first month, then $5/month afterwards"]
-      [:p {:class "f4"} "50 GB, up to 15 family members"]]
-     [svg/chevron-right {} "white" "64px"]]
-    [:button {:class "bn white bg-green pa3 ma2 dim flex items-center" :on-click (partial purchase-handler :b)}
-     [:div {:class "mr1"}
-      [:p {:class "f3 b"} "$55/year"]
-      [:p {:class "f4"} "50 GB, up to 15 family members"]]
-     [svg/chevron-right {} "white" "64px"]]]
-   [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
+  (let [loading-stripe (reagent/atom false)]
+    (fn []
+      [:div {:class "h-100 flex flex-column"}
+       [:div {:class "white bg-blue pl2-ns"}
+        [:p  {:class "f1 ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]
+        [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
+       [:p  {:class "f4 ml1"} "When you host your family videos with FamilyMemoryStream, your family can:"]
+       [:ul {:class "f4"}
+        [:li
+         [:p {:class "f4"} "Stream the videos on-demand to their computer or mobile device."]
+         [:p {:class "f5 i"} "No need to pass around massive video files or DVDs."]]
+        [:li
+         [:p {:class "f4"} "Highlight their favorite memories by adding notes."]
+         [:p {:class "f5 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
+        [:li
+         [:p {:class "f4"} "Find memories with a built-in notes search."]
+         [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
+       [:h2 {:class "f2 ml1"} "Get started"]
+       [:h3 {:class "f3 ml1"} "Pick a user name"]
+       [:p {:class "ml1"} "TODO username picker goes here"]
+       [:div
+        [:input {:type :checkbox :name "TOS" :class "mr1"}]
+        [:label {:for "TOS" } "I agree with the TODO TOS."]]
+       [:div {:class "flex flex-row"}
+        [:button {:class (str "bn white pa3 ma2 flex items-center "
+                              (if @loading-stripe "bg-light-green" "bg-green dim" ))
+                  :on-click (partial purchase-handler loading-stripe :a)}
+         (if (= :a @loading-stripe)
+           [:div
+            [:p {:class "f3 b"} "Loading payment page."]]
+           [:<>
+            [:div {:class "mr1"}
+             [:p {:class "f3 b"} "$15 first month, then $5/month afterwards"]
+             [:p {:class "f4"} "50 GB, up to 15 family members"]]
+            [svg/chevron-right {} "white" "64px"]])]
+        [:button {:class (str "bn white bg-green pa3 ma2 dim flex items-center "
+                              (if @loading-stripe "bg-light-green" "bg-green dim" ))
+                  :on-click (partial purchase-handler loading-stripe :b)}
+         (if (= :b @loading-stripe)
+           [:div
+            [:p {:class "f3 b"} "Loading payment page."]]
+           [:<>
+            [:div {:class "mr1"}
+             [:p {:class "f3 b"} "$55/year"]
+             [:p {:class "f4"} "50 GB, up to 15 family members"]]
+            [svg/chevron-right {} "white" "64px"]])]]
+       [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
-   ])
+       ])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App
