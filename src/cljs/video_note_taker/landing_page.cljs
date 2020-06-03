@@ -74,7 +74,9 @@
                                (swap! check-ctr inc)
                                (js/setTimeout (fn []
                                                 (let [username @username-atom]
-                                                  (when (= 0 (swap! check-ctr dec))
+                                                  (when (and
+                                                         (= 0 (swap! check-ctr dec))
+                                                         (not (empty? username)))
                                                     (do
                                                       (reset! username-status :checking)
                                                       (println "username check TODO")
