@@ -40,10 +40,11 @@
      (println "Stripe endpoint failed: " raw-resp))))
 
 (defn my-page []
-  [:div {:class "ma1"}
-   [:h1 {:class "f1"} "Family Memory Stream"]
-   [:p  {:class "f3"} "Helping your family reminisce together"]
-   [:p  {:class "f4"} "When you host your family videos with FamilyMemoryStream, your family can:"]
+  [:div {:class "h-100 flex flex-column"}
+   [:div {:class "white bg-blue pl2-ns"}
+    [:p  {:class "f1 ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]
+    [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
+   [:p  {:class "f4 ml1"} "When you host your family videos with FamilyMemoryStream, your family can:"]
    [:ul {:class "f4"}
     [:li
      [:p {:class "f4"} "Stream the videos on-demand to their computer or mobile device."]
@@ -54,11 +55,12 @@
     [:li
      [:p {:class "f4"} "Find memories with a built-in notes search."]
      [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
-   [:h2 {:class "f2"} "Get started"]
-   [:h3 {:class "f3"} "Pick a user name"]
-   [:p "TODO username picker goes here"]
-   [:input {:type :checkbox :name "TOS"}]
-   [:label {:for "TOS" } "I agree with the TODO TOS."]
+   [:h2 {:class "f2 ml1"} "Get started"]
+   [:h3 {:class "f3 ml1"} "Pick a user name"]
+   [:p {:class "ml1"} "TODO username picker goes here"]
+   [:div
+    [:input {:type :checkbox :name "TOS" :class "mr1"}]
+    [:label {:for "TOS" } "I agree with the TODO TOS."]]
    [:div {:class "flex flex-row"}
     [:button {:class "bn white bg-green pa3 ma2 dim flex items-center" :on-click (partial purchase-handler :a)}
      [:div {:class "mr1"}
