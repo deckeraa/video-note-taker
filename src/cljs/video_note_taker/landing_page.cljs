@@ -40,9 +40,9 @@
      (println "Stripe endpoint failed: " raw-resp))))
 
 (defn my-page []
-  [:div
+  [:div {:class "ma1"}
    [:h1 {:class "f1"} "Family Memory Stream"]
-   [:p  {:class "f3"} "Help your family reminisce together"]
+   [:p  {:class "f3"} "Helping your family reminisce together"]
    [:p  {:class "f4"} "When you host your family videos with FamilyMemoryStream, your family can:"]
    [:ul {:class "f4"}
     [:li
@@ -59,12 +59,17 @@
    [:p "TODO username picker goes here"]
    [:input {:type :checkbox :name "TOS"}]
    [:label {:for "TOS" } "I agree with the TODO TOS."]
-   [:button {:class "bn white bg-green pa3 ma2 dim" :on-click (partial purchase-handler :a)}
-    [:p {:class "f3 b"} "$15 first month, then $5/month afterwards"]
-    [:p {:class "f4"} "50 GB, up to 15 family members"]]
-   [:button {:class "bn white bg-green pa3 ma2 dim" :on-click (partial purchase-handler :b)}
-    [:p {:class "f3 b"} "$55/year"]
-    [:p {:class "f4"} "50 GB, up to 15 family members"]]
+   [:div {:class "flex flex-row"}
+    [:button {:class "bn white bg-green pa3 ma2 dim flex items-center" :on-click (partial purchase-handler :a)}
+     [:div {:class "mr1"}
+      [:p {:class "f3 b"} "$15 first month, then $5/month afterwards"]
+      [:p {:class "f4"} "50 GB, up to 15 family members"]]
+     [svg/chevron-right {} "white" "64px"]]
+    [:button {:class "bn white bg-green pa3 ma2 dim flex items-center" :on-click (partial purchase-handler :b)}
+     [:div {:class "mr1"}
+      [:p {:class "f3 b"} "$55/year"]
+      [:p {:class "f4"} "50 GB, up to 15 family members"]]
+     [svg/chevron-right {} "white" "64px"]]]
    [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
    ])
