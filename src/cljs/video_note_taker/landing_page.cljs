@@ -25,16 +25,16 @@
    [cljs.core.async.macros :refer [go go-loop]]))
 
 
-(defn page []
+(defn my-page []
   [:div
    [:h1 "Family Memory Stream"]
-;   [:p "Help your family reminisce together"]
+   [:p "Help your family reminisce together"]
+   [:button {} "Purchase at $5/mo"]
+   [:button {} "Purchase at $55/year"]
    ])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialize App
-
-(auth/run-cookie-renewer) ;; set up the auto-renewer
 
 (defn dev-setup []
   (when ^boolean js/goog.DEBUG
@@ -43,9 +43,10 @@
     ))
 
 (defn reload []
-  (reagent.dom/render [page atoms/app-state]
-                  (.getElementById js/document "app")))
+  (println "landing-page.cljs")
+  (reagent.dom/render [my-page atoms/app-state]
+                      (.getElementById js/document "app")))
 
-(defn ^:export main []
+(defn ^:export landing-page []
   (dev-setup)
   (reload))

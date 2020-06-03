@@ -103,6 +103,7 @@
     ))
 
 (defn reload []
+  (println "core.cljs")
   (reagent.dom/render [page atoms/app-state]
                   (.getElementById js/document "app")))
 
