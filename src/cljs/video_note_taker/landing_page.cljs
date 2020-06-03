@@ -24,12 +24,25 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
+(def stripe-public-key "pk_test_SXM3FqTZVdax1V17XeTEgvCJ003ySTXbMq")
 
 (defn my-page []
   [:div
    [:h1 "Family Memory Stream"]
    [:p "Help your family reminisce together"]
-   [:button {} "Purchase at $5/mo"]
+   [:button {:on-click (fn [e]
+                         (db/post-to-endpoint
+                          "create-checkout-session"
+                          {:plan :a}
+                          (fn [resp]
+                            (println "resp:" resp)
+                            (let [id (:id resp)]
+                              (when id
+                                (let [stripe (js/Stripe. stripe-public-key)]
+                                  (.redirectToCheckout stripe (js-obj "sessionId" id))))))
+                          (fn [resp raw-resp]
+                            (println "Stripe endpoint failed: " raw-resp))))}
+    "Purchase at $5/mo"]
    [:button {} "Purchase at $55/year"]
    ])
 

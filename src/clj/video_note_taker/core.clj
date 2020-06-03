@@ -52,6 +52,7 @@
    [amazonica.aws.s3transfer]
    [clj-time.core :as time]
    [clj-time.coerce :as coerce]
+   [video-note-taker.stripe-handlers :as stripe-handlers]
    )
   (:gen-class))
 
@@ -521,6 +522,7 @@
         ["delete-group" (wrap-cookie-auth groups/delete-group-handler)]
         ["install-views" (wrap-cookie-auth (partial db/install-views db))]
         ["spaces-upload" (wrap-cookie-auth spaces-upload-handler)]
+        ["create-checkout-session" stripe-handlers/create-checkout-session-handler]
         ["hello" (fn [req]
                    (json-response
                     (.toString (s3/generate-presigned-url

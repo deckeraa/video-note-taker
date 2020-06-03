@@ -76,7 +76,7 @@
   {:builds
    [{:id           "dev"
      :source-paths ["src/cljs" "src/cljc"]
-     :figwheel     {:on-jsload "video-note-taker.landing-page/reload"}
+     :figwheel     {:on-jsload "video-note-taker.core/reload"}
      :compiler     {:main                 video-note-taker.core
                     :optimizations        :none
                     :output-to            "resources/public/js/app.js"
