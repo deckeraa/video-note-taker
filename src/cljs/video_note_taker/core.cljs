@@ -19,7 +19,8 @@
    [video-note-taker.auth-util :as auth-util]
    [video-note-taker.video :as video :refer [video]]
    [video-note-taker.search :as search]
-   [video-note-taker.uploads :as uploads])
+   [video-note-taker.uploads :as uploads]
+   [video-note-taker.landing-page])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
