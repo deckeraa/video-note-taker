@@ -40,6 +40,23 @@
    (fn [resp raw-resp]
      (println "Stripe endpoint failed: " raw-resp))))
 
+(defn payment-button [loading-stripe-atom plan]
+  [:button {:class (str "bn white pa3 ma2 flex items-center "
+                        (if @loading-stripe-atom "bg-light-green" "bg-green dim" ))
+            :on-click (partial purchase-handler loading-stripe-atom plan)}
+         (if (= plan @loading-stripe-atom)
+           [:div
+            [:p {:class "f3 b"} "Loading Stripe payment page."]]
+           [:<>
+            [:div {:class "mr1"}
+             [:p {:class "f3 b"}
+              (case plan
+                :a "$15 first month, then $5/month afterwards"
+                :b "$55/year"
+                "Undefined payment plan")]
+             [:p {:class "f4"} "50 GB, up to 15 family members"]]
+            [svg/chevron-right {} "white" "64px"]])])
+
 (defn my-page []
   (let [loading-stripe (reagent/atom false)]
     (fn []
@@ -65,28 +82,9 @@
         [:input {:type :checkbox :name "TOS" :class "mr1"}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
        [:div {:class "flex flex-row"}
-        [:button {:class (str "bn white pa3 ma2 flex items-center "
-                              (if @loading-stripe "bg-light-green" "bg-green dim" ))
-                  :on-click (partial purchase-handler loading-stripe :a)}
-         (if (= :a @loading-stripe)
-           [:div
-            [:p {:class "f3 b"} "Loading payment page."]]
-           [:<>
-            [:div {:class "mr1"}
-             [:p {:class "f3 b"} "$15 first month, then $5/month afterwards"]
-             [:p {:class "f4"} "50 GB, up to 15 family members"]]
-            [svg/chevron-right {} "white" "64px"]])]
-        [:button {:class (str "bn white bg-green pa3 ma2 dim flex items-center "
-                              (if @loading-stripe "bg-light-green" "bg-green dim" ))
-                  :on-click (partial purchase-handler loading-stripe :b)}
-         (if (= :b @loading-stripe)
-           [:div
-            [:p {:class "f3 b"} "Loading payment page."]]
-           [:<>
-            [:div {:class "mr1"}
-             [:p {:class "f3 b"} "$55/year"]
-             [:p {:class "f4"} "50 GB, up to 15 family members"]]
-            [svg/chevron-right {} "white" "64px"]])]]
+        [payment-button loading-stripe :a]
+        [payment-button loading-stripe :b]
+        ]
        [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
        ])))
