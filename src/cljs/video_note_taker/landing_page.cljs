@@ -41,12 +41,32 @@
 
 (defn my-page []
   [:div
-   [:h1 "Family Memory Stream"]
-   [:p "Help your family reminisce together"]
-   [:button {:on-click (partial purchase-handler :a)}
-    "Purchase at $5/mo"]
-   [:button {:on-click (partial purchase-handler :b)}
-    "Purchase at $55/year"]
+   [:h1 {:class "f1"} "Family Memory Stream"]
+   [:p  {:class "f3"} "Help your family reminisce together"]
+   [:p  {:class "f4"} "When you host your family videos with FamilyMemoryStream, your family can:"]
+   [:ul {:class "f4"}
+    [:li
+     [:p {:class "f4"} "Stream the videos on-demand to their computer or mobile device."]
+     [:p {:class "f5 i"} "No need to pass around massive video files or DVDs."]]
+    [:li
+     [:p {:class "f4"} "Highlight their favorite memories by adding notes."]
+     [:p {:class "f5 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
+    [:li
+     [:p {:class "f4"} "Find memories with a built-in notes search."]
+     [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
+   [:h2 {:class "f2"} "Get started"]
+   [:h3 {:class "f3"} "Pick a user name"]
+   [:p "TODO username picker goes here"]
+   [:input {:type :checkbox :name "TOS"}]
+   [:label {:for "TOS" } "I agree with the TODO TOS."]
+   [:button {:class "bn white bg-green pa3 ma2 dim" :on-click (partial purchase-handler :a)}
+    [:p {:class "f3 b"} "$15 first month, then $5/month afterwards"]
+    [:p {:class "f4"} "50 GB, up to 15 family members"]]
+   [:button {:class "bn white bg-green pa3 ma2 dim" :on-click (partial purchase-handler :b)}
+    [:p {:class "f3 b"} "$55/year"]
+    [:p {:class "f4"} "50 GB, up to 15 family members"]]
+   [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
+extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
    ])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
