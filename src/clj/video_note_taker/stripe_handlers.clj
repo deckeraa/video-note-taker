@@ -1,10 +1,15 @@
 (ns video-note-taker.stripe-handlers
   (:require
+   [clojure.data.json :as json]
+   [clojure.walk :refer [keywordize-keys]]
+   [ring.util.request :as request]
    [ring.util.json-response :refer [json-response]]
    [clj-stripe.common :as common]
    [clj-stripe.checkouts :as checkouts]
    [video-note-taker.util :refer [get-body]]
-   [video-note-taker.db :as db :refer [users-db]]))
+   [video-note-taker.db :as db :refer [users-db]])
+  (:import
+   com.stripe.net.ApiResource))
 
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
@@ -38,17 +43,26 @@
           (json-response {:status :taken})))
       (json-response {:status :invalid}))))
 
-;; (defn hooks [req]
-;;   (println "hooks: " req)
-;;   (let [body-str (request/body-string req)
-;;         sig-header (get-in req [:headers "stripe-signature"])]
-;;     (println "hooks body: " body-str)
-;;     (println "sig-header: " sig-header)
-;;     (try
-;;       (println "Checking signature")
-;;       (com.stripe.net.Webhook/constructEvent body-str (str sig-header) (System/getenv "STRIPE_SIGNING_SECRET"))
-;;       (println "Signature check passed!")
-;;       (json-response {:status "Web hook succeeded!"})
-;;       (catch com.stripe.exception.SignatureVerificationException e
-;;         (println "The signature was bad.")
-;;         {:status 500 :body "Bad request"}))))
+(defn hooks [req]
+  ;;(println "hooks: " req)
+  (let [body-str (request/body-string req)
+        body (keywordize-keys (json/read-str body-str))
+        sig-header (get-in req [:headers "stripe-signature"])
+        type (get body :type)]
+    (println "hooks type:" type)
+    
+    (if (or (= type "checkout.session.completed")
+            (= type "payment_intent.succeeded"))
+      (do
+        (println "hooks body: " body)
+        (println "sig-header: " sig-header)
+        (println "extracted username: " (get-in body [:data :object :metadata :username]))
+        (try
+          (println "Checking signature")
+          (com.stripe.net.Webhook/constructEvent body-str (str sig-header) (System/getenv "STRIPE_SIGNING_SECRET"))
+          (println "Signature check passed!")
+          (json-response {:status "Web hook succeeded!"})
+          (catch com.stripe.exception.SignatureVerificationException e
+            (println "The signature was bad.")
+            {:status 500 :body "Bad request"})))
+      (json-response {:status "Web hook not needed."}))))

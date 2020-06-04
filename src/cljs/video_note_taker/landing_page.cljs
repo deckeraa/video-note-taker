@@ -41,10 +41,10 @@
    (fn [resp raw-resp]
      (println "Stripe endpoint failed: " raw-resp))))
 
-(defn payment-button [loading-stripe-atom plan]
+(defn payment-button [loading-stripe-atom validated-username-atom plan]
   [:button {:class (str "bn white pa3 ma2 flex items-center "
                         (if @loading-stripe-atom "bg-light-green" "bg-green dim" ))
-            :on-click (partial purchase-handler loading-stripe-atom plan)}
+            :on-click (partial purchase-handler loading-stripe-atom validated-username-atom plan)}
          (if (= plan @loading-stripe-atom)
            [:div
             [:p {:class "f3 b"} "Loading Stripe payment page."]]
