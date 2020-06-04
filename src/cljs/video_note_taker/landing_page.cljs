@@ -62,40 +62,41 @@
   (let [check-ctr (reagent/atom 0)
         username-status (reagent/atom :none)]
     (fn []
-      [:div {:class "flex"}
-       [:p "User name: "]
-       [:input {:type :text :value @username-atom
-                :on-change
-                (fn [e]
-                  (let [username (-> e .-target .-value)]
-                    (if (empty? username)
-                      (reset! username-status :none)
-                      (reset! username-status nil))
-                    (reset! username-atom username)
-                    (reset! validated-username-atom nil)
-                    (swap! check-ctr inc)
-                    (js/setTimeout
-                     (fn []
-                       (let [username @username-atom]
-                         (when (and
-                                (= 0 (swap! check-ctr dec))
-                                (not (empty? username)))
-                           (do
-                             (reset! username-status :checking)
-                             (println "username check TODO" username)
-                             (db/post-to-endpoint
-                              "check-username" {:username username}
-                              (fn [resp]
-                                (case (keyword (:status resp))
-                                  :available
-                                  (do
-                                    (reset! username-status :validated)
-                                    (reset! validated-username-atom username))
-                                  :taken
-                                  (reset! username-status :taken)
-                                  :invalid
-                                  (reset! username-status :invalid))))))))
-                                   350)))}]
+      [:div {:class "flex flex-column"}
+       [:div {:class "flex"}
+        [:p {:class "ma1"} "Username: "]
+        [:input {:type :text :value @username-atom
+                 :on-change
+                 (fn [e]
+                   (let [username (-> e .-target .-value)]
+                     (if (empty? username)
+                       (reset! username-status :none)
+                       (reset! username-status nil))
+                     (reset! username-atom username)
+                     (reset! validated-username-atom nil)
+                     (swap! check-ctr inc)
+                     (js/setTimeout
+                      (fn []
+                        (let [username @username-atom]
+                          (when (and
+                                 (= 0 (swap! check-ctr dec))
+                                 (not (empty? username)))
+                            (do
+                              (reset! username-status :checking)
+                              (println "username check TODO" username)
+                              (db/post-to-endpoint
+                               "check-username" {:username username}
+                               (fn [resp]
+                                 (case (keyword (:status resp))
+                                   :available
+                                   (do
+                                     (reset! username-status :validated)
+                                     (reset! validated-username-atom username))
+                                   :taken
+                                   (reset! username-status :taken)
+                                   :invalid
+                                   (reset! username-status :invalid))))))))
+                      350)))}]]
        (case @username-status
          :none      [:p {:class ""}      "Please pick a username"]
          :checking  [:p {:class ""}      "Checking username..."]
@@ -104,9 +105,28 @@
          :validated [:p {:class "green"} "Username is available."]
          nil)])))
 
+(defn password-picker [password-atom]
+  (let [input-atm (reagent/atom "")]
+    (fn []
+      [:div {:class "flex flex-column"}
+       [:div {:class "flex"}
+        [:p {:class "ma1"} "Password: "]
+        [:input {:type :password :value @input-atm
+                 :on-change
+                 (fn [e]
+                   (let [value (-> e .-target .-value)]
+                     (reset! input-atm value)
+                     (when (> (count value) 4)
+                       (reset! password-atom value))))}]]
+       (cond
+         (empty? @input-atm) [:p {:class "red"} "Please pick a password"]
+         (empty? @password-atom) [:p {:class "red"} "Password must be at least four characters long"]
+         :default [:p ""])])))
+
 (defn my-page []
   (let [loading-stripe (reagent/atom false)
         username-atom (reagent/atom "")
+        password-atom (reagent/atom "")
         validated-username-atom (reagent/atom nil)]
     (fn []
       [:div {:class "h-100 flex flex-column"}
@@ -127,6 +147,7 @@
        [:h2 {:class "f2 ml1"} "Get started"]
        [:h3 {:class "f3 ml1"} "Pick a user name"]
        [user-name-picker username-atom validated-username-atom]
+       [password-picker password-atom]
        [:div
         [:input {:type :checkbox :name "TOS" :class "mr1"}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
