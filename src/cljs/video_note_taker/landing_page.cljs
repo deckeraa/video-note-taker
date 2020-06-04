@@ -26,7 +26,7 @@
 
 (def stripe-public-key "pk_test_SXM3FqTZVdax1V17XeTEgvCJ003ySTXbMq")
 
-(defn purchase-handler [loading-stripe-atom validated-username-atom plan e]
+(defn purchase-handler [loading-stripe-atom validated-username-atom password-atom plan e]
   (reset! loading-stripe-atom plan)
   (db/post-to-endpoint
    "create-checkout-session"
@@ -41,10 +41,14 @@
    (fn [resp raw-resp]
      (println "Stripe endpoint failed: " raw-resp))))
 
-(defn payment-button [loading-stripe-atom validated-username-atom plan]
+(defn payment-button [loading-stripe-atom validated-username-atom password-atom plan]
   [:button {:class (str "bn white pa3 ma2 flex items-center "
-                        (if @loading-stripe-atom "bg-light-green" "bg-green dim" ))
-            :on-click (partial purchase-handler loading-stripe-atom validated-username-atom plan)}
+                        (if (or @loading-stripe-atom
+                                (or (empty? @validated-username-atom)
+                                    (empty? @password-atom)))
+                          "bg-light-green"
+                          "bg-green dim" ))
+            :on-click (partial purchase-handler loading-stripe-atom validated-username-atom password-atom plan)}
          (if (= plan @loading-stripe-atom)
            [:div
             [:p {:class "f3 b"} "Loading Stripe payment page."]]
@@ -116,8 +120,9 @@
                  (fn [e]
                    (let [value (-> e .-target .-value)]
                      (reset! input-atm value)
-                     (when (> (count value) 4)
-                       (reset! password-atom value))))}]]
+                     (if (> (count value) 4)
+                       (reset! password-atom value)
+                       (reset! password-atom nil))))}]]
        (cond
          (empty? @input-atm) [:p {:class "red"} "Please pick a password"]
          (empty? @password-atom) [:p {:class "red"} "Password must be at least four characters long"]
@@ -152,8 +157,8 @@
         [:input {:type :checkbox :name "TOS" :class "mr1"}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
        [:div {:class "flex flex-row"}
-        [payment-button loading-stripe validated-username-atom :a]
-        [payment-button loading-stripe validated-username-atom :b]
+        [payment-button loading-stripe validated-username-atom password-atom :a]
+        [payment-button loading-stripe validated-username-atom password-atom :b]
         ]
        [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
