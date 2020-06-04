@@ -41,13 +41,14 @@
    (fn [resp raw-resp]
      (println "Stripe endpoint failed: " raw-resp))))
 
-(defn payment-button [loading-stripe-atom validated-username-atom password-atom plan]
+(defn payment-button [loading-stripe-atom validated-username-atom password-atom tos-atom plan]
   [:button {:class (str "bn white pa3 ma2 flex items-center "
                         (if (or @loading-stripe-atom
                                 (or (empty? @validated-username-atom)
-                                    (empty? @password-atom)))
+                                    (empty? @password-atom)
+                                    (not @tos-atom)))
                           "bg-light-green"
-                          "bg-green dim" ))
+                          "bg-green dim"))
             :on-click (partial purchase-handler loading-stripe-atom validated-username-atom password-atom plan)}
          (if (= plan @loading-stripe-atom)
            [:div
@@ -132,7 +133,8 @@
   (let [loading-stripe (reagent/atom false)
         username-atom (reagent/atom "")
         password-atom (reagent/atom "")
-        validated-username-atom (reagent/atom nil)]
+        validated-username-atom (reagent/atom nil)
+        tos-atom (reagent/atom false)]
     (fn []
       [:div {:class "h-100 flex flex-column"}
        [:div {:class "white bg-blue pl2-ns"}
@@ -154,11 +156,14 @@
        [user-name-picker username-atom validated-username-atom]
        [password-picker password-atom]
        [:div
-        [:input {:type :checkbox :name "TOS" :class "mr1"}]
+        [:input {:type :checkbox :name "TOS" :class "mr1"
+                 :checked @tos-atom
+                 :on-change (fn [e]
+                              (reset! tos-atom (-> e .-target .-checked)))}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
        [:div {:class "flex flex-row"}
-        [payment-button loading-stripe validated-username-atom password-atom :a]
-        [payment-button loading-stripe validated-username-atom password-atom :b]
+        [payment-button loading-stripe validated-username-atom password-atom tos-atom :a]
+        [payment-button loading-stripe validated-username-atom password-atom tos-atom :b]
         ]
        [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
