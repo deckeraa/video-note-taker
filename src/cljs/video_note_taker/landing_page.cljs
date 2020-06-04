@@ -31,7 +31,8 @@
   (db/post-to-endpoint
    "create-checkout-session"
    {:plan plan
-    :username @validated-username-atom}
+    :username @validated-username-atom
+    :password @password-atom}
    (fn [resp]
      (println "resp:" resp)
      (let [id (:id resp)]
