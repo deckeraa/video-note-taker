@@ -26,11 +26,12 @@
 
 (def stripe-public-key "pk_test_SXM3FqTZVdax1V17XeTEgvCJ003ySTXbMq")
 
-(defn purchase-handler [loading-stripe-atom plan e]
+(defn purchase-handler [loading-stripe-atom validated-username-atom plan e]
   (reset! loading-stripe-atom plan)
   (db/post-to-endpoint
    "create-checkout-session"
-   {:plan plan}
+   {:plan plan
+    :username @validated-username-atom}
    (fn [resp]
      (println "resp:" resp)
      (let [id (:id resp)]
@@ -130,8 +131,8 @@
         [:input {:type :checkbox :name "TOS" :class "mr1"}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
        [:div {:class "flex flex-row"}
-        [payment-button loading-stripe :a]
-        [payment-button loading-stripe :b]
+        [payment-button loading-stripe validated-username-atom :a]
+        [payment-button loading-stripe validated-username-atom :b]
         ]
        [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]

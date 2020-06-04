@@ -9,9 +9,11 @@
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
         secret-key (System/getenv "STRIPE_SECRET_KEY")
-        plan (keyword (:plan body))]
+        plan (keyword (:plan body))
+        username (:username body)]
     (println "Using STRIPE_SECRET_KEY: " secret-key)
     (println "plan: " plan)
+    (println "username: " username)
     (json-response 
      (common/with-token secret-key
        (common/execute
@@ -22,7 +24,8 @@
            [{:price-id "price_HOOdnszH3OSHgU"           :quantity 1}])
          "subscription"
          "http://localhost:3450/memories.html"
-         "http://localhost:3450/?cancel=true"))))))
+         "http://localhost:3450/?cancel=true"
+         {"username" username}))))))
 
 (defn check-username-handler [req]
   (let [body (get-body req)
@@ -34,3 +37,18 @@
           (json-response {:status :available})
           (json-response {:status :taken})))
       (json-response {:status :invalid}))))
+
+;; (defn hooks [req]
+;;   (println "hooks: " req)
+;;   (let [body-str (request/body-string req)
+;;         sig-header (get-in req [:headers "stripe-signature"])]
+;;     (println "hooks body: " body-str)
+;;     (println "sig-header: " sig-header)
+;;     (try
+;;       (println "Checking signature")
+;;       (com.stripe.net.Webhook/constructEvent body-str (str sig-header) (System/getenv "STRIPE_SIGNING_SECRET"))
+;;       (println "Signature check passed!")
+;;       (json-response {:status "Web hook succeeded!"})
+;;       (catch com.stripe.exception.SignatureVerificationException e
+;;         (println "The signature was bad.")
+;;         {:status 500 :body "Bad request"}))))
