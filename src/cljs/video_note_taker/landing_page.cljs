@@ -42,26 +42,29 @@
      (println "Stripe endpoint failed: " raw-resp))))
 
 (defn payment-button [loading-stripe-atom validated-username-atom password-atom tos-atom plan]
-  [:button {:class (str "bn white pa3 ma2 flex items-center "
-                        (if (or @loading-stripe-atom
+  (let [payment-button-inactive (or @loading-stripe-atom
                                 (or (empty? @validated-username-atom)
                                     (empty? @password-atom)
-                                    (not @tos-atom)))
-                          "bg-light-green"
-                          "bg-green dim"))
-            :on-click (partial purchase-handler loading-stripe-atom validated-username-atom password-atom plan)}
-         (if (= plan @loading-stripe-atom)
-           [:div
-            [:p {:class "f3 b"} "Loading Stripe payment page."]]
-           [:<>
-            [:div {:class "mr1"}
-             [:p {:class "f3 b"}
-              (case plan
-                :a "$15 first month, then $5/month afterwards"
-                :b "$55/year"
-                "Undefined payment plan")]
-             [:p {:class "f4"} "50 GB, up to 15 family members"]]
-            [svg/chevron-right {} "white" "64px"]])])
+                                    (not @tos-atom)))]
+    [:button {:class (str "bn white pa3 ma2 flex items-center "
+                          (if payment-button-inactive
+                            "bg-light-green"
+                            "bg-green dim"))
+              :on-click (fn [e]
+                          (when (not payment-button-inactive)
+                            (purchase-handler loading-stripe-atom validated-username-atom password-atom plan e)))}
+     (if (= plan @loading-stripe-atom)
+       [:div
+        [:p {:class "f3 b"} "Loading Stripe payment page."]]
+       [:<>
+        [:div {:class "mr1"}
+         [:p {:class "f3 b"}
+          (case plan
+            :a "$15 first month, then $5/month afterwards"
+            :b "$55/year"
+            "Undefined payment plan")]
+         [:p {:class "f4"} "50 GB, up to 15 family members"]]
+        [svg/chevron-right {} "white" "64px"]])]))
 
 (defn user-name-picker [username-atom validated-username-atom]
   (let [check-ctr (reagent/atom 0)
