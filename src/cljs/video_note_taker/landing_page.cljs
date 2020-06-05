@@ -145,7 +145,7 @@
         [:p  {:class "f1 ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]
         [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
        [:p  {:class "f4 ml1"} "When you host your family videos with FamilyMemoryStream, your family can:"]
-       [:div {:class "flex flex-row"}
+       [:div {:class "flex flex-column flex-row-ns justify-between-ns"}
         [:div {:class "flex flex-column items-center pa3"}
          [:img {:src "http://placekitten.com/100/100"}]
          [:p {:class "f4 ma1"} "Stream videos to their computer or mobile device."]
