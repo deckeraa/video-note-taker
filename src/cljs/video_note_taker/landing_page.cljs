@@ -145,16 +145,19 @@
         [:p  {:class "f1 ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]
         [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
        [:p  {:class "f4 ml1"} "When you host your family videos with FamilyMemoryStream, your family can:"]
-       [:ul {:class "f4"}
-        [:li
-         [:p {:class "f4"} "Stream the videos on-demand to their computer or mobile device."]
-         [:p {:class "f5 i"} "No need to pass around massive video files or DVDs."]]
-        [:li
-         [:p {:class "f4"} "Highlight their favorite memories by adding notes."]
-         [:p {:class "f5 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
-        [:li
-         [:p {:class "f4"} "Find memories with a built-in notes search."]
-         [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
+       [:div {:class "flex flex-row"}
+        [:div {:class "flex flex-column items-center pa3"}
+         [:img {:src "http://placekitten.com/100/100"}]
+         [:p {:class "f4 ma1"} "Stream videos to their computer or mobile device."]
+         [:p {:class "f5 ma1 i"} "No need to pass around massive video files or DVDs."]]
+        [:div {:class "flex flex-column items-center pa3"}
+         [:img {:src "http://placekitten.com/100/100"}]
+         [:p {:class "f4 ma1"} "Highlight their favorite memories by adding notes."]
+         [:p {:class "f5 ma1 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
+        [:div {:class "flex flex-column items-center pa3"}
+         [:img {:src "http://placekitten.com/100/100"}]
+         [:p {:class "f4 ma1"} "Find memories with a built-in notes search."]
+         [:p {:class "f5 ma1 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
        [:h2 {:class "f2 ml1"} "Get started"]
        [user-name-picker username-atom validated-username-atom]
        [password-picker password-atom]
