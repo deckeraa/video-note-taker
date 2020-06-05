@@ -71,7 +71,7 @@
   (let [check-ctr (reagent/atom 0)
         username-status (reagent/atom :none)]
     (fn []
-      [:div {:class "flex flex-column"}
+      [:div {:class "flex items-center"}
        [:div {:class "flex"}
         [:p {:class "ma1"} "Username: "]
         [:input {:type :text :value @username-atom
@@ -117,7 +117,7 @@
 (defn password-picker [password-atom]
   (let [input-atm (reagent/atom "")]
     (fn []
-      [:div {:class "flex flex-column"}
+      [:div {:class "flex items-center"}
        [:div {:class "flex"}
         [:p {:class "ma1"} "Password: "]
         [:input {:type :password :value @input-atm
@@ -129,9 +129,9 @@
                        (reset! password-atom value)
                        (reset! password-atom nil))))}]]
        (cond
-         (empty? @input-atm) [:p {:class "red"} "Please pick a password"]
+         (empty? @input-atm) [:p {:class ""} "Please pick a password"]
          (empty? @password-atom) [:p {:class "red"} "Password must be at least four characters long"]
-         :default [:p ""])])))
+         :default [svg/check {:class "ma1"} "green" "24px"])])))
 
 (defn my-page []
   (let [loading-stripe (reagent/atom false)
@@ -156,7 +156,6 @@
          [:p {:class "f4"} "Find memories with a built-in notes search."]
          [:p {:class "f5 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
        [:h2 {:class "f2 ml1"} "Get started"]
-       [:h3 {:class "f3 ml1"} "Pick a user name"]
        [user-name-picker username-atom validated-username-atom]
        [password-picker password-atom]
        [:div
