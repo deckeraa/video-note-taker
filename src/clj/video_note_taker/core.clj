@@ -489,7 +489,7 @@
       (if (= (:body resp) "false")
         (warn "Unsuccessful login attempt from" (:remote-addr req))
         (info "Successful login for" (get-in resp [:body]) "at" (:remote-addr req))
-)
+        )
       resp)))
 
 (def api-routes

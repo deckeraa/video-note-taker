@@ -105,7 +105,7 @@
           [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
            (if @creating-new-user?
              "Couldn't create new user :("
-             "Login failed :(")])
+             "Login failed or user not yet created :(")])
         (when @can't-set-cookie-atm
           [:div {:class "f3 br1 white bg-red b tc pa3 ma3"}
            "Sucessfully logged in but could not set the authorization cookie.
