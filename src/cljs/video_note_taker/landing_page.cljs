@@ -148,17 +148,17 @@
         [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
        [:p  {:class "f4 ml1 tc"} "When you host your family videos with FamilyMemoryStream, your family can:"]
        [:div {:class "flex flex-column flex-row-ns justify-between-ns"}
-        [:div {:class "flex flex-column items-center pa3"}
+        [:div {:class "flex flex-column items-center pa3 ma3-ns"}
          [:img {:src "streaming_icon.svg" :width "64px" :height "64px"}]
          [:p {:class "f4 ma1"} "Stream videos to their computer or mobile device."]
          [:p {:class "f5 ma1 i"} "No need to pass around massive video files or DVDs."]]
-        [:div {:class "flex flex-column items-center pa3"}
+        [:div {:class "flex flex-column items-center pa3 ma3-ns"}
          [:img {:src "note_taking_icon.svg" :width "64px" :height "64px"}]
          [:p {:class "f4 ma1"} "Highlight their favorite memories by adding notes."]
          [:p {:class "f5 ma1 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
-        [:div {:class "flex flex-column items-center pa3"}
+        [:div {:class "flex flex-column items-center pa3 ma3-ns"}
          [:img {:src "magnifying_glass.svg" :width "64px" :height "64px"}]
-         [:p {:class "f4 ma1"} "Find memories with a built-in notes search."]
+         [:p {:class "f4 ma1"} "Find memories with built-in search."]
          [:p {:class "f5 ma1 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
        [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
        [user-name-picker username-atom validated-username-atom]
