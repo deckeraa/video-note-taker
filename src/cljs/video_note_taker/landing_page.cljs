@@ -162,7 +162,7 @@
        [:h2 {:class "f2 ml1"} "Get started"]
        [user-name-picker username-atom validated-username-atom]
        [password-picker password-atom]
-       [:div
+       [:div {:class "ma1"}
         [:input {:type :checkbox :name "TOS" :class "mr1"
                  :checked @tos-atom
                  :on-change (fn [e]
@@ -172,7 +172,7 @@
         [payment-button loading-stripe validated-username-atom password-atom tos-atom :a]
         [payment-button loading-stripe validated-username-atom password-atom tos-atom :b]
         ]
-       [:p {:class "f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
+       [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
        ])))
 
