@@ -139,7 +139,8 @@
         username-atom (reagent/atom "")
         password-atom (reagent/atom "")
         validated-username-atom (reagent/atom nil)
-        tos-atom (reagent/atom false)]
+        tos-checked-atom (reagent/atom false)
+        show-tos (reagent/atom false)]
     (fn []
       [:div {:class "h-100 flex flex-column"}
        [:div {:class "white bg-blue pl2-ns"}
@@ -164,16 +165,44 @@
        [password-picker password-atom]
        [:div {:class "ma1"}
         [:input {:type :checkbox :name "TOS" :class "mr1"
-                 :checked @tos-atom
+                 :checked @tos-checked-atom
                  :on-change (fn [e]
-                              (reset! tos-atom (-> e .-target .-checked)))}]
-        [:label {:for "TOS" } "I agree with the TODO TOS."]]
+                              (reset! tos-checked-atom (-> e .-target .-checked)))}]
+        [:label {:for "TOS" }
+         "I agree with the "
+         [:a {:class "link underline blue hover-orange"
+              :on-click (fn [e]
+                          (reset! show-tos true)
+                          )}
+          "Terms of Service"]
+         "."]]
        [:div {:class "flex flex-row flex-wrap"}
-        [payment-button loading-stripe validated-username-atom password-atom tos-atom :a]
-        [payment-button loading-stripe validated-username-atom password-atom tos-atom :b]
+        [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :a]
+        [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :b]
         ]
        [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
+       (when @show-tos
+         [:div {:class "fixed top-2 left-1 br3 bg-white shadow-3 pa1"}
+          [:p {:class "f2 ma0 pa0"} "Terms of Service:"]
+          [svg/x {:class "ml3 dim absolute top-1 right-1"
+                  :on-click (fn [e] (reset! show-tos false))} "red" "24"]
+          [:ul {:class "f3"}
+           [:li "FamilyMemoryStore will " [:b "not"] " sell or share your data with other third parties."]
+           [:li "Do not store any of the following:"
+            [:ul
+             [:li "Pornography"]
+             [:li "Protected Health Information (PHI) and files that require a security clearance."]
+             [:li "Files considered to be criminal by the U.S. government."]]
+            "FamilyMemoryStore reserves the right to delete content that violates this."]
+           [:li "FamilyMemoryStore may view user-submitted data such as videos as notes for the purposes of: "
+            [:ul
+             [:li "(1) debugging"]
+             [:li "(2) verifying that uploaded content does not violate the TOS."]]]
+           [:li "Videos are stored by Digital Ocean "
+            [:a {:href "https://www.digitalocean.com/docs/spaces/"} "Spaces"]
+            ". Nevertheless, we encourage you to keep your own backups." ]
+           [:li "This service can be cancelled at any time inside the app or by emailing aaron@stronganchortech.com ."]]])
        ])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
