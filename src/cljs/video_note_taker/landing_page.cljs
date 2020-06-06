@@ -168,7 +168,7 @@
                  :on-change (fn [e]
                               (reset! tos-atom (-> e .-target .-checked)))}]
         [:label {:for "TOS" } "I agree with the TODO TOS."]]
-       [:div {:class "flex flex-row"}
+       [:div {:class "flex flex-row flex-wrap"}
         [payment-button loading-stripe validated-username-atom password-atom tos-atom :a]
         [payment-button loading-stripe validated-username-atom password-atom tos-atom :b]
         ]
