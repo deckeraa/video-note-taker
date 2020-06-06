@@ -159,7 +159,7 @@
          [:img {:src "magnifying_glass.svg" :width "64px" :height "64px"}]
          [:p {:class "f4 ma1"} "Find memories with a built-in notes search."]
          [:p {:class "f5 ma1 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
-       [:h2 {:class "f2 ml1"} "Get started"]
+       [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
        [user-name-picker username-atom validated-username-atom]
        [password-picker password-atom]
        [:div {:class "ma1"}
