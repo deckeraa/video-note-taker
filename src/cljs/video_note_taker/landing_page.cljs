@@ -56,7 +56,8 @@
                             (purchase-handler loading-stripe-atom validated-username-atom password-atom plan e)))}
      (if (= plan @loading-stripe-atom)
        [:div
-        [:p {:class "f3 b"} "Loading Stripe payment page."]]
+        [:img {:src "tapefish_animation.gif" :width "200px"}]
+        [:p {:class "f3 b"} "Loading Stripe payment page..."]]
        [:<>
         [:div {:class "mr1"}
          [:p {:class "f3 b"}
