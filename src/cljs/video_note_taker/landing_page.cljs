@@ -183,7 +183,7 @@
        [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
        (when @show-tos
-         [:div {:class "fixed top-2 left-1 br3 bg-white shadow-3 pa1"}
+         [:div {:class "fixed top-1 left-1 br3 bg-white shadow-3 pa1"}
           [:p {:class "f2 ma0 pa0"} "Terms of Service:"]
           [svg/x {:class "ml3 dim absolute top-1 right-1"
                   :on-click (fn [e] (reset! show-tos false))} "red" "24"]
