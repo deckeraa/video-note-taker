@@ -86,7 +86,7 @@
           (let [username (get-in body [:data :object :metadata :username])
                 password (get-in @temp-users-db [username])]
             (println "username, password: " username password)
-            (if (auth/create-user username password)
+            (if (auth/create-user username password ["family_lead"] {:gb-limit 50})
               (do
                 (swap! temp-users-db dissoc username)
                 (json-response {:status "Web hook succeeded!"}))

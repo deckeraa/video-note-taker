@@ -128,7 +128,7 @@
                  (fn [e]
                    (let [value (-> e .-target .-value)]
                      (reset! input-atm value)
-                     (if (> (count value) 4)
+                     (if (>= (count value) 4)
                        (reset! password-atom value)
                        (reset! password-atom nil))))}]]
        (cond
