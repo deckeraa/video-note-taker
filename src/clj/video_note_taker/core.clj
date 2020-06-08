@@ -495,6 +495,7 @@
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
         ["memories" (fn [req]
+                      (println "req: " req)
                       (content-type
                        (file-response "memories.html" {:root "resources/public/"})
                        "text/html"))]

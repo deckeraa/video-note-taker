@@ -24,6 +24,15 @@
     (json-response (keys @temp-users-db))
     (not-authorized-response)))
 
+(defn get-endpoint
+  "Example output: http://localhost:3000/memories"
+  [req endpoint]
+  (str (name (:scheme req))
+       "://"
+       (get-in req [:headers "host"])
+       "/"
+       endpoint))
+
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
         stripe-mode (System/getenv "STRIPE_MODE")
@@ -38,6 +47,7 @@
     (println "plan: " plan)
     (println "username: " username)
     (println "password: " password)
+    (println "success-url: " (get-endpoint req "memories"))
     (swap! temp-users-db assoc username password)
     (if stripe-mode
       (json-response 
@@ -49,8 +59,8 @@
               {:price-id "price_1GpxiCBo2Vr1t1SegLl0iU1K" :quantity 1}]
              [{:price-id "price_HOOdnszH3OSHgU"           :quantity 1}])
            "subscription"
-           "http://localhost:3450/memories.html"
-           "http://localhost:3450/?cancel=true"
+           (get-endpoint req "memories")
+           (get-endpoint req "?cancel=true")
            {"username" username}))))
       (json-response {:status "failed" :reason "STRIPE_MODE is not set."}))))
 
