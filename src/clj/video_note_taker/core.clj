@@ -541,7 +541,6 @@
   [handler]
   (fn [req]
     (let [resp (handler req)]
-      (println "wrap-index: " resp)
       (if resp
         resp
         (if (= (:uri req) "/")
