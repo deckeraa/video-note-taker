@@ -3,7 +3,7 @@
    [clojure.test :refer [deftest is run-tests]]
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
-   [ring.util.response :as response :refer [file-response content-type]]
+   [ring.util.response :as response :refer [file-response content-type response]]
    [ring.util.request :as request]
    [ring.util.json-response :refer [json-response]]
    [ring.middleware.cors :refer [wrap-cors]]
@@ -541,10 +541,19 @@
   [handler]
   (fn [req]
     (let [resp (handler req)]
+      (println "wrap-index: " resp)
       (if resp
         resp
         (if (= (:uri req) "/")
-          (content-type (file-response "index.html" {:root "resources/public"}) "text/html")
+          (content-type
+           (response
+            (clojure.string/replace
+             (slurp "./resources/public/index.html")
+             "PAGEINFO"
+             (pr-str {:stripe-mode "test"})
+             ))
+           ;(file-response "index.html" {:root "resources/public"})
+           "text/html")
           (response/not-found "Not found"))))))
 
 (defn wrap-println
@@ -552,7 +561,7 @@
   [handler caption]
   (fn [req]
     (let [resp (handler req)]
-      (info caption resp)
+      (println caption resp)
       resp)))
 
 (defn wrap-print-req

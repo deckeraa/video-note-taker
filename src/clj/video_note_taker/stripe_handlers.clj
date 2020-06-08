@@ -26,7 +26,7 @@
 
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
-        secret-key (System/getenv "STRIPE_SECRET_KEY")
+        secret-key (System/getenv "STRIPE_SECRET_KEY_TEST")
         plan (keyword (:plan body))
         username (:username body)
         password (:password body)]
@@ -74,7 +74,7 @@
 ;;        (println "extracted username: " )
         (try
           (println "Checking signature")
-          (com.stripe.net.Webhook/constructEvent body-str (str sig-header) (System/getenv "STRIPE_SIGNING_SECRET"))
+          (com.stripe.net.Webhook/constructEvent body-str (str sig-header) (System/getenv "STRIPE_WEBHOOK_SIGNING_SECRET_TEST"))
           (println "Signature check passed!")
           (println "temp-users-db: " @temp-users-db)
           (let [username (get-in body [:data :object :metadata :username])

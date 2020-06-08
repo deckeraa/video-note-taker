@@ -26,6 +26,8 @@
 
 (def stripe-public-key "pk_test_SXM3FqTZVdax1V17XeTEgvCJ003ySTXbMq")
 
+(def pageinfo-atom (reagent/atom {}))
+
 (defn purchase-handler [loading-stripe-atom validated-username-atom password-atom plan e]
   (reset! loading-stripe-atom plan)
   (db/post-to-endpoint
@@ -182,6 +184,7 @@
         ]
        [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
+       ;[:p (str (:stripe-mode @pageinfo-atom))]
        (when @show-tos
          [:div {:class "fixed top-1 left-1 br3 bg-white shadow-3 pa1"}
           [:p {:class "f2 ma0 pa0"} "Terms of Service:"]
@@ -216,6 +219,7 @@ extra $5 a month, so you would pay $20 the first month and $10/month afterwards.
 
 (defn reload []
   (println "landing-page.cljs")
+  (reset! pageinfo-atom (cljs.reader/read-string (.-textContent (.getElementById js/document "pageinfo"))))
   (reagent.dom/render [my-page atoms/app-state]
                       (.getElementById js/document "app")))
 
