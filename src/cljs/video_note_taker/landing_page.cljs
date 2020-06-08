@@ -144,24 +144,7 @@
         tos-checked-atom (reagent/atom false)
         show-tos (reagent/atom false)]
     (fn []
-      [:div {:class "h-100 flex flex-column"}
-       [:div {:class "white bg-blue pl2-ns"}
-        [:p  {:class "f1 ma0"} "Family" [:wbr] "Memory" [:wbr] "Stream"]
-        [:p  {:class "f3 i ma1"} "Helping your family reminisce together"]]
-       [:p  {:class "f4 ml1 tc"} "When you host your family videos with FamilyMemoryStream, your family can:"]
-       [:div {:class "flex flex-column flex-row-ns justify-between-ns"}
-        [:div {:class "flex flex-column items-center pa3 ma3-ns"}
-         [:img {:src "streaming_icon.svg" :width "64px" :height "64px"}]
-         [:p {:class "f4 ma1"} "Stream videos to their computer or mobile device."]
-         [:p {:class "f5 ma1 i"} "No need to pass around massive video files or DVDs."]]
-        [:div {:class "flex flex-column items-center pa3 ma3-ns"}
-         [:img {:src "note_taking_icon.svg" :width "64px" :height "64px"}]
-         [:p {:class "f4 ma1"} "Highlight their favorite memories by adding notes."]
-         [:p {:class "f5 ma1 i"} "Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories."]]
-        [:div {:class "flex flex-column items-center pa3 ma3-ns"}
-         [:img {:src "magnifying_glass.svg" :width "64px" :height "64px"}]
-         [:p {:class "f4 ma1"} "Find memories with built-in search."]
-         [:p {:class "f5 ma1 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
+      [:<>
        (if (:stripe-mode @pageinfo-atom)
          [:<>
           [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
@@ -187,7 +170,6 @@
           [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]]
          [:p "Contact aaron@stronganchortech.com to get started."])
-       ;[:p (str (:stripe-mode @pageinfo-atom))]
        (when @show-tos
          [:div {:class "fixed top-1 left-1 br3 bg-white shadow-3 pa1"}
           [:p {:class "f2 ma0 pa0"} "Terms of Service:"]
@@ -224,7 +206,7 @@ extra $5 a month, so you would pay $20 the first month and $10/month afterwards.
   (println "landing-page.cljs")
   (reset! pageinfo-atom (cljs.reader/read-string (.-textContent (.getElementById js/document "pageinfo"))))
   (reagent.dom/render [my-page atoms/app-state]
-                      (.getElementById js/document "app")))
+                      (.getElementById js/document "dynamic-content")))
 
 (defn ^:export landing-page []
   (dev-setup)
