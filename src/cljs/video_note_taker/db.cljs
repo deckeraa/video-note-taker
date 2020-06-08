@@ -14,7 +14,7 @@
 
 (defn get-server-url
   ([]
-   (get-server-url (str (.-location js/window))))
+   (get-server-url (str (.-origin (.-location js/window)) "/")))
   ([url]
    (if (re-matches #".*:3450.*" url)
      "http://localhost:3000/"
