@@ -494,7 +494,10 @@
 
 (def api-routes
   ["/" [[["videos/" :id]  (wrap-cookie-auth videos-handler)]
-        ["memories" (file-response "./memories.html")]
+        ["memories" (fn [req]
+                      (content-type
+                       (file-response "memories.html" {:root "resources/public/"})
+                       "text/html"))]
         ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler db access/get-hook-fn))]
         ["bulk-get-doc" (wrap-cookie-auth (partial db/bulk-get-doc-handler db access/get-hook-fn))]
         ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler db access/put-hook-fn))]
@@ -526,14 +529,6 @@
         ["check-username" stripe-handlers/check-username-handler]
         ["hooks" stripe-handlers/hooks]
         ["get-temp-users" (wrap-cookie-auth stripe-handlers/get-temp-users-handler)]
-        ;; ["hello" (fn [req]
-        ;;            (json-response
-        ;;             (.toString (s3/generate-presigned-url
-        ;;                         :bucket-name "vnt-spaces-0"
-        ;;                         :key "brick_building_falling_down.jpg"
-        ;;                         :expiration (coerce/to-date (-> 30 time/seconds time/from-now))
-        ;;                         :method "GET"
-        ;;                         ))))]
         ]])
 
 (defn wrap-index
