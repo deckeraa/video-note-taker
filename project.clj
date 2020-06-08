@@ -25,7 +25,7 @@
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [ring-partial-content "1.0.0"]
                  [cljc.java-time "0.1.8"]
-                 [com.stronganchortech/couchdb-auth-for-ring "1.0.3"]
+                 [com.stronganchortech/couchdb-auth-for-ring "1.0.3-SNAPSHOT"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha5"]
                  [amazonica "0.3.152" :exclusions [com.amazonaws/aws-java-sdk
                                                    com.amazonaws/amazon-kinesis-client
