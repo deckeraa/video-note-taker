@@ -549,9 +549,9 @@
             (clojure.string/replace
              (slurp "./resources/public/index.html")
              "PAGEINFO"
-             (pr-str {:stripe-mode (System/getenv "STRIPE_MODE")})
+             (pr-str {:stripe-mode (System/getenv "STRIPE_MODE")
+                      :landing-page-video-url (System/getenv "LANDING_PAGE_VIDEO_URL")})
              ))
-           ;(file-response "index.html" {:root "resources/public"})
            "text/html")
           (response/not-found "Not found"))))))
 
