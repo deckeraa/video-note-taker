@@ -550,7 +550,7 @@
             (clojure.string/replace
              (slurp "./resources/public/index.html")
              "PAGEINFO"
-             (pr-str {:stripe-mode "test"})
+             (pr-str {:stripe-mode (System/getenv "STRIPE_MODE")})
              ))
            ;(file-response "index.html" {:root "resources/public"})
            "text/html")

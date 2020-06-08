@@ -162,28 +162,31 @@
          [:img {:src "magnifying_glass.svg" :width "64px" :height "64px"}]
          [:p {:class "f4 ma1"} "Find memories with built-in search."]
          [:p {:class "f5 ma1 i"} "Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips."]]]
-       [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
-       [user-name-picker username-atom validated-username-atom]
-       [password-picker password-atom]
-       [:div {:class "ma1"}
-        [:input {:type :checkbox :name "TOS" :class "mr1"
-                 :checked @tos-checked-atom
-                 :on-change (fn [e]
-                              (reset! tos-checked-atom (-> e .-target .-checked)))}]
-        [:label {:for "TOS" }
-         "I agree with the "
-         [:a {:class "link underline blue hover-orange"
-              :on-click (fn [e]
-                          (reset! show-tos true)
-                          )}
-          "Terms of Service"]
-         "."]]
-       [:div {:class "flex flex-row flex-wrap"}
-        [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :a]
-        [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :b]
-        ]
-       [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
-extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]
+       (if (:stripe-mode @pageinfo-atom)
+         [:<>
+          [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
+          [user-name-picker username-atom validated-username-atom]
+          [password-picker password-atom]
+          [:div {:class "ma1"}
+           [:input {:type :checkbox :name "TOS" :class "mr1"
+                    :checked @tos-checked-atom
+                    :on-change (fn [e]
+                                 (reset! tos-checked-atom (-> e .-target .-checked)))}]
+           [:label {:for "TOS" }
+            "I agree with the "
+            [:a {:class "link underline blue hover-orange"
+                 :on-click (fn [e]
+                             (reset! show-tos true)
+                             )}
+             "Terms of Service"]
+            "."]]
+          [:div {:class "flex flex-row flex-wrap"}
+           [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :a]
+           [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :b]
+           ]
+          [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
+extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]]
+         [:p "Contact aaron@stronganchortech.com to get started."])
        ;[:p (str (:stripe-mode @pageinfo-atom))]
        (when @show-tos
          [:div {:class "fixed top-1 left-1 br3 bg-white shadow-3 pa1"}
