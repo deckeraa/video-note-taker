@@ -26,29 +26,33 @@
 
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
-        secret-key (if (= "live" (System/getenv "STRIPE_MODE"))
+        stripe-mode (System/getenv "STRIPE_MODE")
+        secret-key (if (= "live" stripe-mode)
                      (System/getenv "STRIPE_SECRET_KEY_LIVE")
                      (System/getenv "STRIPE_SECRET_KEY_TEST"))
         plan (keyword (:plan body))
         username (:username body)
         password (:password body)]
+    (println "In STRIPE_MODE: " stripe-mode)
     (println "Using STRIPE_SECRET_KEY: " secret-key)
     (println "plan: " plan)
     (println "username: " username)
     (println "password: " password)
     (swap! temp-users-db assoc username password)
-    (json-response 
-     (common/with-token secret-key
-       (common/execute
-        (checkouts/create-checkout-session
-         (if (= :a plan)
-           [{:price-id "price_HOOd5cGclxAn2v"           :quantity 1}
-            {:price-id "price_1GpxiCBo2Vr1t1SegLl0iU1K" :quantity 1}]
-           [{:price-id "price_HOOdnszH3OSHgU"           :quantity 1}])
-         "subscription"
-         "http://localhost:3450/memories.html"
-         "http://localhost:3450/?cancel=true"
-         {"username" username}))))))
+    (if stripe-mode
+      (json-response 
+       (common/with-token secret-key
+         (common/execute
+          (checkouts/create-checkout-session
+           (if (= :a plan)
+             [{:price-id "price_HOOd5cGclxAn2v"           :quantity 1}
+              {:price-id "price_1GpxiCBo2Vr1t1SegLl0iU1K" :quantity 1}]
+             [{:price-id "price_HOOdnszH3OSHgU"           :quantity 1}])
+           "subscription"
+           "http://localhost:3450/memories.html"
+           "http://localhost:3450/?cancel=true"
+           {"username" username}))))
+      (json-response {:status "failed" :reason "STRIPE_MODE is not set."}))))
 
 (defn check-username-handler [req]
   (let [body (get-body req)
