@@ -189,7 +189,15 @@
                             emit(doc.users[idx],doc._id);
                          }
                       }
-                    }"}}
+                    }"}
+                   :content_length_by_user
+                   {:map "function (doc) {
+                             if( doc.type === \"video\" && doc[\"content-length\"]) {
+                                emit(doc[\"uploaded-by\"], doc[\"content-length\"]);
+                             }
+                          }"
+                    :reduce "_sum"
+                    }}
                   :language "javascript"}
                  username roles)
         (catch Exception e
