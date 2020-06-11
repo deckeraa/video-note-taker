@@ -84,7 +84,7 @@
               [video atoms/video-ref-cursor atoms/video-cursor atoms/video-options-cursor]
               [notes/notes notes-cursor atoms/video-ref-cursor atoms/video-cursor atoms/video-options-cursor]])
            (when (= :settings (peek @atoms/screen-cursor))
-             [settings/settings atoms/settings-cursor atoms/login-cursor atoms/notes-cursor atoms/video-listing-cursor atoms/video-cursor atoms/screen-cursor atoms/uploads-cursor])
+             [settings/settings atoms/settings-cursor atoms/login-cursor atoms/notes-cursor atoms/video-listing-cursor atoms/video-cursor atoms/screen-cursor atoms/uploads-cursor atoms/user-cursor])
            (when (:show-app-state @atoms/settings-cursor)
              [:p (str @ratom)])
            [toaster-oven/toaster-control]

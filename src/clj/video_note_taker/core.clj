@@ -508,6 +508,14 @@
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
+(defn get-user-usage-handler
+  "Returns the user's storage usage in bytes"
+  [req username roles]
+  (let [view-resp (db/get-view db nil "videos" "content_length_by_user" {:key username} nil nil nil)]
+    (json-response (-> view-resp
+                       (first)
+                       (:value)))))
+
 (defn wrap-login [handler]
   (fn [req]
     (let [resp (handler req)]
@@ -555,6 +563,7 @@
         ["check-username" stripe-handlers/check-username-handler]
         ["hooks" stripe-handlers/hooks]
         ["get-temp-users" (wrap-cookie-auth stripe-handlers/get-temp-users-handler)]
+        ["get-user-usage" (wrap-cookie-auth get-user-usage-handler)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"
         ;;                  metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key id)]

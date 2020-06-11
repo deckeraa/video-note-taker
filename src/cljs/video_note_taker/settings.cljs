@@ -34,13 +34,31 @@
   [:div {}
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
 
-(defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
+(defn usage-monitor [user-cursor]
+  (let [current-usage-atom (reagent/atom nil)]
+    (db/put-endpoint-in-atom "get-user-usage" {} current-usage-atom)
+    (fn []
+      (if @current-usage-atom
+        [:div
+         [:div {:class "f3"}
+          "You are using "
+          (/ (Math/round (/ @current-usage-atom 10000000)) 100)
+          " GB"
+          (when-let [gb-limit (:gb-limit @user-cursor)]
+            [:<>
+             " of your " gb-limit " GB"])
+          " of storage."]
+         [:div {:class "f4 i"} "Recent uploads may not yet be reflected in the calculated total."]]
+        [:div {:class "f3 i"} "Loading usage information."]))))
+
+(defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         success-import-counter (reagent/atom nil)
         import-issues     (reagent/atom [])]
     (fn [settings-cursor]
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
+       [usage-monitor user-cursor]
        [:h2 "Import & Export"]
        [:a (merge {:style {:text-align :center}}
                 (if (uploads/uploads-in-progress?)
