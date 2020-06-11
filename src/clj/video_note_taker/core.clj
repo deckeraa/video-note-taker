@@ -512,9 +512,10 @@
   "Returns the user's storage usage in bytes"
   [req username roles]
   (let [view-resp (db/get-view db nil "videos" "content_length_by_user" {:key username} nil nil nil)]
-    (json-response (-> view-resp
-                       (first)
-                       (:value)))))
+    (json-response (or (-> view-resp
+                           (first)
+                           (:value))
+                       0))))
 
 (defn wrap-login [handler]
   (fn [req]
