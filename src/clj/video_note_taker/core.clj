@@ -53,6 +53,7 @@
    [clj-time.core :as time]
    [clj-time.coerce :as coerce]
    [video-note-taker.stripe-handlers :as stripe-handlers]
+   [clojure.core.async :as async :refer [<! go go-loop timeout]]
    )
   (:gen-class))
 
@@ -327,6 +328,7 @@
         params (assoc params :file-name new-short-filename)]
     (info "filename: " filename)
     (info "updated params: " params)
+    ;; TODO GB limit check could go here
     ;; put the video metadata into Couch
     (let [video-doc (db/put-doc
                      db access/put-hook-fn
@@ -342,6 +344,20 @@
                      roles
                      (db/get-auth-cookie req)
                      )])
+    ;; Content length is known by Spaces once the client starts the upload
+    ;; This isn't known at the point in time in which this code is run, so we're going to
+    ;; blindly set a timer and see if we can set the content length. This should work for most
+    ;; cases. There will be a CouchDB view to catch videos that don't have content-length set so
+    ;; that we can get those set via another process
+    (go
+      (<! (timeout 15000))
+      (let [metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key "superman_eleventh_hour_512kb.mp4")
+            content-length (:content-length metadata)
+            doc (db/get-doc db nil id nil nil nil)]
+        (info "Got content-length of " content-length " for id " id " " metadata)
+        (when content-length
+          (db/put-doc db nil (assoc doc :content-length content-length) nil nil))))
+    ;; Return the response with the pre-signed url for client uploading
     {:status 200
      :body (pr-str
             (s3b/sign-upload
