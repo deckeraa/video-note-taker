@@ -35,6 +35,7 @@
                  [org.sharetribe/aws-sig4 "0.1.4"]
                  [deckeraa/clj-stripe "1.0.5-SNAPSHOT"]
                  [com.stripe/stripe-java "19.16.0"]
+                 [org.clojure/math.numeric-tower "0.0.4"]
                  ]
 
   :min-lein-version "2.5.3"

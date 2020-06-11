@@ -54,6 +54,7 @@
    [clj-time.coerce :as coerce]
    [video-note-taker.stripe-handlers :as stripe-handlers]
    [clojure.core.async :as async :refer [<! go go-loop timeout]]
+   [clojure.math.numeric-tower :as math :refer [expt]]
    )
   (:gen-class))
 
@@ -344,19 +345,27 @@
                      roles
                      (db/get-auth-cookie req)
                      )])
-    ;; Content length is known by Spaces once the client starts the upload
-    ;; This isn't known at the point in time in which this code is run, so we're going to
-    ;; blindly set a timer and see if we can set the content length. This should work for most
-    ;; cases. There will be a CouchDB view to catch videos that don't have content-length set so
-    ;; that we can get those set via another process
-    (go
-      (<! (timeout 15000))
-      (let [metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key "superman_eleventh_hour_512kb.mp4")
-            content-length (:content-length metadata)
-            doc (db/get-doc db nil id nil nil nil)]
-        (info "Got content-length of " content-length " for id " id " " metadata)
-        (when content-length
-          (db/put-doc db nil (assoc doc :content-length content-length) nil nil))))
+    ;; Do an exponential backoff to query Spaces to get the content length of the uploaded video.
+    ;; Content length isn't available until the upload is entirely complete.
+    (go-loop [retry 0]
+      (<! (timeout (* 1000 (expt 10 (+ retry 1)))))
+      (let [success?
+            (try
+              (warn "Looking up: " new-short-filename)
+              (let [metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key new-short-filename)
+                    content-length (:content-length metadata)
+                    doc (db/get-doc db nil id nil nil nil)]
+                (warn "Got content-length of " content-length " for id " id " " metadata)
+                (when content-length
+                  (db/put-doc db nil (assoc doc :content-length content-length) nil nil)
+                  true)
+                false)
+              (catch Exception ex
+                (warn new-short-filename " not found.")
+                false))]
+        (when (and (not success?)
+                   (< retry 5))
+          (recur (inc retry)))))
     ;; Return the response with the pre-signed url for client uploading
     {:status 200
      :body (pr-str
@@ -546,6 +555,11 @@
         ["check-username" stripe-handlers/check-username-handler]
         ["hooks" stripe-handlers/hooks]
         ["get-temp-users" (wrap-cookie-auth stripe-handlers/get-temp-users-handler)]
+        ;; ["hello" (fn [req]
+        ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"
+        ;;                  metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key id)]
+        ;;              (warn metadata)
+        ;;              (json-response (:content-length metadata))))]
         ]])
 
 (defn wrap-index
