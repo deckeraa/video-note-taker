@@ -586,6 +586,7 @@
         ["get-temp-users" (wrap-cookie-auth stripe-handlers/get-temp-users-handler)]
         ["get-current-user" (wrap-cookie-auth get-user-handler)]
         ["get-user-usage" (wrap-cookie-auth get-user-usage-handler)]
+        ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"
         ;;                  metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key id)]

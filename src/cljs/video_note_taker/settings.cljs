@@ -50,6 +50,14 @@
        [:div {:class "f4 i"} "Recent uploads may not yet be reflected in the calculated total."]]
       [:div {:class "f3 i"} "Loading usage information."])))
 
+(defn cancel-subscription-button []
+  [:button {:class "white bg-red br3 bn pa3"
+            :on-click
+            (fn [e] 
+              (db/post-to-endpoint "cancel-subscription" {}
+                                   (fn [resp] (println "cancel-subscription: " resp))))}
+   "Cancel subscription"])
+
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         success-import-counter (reagent/atom nil)
@@ -58,6 +66,7 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
        [usage-monitor user-cursor]
+       [cancel-subscription-button]
        [:h2 "Import & Export"]
        [:a (merge {:style {:text-align :center}}
                 (if (uploads/uploads-in-progress?)

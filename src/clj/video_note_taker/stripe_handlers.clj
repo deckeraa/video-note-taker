@@ -6,6 +6,7 @@
    [ring.util.json-response :refer [json-response]]
    [clj-stripe.common :as common]
    [clj-stripe.checkouts :as checkouts]
+   [clj-stripe.subscriptions :as subscriptions]
    [com.stronganchortech.couchdb-auth-for-ring :as auth :refer [wrap-cookie-auth]]
    [video-note-taker.util :refer [get-body not-authorized-response]]
    [video-note-taker.db :as db :refer [users-db]]
@@ -32,6 +33,13 @@
        (get-in req [:headers "host"])
        "/"
        endpoint))
+
+(defn get-stripe-secret-key []
+  (let [stripe-mode (System/getenv "STRIPE_MODE")
+        secret-key  (if (= "live" stripe-mode)
+                     (System/getenv "STRIPE_SECRET_KEY_LIVE")
+                     (System/getenv "STRIPE_SECRET_KEY_TEST"))]
+    secret-key))
 
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
@@ -64,12 +72,15 @@
            {"username" username}))))
       (json-response {:status "failed" :reason "STRIPE_MODE is not set."}))))
 
+(defn get-user-doc [username]
+  (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
+
 (defn check-username-handler [req]
   (let [body (get-body req)
         username (:username body)]
     (println "check-username: " body)
     (if (re-matches #"^\w*$" username)
-      (let [resp (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil)]
+      (let [resp (get-user-doc username)]
         (if (empty? resp)
           (json-response {:status :available})
           (json-response {:status :taken})))
@@ -117,3 +128,17 @@
             (println "The signature was bad.")
             {:status 500 :body "Bad request"})))
       (json-response {:status "Web hook not needed."}))))
+
+(defn cancel-subscription-handler [req username roles]
+  (let [user (get-user-doc username)]
+    (let [stripe-resp
+          (json/read-str
+           (common/with-token (get-stripe-secret-key)
+             (common/execute (subscriptions/unsubscribe-customer
+                              (common/customer (:customer user))
+                              (subscriptions/immediately)))))
+          cancel-success? (not (nil? (get stripe-resp "error")))]
+      ;; Set their upload limit to 0GB. This will leave existing videos in place. Those will need cleaned up manually.
+      (when cancel-success?
+        (db/put-doc users-db nil (assoc user :gb-limit 0) nil nil))
+      (json-response cancel-success?))))
