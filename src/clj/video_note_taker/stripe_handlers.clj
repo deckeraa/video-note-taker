@@ -137,7 +137,8 @@
              (common/execute (subscriptions/unsubscribe-customer
                               (common/customer (:customer user))
                               (subscriptions/immediately)))))
-          cancel-success? (not (nil? (get stripe-resp "error")))]
+          cancel-success? (nil? (get stripe-resp "error"))]
+      (warn (get stripe-resp "error"))
       ;; Set their upload limit to 0GB. This will leave existing videos in place. Those will need cleaned up manually.
       (when cancel-success?
         (db/put-doc users-db nil (assoc user :gb-limit 0) nil nil))

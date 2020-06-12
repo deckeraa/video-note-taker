@@ -9,7 +9,8 @@
    [video-note-taker.video-notes :as video-notes]
    [video-note-taker.groups :as groups]
    [video-note-taker.listing :as listing]
-   [video-note-taker.uploads :as uploads])
+   [video-note-taker.uploads :as uploads]
+   [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -53,9 +54,16 @@
 (defn cancel-subscription-button []
   [:button {:class "white bg-red br3 bn pa3"
             :on-click
-            (fn [e] 
-              (db/post-to-endpoint "cancel-subscription" {}
-                                   (fn [resp] (println "cancel-subscription: " resp))))}
+            (fn [e]
+              (toaster-oven/add-toast
+               "Unsubscribe?" nil nil
+               {:cancel-fn (fn [])
+                :ok-fn (fn []
+                         (db/post-to-endpoint
+                          "cancel-subscription" {}
+                          (fn [resp]
+                            (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                            (println "cancel-subscription: " resp))))}))}
    "Cancel subscription"])
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
