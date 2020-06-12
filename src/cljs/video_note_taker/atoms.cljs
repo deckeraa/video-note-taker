@@ -19,6 +19,7 @@
                  :toaster {:toasts [] :old-toasts []}
                  :login-atm 0
                  :user nil
+                 :usage nil
                  }))
 
 (defonce screen-cursor    (reagent/cursor app-state [:screen-stack]))
@@ -32,3 +33,4 @@
 (defonce login-cursor     (reagent/cursor app-state [:login-atm]))
 (defonce user-cursor      (reagent/cursor app-state [:user]))
 (defonce uploads-cursor   (reagent/cursor app-state [:uploads]))
+(defonce usage-cursor     (reagent/cursor app-state [:usage]))

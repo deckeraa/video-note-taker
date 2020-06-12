@@ -164,7 +164,9 @@
              :style {:position :relative}}
        [:label {:for "file-upload"
                 :class
-                (if (:upload-location? @atoms/settings-cursor)
+                (if (and
+                     (:upload-location? @atoms/settings-cursor)
+                     (uploads/user-has-not-exceeded-available-storage))
                   "f2 bg-green white b br3 dib pa2 w-100 tc dim"
                   "f2 bg-light-green white b br3 dib pa2 w-100 tc")
                 :title
@@ -172,7 +174,9 @@
                   ""
                   "Upload location has not been set. This is something that FamilyMemoryStream must set, so if you can see this message, please file a support ticket."
                   )}
-        "Upload video"]
+        (if (uploads/user-has-not-exceeded-available-storage)
+          "Upload video"
+          "Your available storage has been used.")]
        [:input {:id "file-upload"
                 :name "file"
                 :type "file"
@@ -180,6 +184,10 @@
                 :class "dn"
                 :ref (fn [el]
                        (reset! file-input-ref-atom el))
+                :on-click (fn [e]
+                            ;; Don't open up the dialog when it's not enabled.
+                            (when (not (uploads/user-has-not-exceeded-available-storage))
+                              (.preventDefault e)))
                 :on-change (fn [e]
                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
                              (case (keyword (:upload-location? @atoms/settings-cursor))
@@ -187,7 +195,9 @@
                                (uploads/upload-files-to-s3
                                 atoms/uploads-cursor
                                 file-input-ref-atom
-                                #(load-video-listing video-listing-cursor))
+                                (fn []
+                                  (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
+                                  (load-video-listing video-listing-cursor)))
                                :local
                                (uploads/upload-files
                                 atoms/uploads-cursor file-input-ref-atom "upload-video"

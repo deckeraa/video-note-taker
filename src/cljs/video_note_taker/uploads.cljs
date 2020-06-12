@@ -13,6 +13,10 @@
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
+(defn user-has-not-exceeded-available-storage []
+  (< (/ @atoms/usage-cursor 1000000000)
+     (:gb-limit @atoms/user-cursor)))
+
 (defn file-objects
   "Returns a vector of File objects from the file input provided in the file-input-ref-atom.
   https://developer.mozilla.org/en-US/docs/Web/API/File"

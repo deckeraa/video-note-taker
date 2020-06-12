@@ -70,6 +70,8 @@
           (when (not @_auto-loaded-settings)
             (settings/load-settings atoms/settings-cursor)
             (reset! _auto-loaded-settings true))
+          (when (nil? @atoms/usage-cursor)
+            (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor))
           ;; Draw thte page
           [:div {:class "flex flex-column items-center"}
            [header atoms/screen-cursor atoms/video-cursor]

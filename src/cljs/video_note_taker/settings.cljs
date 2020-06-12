@@ -3,6 +3,7 @@
    [reagent.core :as reagent]
    [cljs-http.client :as http]
    [cljs.core.async :refer [<! >! chan close! timeout put!]]
+   [video-note-taker.atoms :as atoms]
    [video-note-taker.db :as db]
    [video-note-taker.auth :as auth]
    [video-note-taker.video-notes :as video-notes]
@@ -35,21 +36,19 @@
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
 
 (defn usage-monitor [user-cursor]
-  (let [current-usage-atom (reagent/atom nil)]
-    (db/put-endpoint-in-atom "get-user-usage" {} current-usage-atom)
-    (fn []
-      (if @current-usage-atom
-        [:div
-         [:div {:class "f3"}
-          "You are using "
-          (/ (Math/round (/ @current-usage-atom 10000000)) 100)
-          " GB"
-          (when-let [gb-limit (:gb-limit @user-cursor)]
-            [:<>
-             " of your " gb-limit " GB"])
-          " of storage."]
-         [:div {:class "f4 i"} "Recent uploads may not yet be reflected in the calculated total."]]
-        [:div {:class "f3 i"} "Loading usage information."]))))
+  (fn []
+    (if @atoms/usage-cursor
+      [:div
+       [:div {:class "f3"}
+        "You are using "
+        (/ (Math/round (/ @atoms/usage-cursor 10000000)) 100)
+        " GB"
+        (when-let [gb-limit (:gb-limit @user-cursor)]
+          [:<>
+           " of your " gb-limit " GB"])
+        " of storage."]
+       [:div {:class "f4 i"} "Recent uploads may not yet be reflected in the calculated total."]]
+      [:div {:class "f3 i"} "Loading usage information."])))
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)

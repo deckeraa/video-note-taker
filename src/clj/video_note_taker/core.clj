@@ -330,7 +330,7 @@
     (info "filename: " filename)
     (info "updated params: " params)
     ;; TODO GB limit check could go here
-    (if has-user-exceeded-limits?
+    (if (has-user-exceeded-limits? username)
       {:status 402 ; payment required
        :body "Storage usage limit has been exceeded."
        :headers {"Content-Type" "application/json"}
@@ -533,7 +533,8 @@
 
 (defn has-user-exceeded-limits? [username]
   (let [limit (:gb-limit (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
-        usage (get-user-usage username)]
+        usage (/ (get-user-usage username) 1000000000)]
+    (warn "limit: " limit "usage: " usage)
     (> usage limit)))
 
 (defn wrap-login [handler]
