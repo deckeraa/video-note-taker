@@ -52,7 +52,7 @@
       [:div {:class "f3 i"} "Loading usage information."])))
 
 (defn cancel-subscription-button []
-  [:button {:class "white bg-red br3 bn pa3"
+  [:button {:class "white bg-red br3 bn pa3 ma2"
             :on-click
             (fn [e]
               (toaster-oven/add-toast
