@@ -97,10 +97,16 @@
              (System/getenv "STRIPE_WEBHOOK_SIGNING_SECRET_TEST")))
           (println "Signature check passed!")
           (println "temp-users-db: " @temp-users-db)
-          (let [username (get-in body [:data :object :metadata :username])
-                password (get-in @temp-users-db [username])]
+          (let [data-object (get-in body [:data :object])
+                metadata    (get-in body [:data :object :metadata])
+                username    (get-in metadata [:username])
+                password    (get-in @temp-users-db [username])]
             (println "username, password: " username password)
-            (if (auth/create-user username password ["family_lead"] {:gb-limit 50})
+            (if (auth/create-user
+                 username password ["family_lead"]
+                 (merge
+                  (select-keys data-object [:customer :subscription])
+                  {:gb-limit 50}))
               (do
                 (swap! temp-users-db dissoc username)
                 (json-response {:status "Web hook succeeded!"}))
