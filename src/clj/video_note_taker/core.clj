@@ -508,6 +508,10 @@
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
+(defn get-user-handler [req username roles]
+  (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))]
+    (json-response user-doc)))
+
 (defn get-user-usage-handler
   "Returns the user's storage usage in bytes"
   [req username roles]
@@ -564,6 +568,7 @@
         ["check-username" stripe-handlers/check-username-handler]
         ["hooks" stripe-handlers/hooks]
         ["get-temp-users" (wrap-cookie-auth stripe-handlers/get-temp-users-handler)]
+        ["get-current-user" (wrap-cookie-auth get-user-handler)]
         ["get-user-usage" (wrap-cookie-auth get-user-usage-handler)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"

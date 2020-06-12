@@ -86,6 +86,7 @@
     "note"  (if (user-has-access-to-note  username real-doc) real-doc nil)
     "group" (if (user-has-access-to-group username real-doc) real-doc nil)
     "settings" (insert-upload-setting real-doc)
+    "user" (select-keys real-doc [:_id :_rev :name :roles :type :gb-limit])
     nil))
 
 (defn note-put-hook [real-doc req-doc username roles]

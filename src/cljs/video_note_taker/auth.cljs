@@ -25,6 +25,18 @@
                          (run-cookie-renewer))))
                  (* 25 60 1000)))
 
+(defn load-user-cursor
+  ([atm]
+   (db/put-endpoint-in-atom "get-current-user" {} atm)))
+
+(defcard-rg load-user-cursor
+  "Don't forget to login to set the auth cookie before running this."
+  (let [resp-atom (reagent/atom nil)]
+    (fn []
+      [:div
+       [:button {:on-click (fn [] (load-user-cursor resp-atom)) } "load-user-cursor"]
+       [:p (str @resp-atom)]])))
+
 (defn login
   "Reagent control that allows a user to log in (or optionally create new users).
    At present the new user creation functionality is behind wrap-cookie-auth on the server;
@@ -89,7 +101,8 @@
                                      (if (auth-util/needs-auth-cookie)
                                          (reset! can't-set-cookie-atm true)
                                          (do
-                                           (reset! atoms/user-cursor (:body resp))
+                                           (load-user-cursor atoms/user-cursor)
+                                           ;(reset! atoms/user-cursor (:body resp))
                                            (js/setTimeout #(swap! logged-in-atm inc) 200)))
                                      (reset! login-failed-atm true)))))}
            "Login"])
@@ -114,18 +127,6 @@
 (defcard-rg user-creation-card
   "Can be used to set the cookie."
   [login (reagent/atom {})])
-
-(defn load-user-cursor
-  ([atm]
-   (db/put-endpoint-in-atom "cookie-check" {} atm)))
-
-(defcard-rg load-user-cursor
-  "Don't forget to login to set the auth cookie before running this."
-  (let [resp-atom (reagent/atom nil)]
-    (fn []
-      [:div
-       [:button {:on-click (fn [] (load-user-cursor resp-atom)) } "load-user-cursor"]
-       [:p (str @resp-atom)]])))
 
 (defn user-creation []
   (let [user-atm (reagent/atom "")
