@@ -371,18 +371,18 @@
                     false))]
             (when (and (not success?)
                        (< retry 5))
-              (recur (inc retry))))))
-      ;; Return the response with the pre-signed url for client uploading
-      {:status 200
-       :body (pr-str
-              (s3b/sign-upload
-               params
-               {:bucket bucket
-                :aws-access-key access-key
-                :aws-secret-key secret-key
-                :acl "private"
-                :upload-url "https://vnt-spaces-0.nyc3.digitaloceanspaces.com"}))
-       :headers {"Content-Type" "application/edn"}})
+              (recur (inc retry)))))
+        ;; Return the response with the pre-signed url for client uploading
+        {:status 200
+         :body (pr-str
+                (s3b/sign-upload
+                 params
+                 {:bucket bucket
+                  :aws-access-key access-key
+                  :aws-secret-key secret-key
+                  :acl "private"
+                  :upload-url "https://vnt-spaces-0.nyc3.digitaloceanspaces.com"}))
+         :headers {"Content-Type" "application/edn"}}))
     ))
 
 ;; to test this via cURL, do something like:
