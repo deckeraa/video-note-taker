@@ -330,53 +330,59 @@
     (info "filename: " filename)
     (info "updated params: " params)
     ;; TODO GB limit check could go here
-    ;; put the video metadata into Couch
-    (let [video-doc (db/put-doc
-                     db access/put-hook-fn
-                     {:_id id
-                      :type "video"
-                      :display-name filename
-                      :file-name new-short-filename
-                      :users [username]
-                      :uploaded-by username
-                      :uploaded-datetime (.toString (new java.util.Date))
-                      :storage-location bucket}
-                     username
-                     roles
-                     (db/get-auth-cookie req)
-                     )])
-    ;; Do an exponential backoff to query Spaces to get the content length of the uploaded video.
-    ;; Content length isn't available until the upload is entirely complete.
-    (go-loop [retry 0]
-      (<! (timeout (* 1000 (expt 10 (+ retry 1)))))
-      (let [success?
-            (try
-              (warn "Looking up: " new-short-filename)
-              (let [metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key new-short-filename)
-                    content-length (:content-length metadata)
-                    doc (db/get-doc db nil id nil nil nil)]
-                (warn "Got content-length of " content-length " for id " id " " metadata)
-                (when content-length
-                  (db/put-doc db nil (assoc doc :content-length content-length) nil nil)
-                  true)
-                false)
-              (catch Exception ex
-                (warn new-short-filename " not found.")
-                false))]
-        (when (and (not success?)
-                   (< retry 5))
-          (recur (inc retry)))))
-    ;; Return the response with the pre-signed url for client uploading
-    {:status 200
-     :body (pr-str
-            (s3b/sign-upload
-             params
-             {:bucket bucket
-              :aws-access-key access-key
-              :aws-secret-key secret-key
-              :acl "private"
-              :upload-url "https://vnt-spaces-0.nyc3.digitaloceanspaces.com"}))
-     :headers {"Content-Type" "application/edn"}}
+    (if has-user-exceeded-limits?
+      {:status 402 ; payment required
+       :body "Storage usage limit has been exceeded."
+       :headers {"Content-Type" "application/json"}
+       }
+      (do
+        ;; put the video metadata into Couch
+        (let [video-doc (db/put-doc
+                         db access/put-hook-fn
+                         {:_id id
+                          :type "video"
+                          :display-name filename
+                          :file-name new-short-filename
+                          :users [username]
+                          :uploaded-by username
+                          :uploaded-datetime (.toString (new java.util.Date))
+                          :storage-location bucket}
+                         username
+                         roles
+                         (db/get-auth-cookie req)
+                         )])
+        ;; Do an exponential backoff to query Spaces to get the content length of the uploaded video.
+        ;; Content length isn't available until the upload is entirely complete.
+        (go-loop [retry 0]
+          (<! (timeout (* 1000 (expt 10 (+ retry 1)))))
+          (let [success?
+                (try
+                  (warn "Looking up: " new-short-filename)
+                  (let [metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key new-short-filename)
+                        content-length (:content-length metadata)
+                        doc (db/get-doc db nil id nil nil nil)]
+                    (warn "Got content-length of " content-length " for id " id " " metadata)
+                    (when content-length
+                      (db/put-doc db nil (assoc doc :content-length content-length) nil nil)
+                      true)
+                    false)
+                  (catch Exception ex
+                    (warn new-short-filename " not found.")
+                    false))]
+            (when (and (not success?)
+                       (< retry 5))
+              (recur (inc retry))))))
+      ;; Return the response with the pre-signed url for client uploading
+      {:status 200
+       :body (pr-str
+              (s3b/sign-upload
+               params
+               {:bucket bucket
+                :aws-access-key access-key
+                :aws-secret-key secret-key
+                :acl "private"
+                :upload-url "https://vnt-spaces-0.nyc3.digitaloceanspaces.com"}))
+       :headers {"Content-Type" "application/edn"}})
     ))
 
 ;; to test this via cURL, do something like:
@@ -512,14 +518,23 @@
   (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))]
     (json-response user-doc)))
 
+(defn get-user-usage [username]
+  (let [view-resp (db/get-view db nil "videos" "content_length_by_user"
+                               {:key username} nil nil nil)]
+    (or (-> view-resp
+            (first)
+            (:value))
+        0)))
+
 (defn get-user-usage-handler
   "Returns the user's storage usage in bytes"
   [req username roles]
-  (let [view-resp (db/get-view db nil "videos" "content_length_by_user" {:key username} nil nil nil)]
-    (json-response (or (-> view-resp
-                           (first)
-                           (:value))
-                       0))))
+  (json-response (get-user-usage username)))
+
+(defn has-user-exceeded-limits? [username]
+  (let [limit (:gb-limit (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
+        usage (get-user-usage username)]
+    (> usage limit)))
 
 (defn wrap-login [handler]
   (fn [req]
