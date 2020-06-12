@@ -51,8 +51,25 @@
        [:div {:class "f4 i"} "Recent uploads may not yet be reflected in the calculated total."]]
       [:div {:class "f3 i"} "Loading usage information."])))
 
+(defn add-subscription-button [plan]
+  [:button {:class "white bg-green br3 bn pa3 ma2 dim"
+            :on-click
+            (fn [e]
+              (toaster-oven/add-toast
+               "Purchase 50 additional GB of storage, and 15 additional users?" nil nil
+               {:cancel-fn (fn [])
+                :ok-fn (fn []
+                         (db/post-to-endpoint
+                          "add-subscription" {:plan plan}
+                          (fn [resp]
+                            (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                            (println "add-subscription: " resp))))}))}
+   (case plan
+     :a "Add 50 GB and 15 users for $5/month."
+     :b "Add 50 GB and 15 users for $55/year.")])
+
 (defn cancel-subscription-button []
-  [:button {:class "white bg-red br3 bn pa3 ma2"
+  [:button {:class "white bg-red br3 bn pa3 ma2 dim"
             :on-click
             (fn [e]
               (toaster-oven/add-toast
@@ -74,6 +91,8 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
        [usage-monitor user-cursor]
+       [add-subscription-button :a]
+       [add-subscription-button :b]
        [cancel-subscription-button]
        [:h2 "Import & Export"]
        [:a (merge {:style {:text-align :center}}

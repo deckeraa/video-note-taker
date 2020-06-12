@@ -41,6 +41,11 @@
                      (System/getenv "STRIPE_SECRET_KEY_TEST"))]
     secret-key))
 
+(defn price-lookup [plan]
+  (case plan
+    :a "price_HOOd5cGclxAn2v"
+    :b "price_HOOdnszH3OSHgU"))
+
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
         stripe-mode (System/getenv "STRIPE_MODE")
@@ -128,6 +133,23 @@
             (println "The signature was bad.")
             {:status 500 :body "Bad request"})))
       (json-response {:status "Web hook not needed."}))))
+
+(defn add-subscription-handler [req username roles]
+  (let [user (get-user-doc username)
+        body (get-body req)
+        price (price-lookup (keyword (:plan body)))
+        stripe-resp
+        ;(json/read-str)
+        (common/with-token (get-stripe-secret-key)
+          (common/execute (subscriptions/subscribe-customer
+                           (common/plan price)
+                           (common/customer (:customer user))
+                           (subscriptions/do-not-prorate))))
+        cancel-success? (nil? (get stripe-resp "error"))]
+    (warn price)
+    (warn cancel-success?)
+    (warn stripe-resp)
+    (json-response "foo")))
 
 (defn cancel-subscription-handler [req username roles]
   (let [user (get-user-doc username)]
