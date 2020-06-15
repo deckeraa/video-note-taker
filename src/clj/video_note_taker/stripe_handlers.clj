@@ -175,4 +175,20 @@
                              items))]
     item))
 
-;;(defn get-item)
+(defn update-quantity [subscription-id item-id quantity]
+  (common/with-token (get-stripe-secret-key)
+    (common/execute
+     (subscriptions/set-subscription-items
+      subscription-id
+      {"items[0][id]" item-id
+       "items[0][quantity]" quantity}))))
+
+(defn modify-subscription-quantity [mutate-fn subscription-id]
+  (let [item (get-subscription-item
+              (common/with-token (get-stripe-secret-key)
+                (common/execute
+                 (subscriptions/get-subscription subscription-id))))]
+    (update-quantity subscription-id (:id item) (mutate-fn (:quantity item)))))
+
+(def inc-subscription-quantity (partial modify-subscription-quantity inc))
+(def dec-subscription-quantity (partial modify-subscription-quantity dec))
