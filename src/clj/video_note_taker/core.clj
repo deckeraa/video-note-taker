@@ -319,6 +319,29 @@
     (info "file-array: " (remove nil? file-array) file-array)
     (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 
+(defn get-user-handler [req username roles]
+  (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))]
+    (json-response user-doc)))
+
+(defn get-user-usage [username]
+  (let [view-resp (db/get-view db nil "videos" "content_length_by_user"
+                               {:key username} nil nil nil)]
+    (or (-> view-resp
+            (first)
+            (:value))
+        0)))
+
+(defn get-user-usage-handler
+  "Returns the user's storage usage in bytes"
+  [req username roles]
+  (json-response (get-user-usage username)))
+
+(defn has-user-exceeded-limits? [username]
+  (let [limit (:gb-limit (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
+        usage (/ (get-user-usage username) 1000000000)]
+    (and limit
+         (> usage limit))))
+
 (defn spaces-upload-handler [req username roles]
   (info "s3 req:" req)
   (let [params (keywordize-keys (:params req))
@@ -513,29 +536,6 @@
     (if (and video filename) ;; get-doc does the acess check for us
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
-
-(defn get-user-handler [req username roles]
-  (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))]
-    (json-response user-doc)))
-
-(defn get-user-usage [username]
-  (let [view-resp (db/get-view db nil "videos" "content_length_by_user"
-                               {:key username} nil nil nil)]
-    (or (-> view-resp
-            (first)
-            (:value))
-        0)))
-
-(defn get-user-usage-handler
-  "Returns the user's storage usage in bytes"
-  [req username roles]
-  (json-response (get-user-usage username)))
-
-(defn has-user-exceeded-limits? [username]
-  (let [limit (:gb-limit (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
-        usage (/ (get-user-usage username) 1000000000)]
-    (and limit
-         (> usage limit))))
 
 (defn wrap-login [handler]
   (fn [req]

@@ -165,3 +165,14 @@
       (when cancel-success?
         (db/put-doc users-db nil (assoc user :gb-limit 0) nil nil))
       (json-response cancel-success?))))
+
+(defn- get-subscription-item [subscription]
+  (let [items (get-in subscription [:items :data])
+        item  (first (filter (fn [item]
+                               (contains?
+                                #{"price_HOOd5cGclxAn2v" "price_HOOdnszH3OSHgU"}
+                                (get-in item [:plan :id])))
+                             items))]
+    item))
+
+;;(defn get-item)
