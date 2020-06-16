@@ -543,6 +543,15 @@
       (file-response filename {:root "resources/private/"})
       (not-authorized-response))))
 
+(defn create-user-handler [req username roles]
+  (warn "User is being created by: " username)
+  (if (access-shared/can-create-family-member-users roles)
+    (let [params (get-body req)
+          name  (:user params)
+          pass  (:pass params)]
+      (json-response (auth/create-user name pass ["family_member"] {:created-by username})))
+    (not-authorized-response)))
+
 (defn wrap-login [handler]
   (fn [req]
     (let [resp (handler req)]
@@ -574,7 +583,7 @@
         ["get-upload-progress" (wrap-cookie-auth upload-progress/get-upload-progress)]
         ["delete-video" (wrap-cookie-auth delete-video-handler)]
         ["login" (wrap-login auth/login-handler)]
-        ["create-user" (wrap-cookie-auth auth/create-user-handler)]
+        ["create-user" (wrap-cookie-auth create-user-handler)]
         ["change-password" (wrap-cookie-auth auth/change-password-handler)]
         ["logout" (wrap-cookie-auth auth/logout-handler)]
         ["cookie-check" auth/cookie-check-handler]
