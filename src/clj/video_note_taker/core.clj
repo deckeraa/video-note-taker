@@ -608,7 +608,6 @@
         ["get-temp-users" (wrap-cookie-auth stripe-handlers/get-temp-users-handler)]
         ["get-current-user" (wrap-cookie-auth get-user-handler)]
         ["get-user-usage" (wrap-cookie-auth get-user-usage-handler)]
-        ["add-subscription" (wrap-cookie-auth stripe-handlers/add-subscription-handler)]
         ["inc-subscription" (wrap-cookie-auth stripe-handlers/inc-subscription-handler)]
         ["dec-subscription" (wrap-cookie-auth stripe-handlers/dec-subscription-handler)]
         ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]

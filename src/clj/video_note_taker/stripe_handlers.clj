@@ -134,23 +134,6 @@
             {:status 500 :body "Bad request"})))
       (json-response {:status "Web hook not needed."}))))
 
-(defn add-subscription-handler [req username roles]
-  (let [user (get-user-doc username)
-        body (get-body req)
-        price (price-lookup (keyword (:plan body)))
-        stripe-resp
-        ;(json/read-str)
-        (common/with-token (get-stripe-secret-key)
-          (common/execute (subscriptions/subscribe-customer
-                           (common/plan price)
-                           (common/customer (:customer user))
-                           (subscriptions/do-not-prorate))))
-        cancel-success? (nil? (get stripe-resp "error"))]
-    (warn price)
-    (warn cancel-success?)
-    (warn stripe-resp)
-    (json-response "foo")))
-
 (defn cancel-subscription-handler [req username roles]
   (let [user (get-user-doc username)]
     (let [stripe-resp
