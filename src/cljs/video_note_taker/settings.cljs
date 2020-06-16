@@ -227,4 +227,6 @@
                                  (db/put-doc @settings-cursor (fn [new-doc] (reset! settings-cursor new-doc))))}]
            [:div "Show app-state atom at the bottom of each page"]]
           ;[auth/user-creation]
-          ])])))
+          ])
+       [:h2 "Support"]
+       [:p "Need help or found an issue with the software? Please email aaron@stronganchortech.com ."]])))
