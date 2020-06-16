@@ -138,43 +138,46 @@
                    :class "white bg-blue bn br3 pa3 dim link ma1 flex items-center"}))
         [:img {:src "./spreadsheet-download.svg" :class "white" :color "white" :width "32px"}]
         [:div {:class "ml2"} "Download spreadsheet of all notes"]]
-       (if (uploads/uploads-in-progress?)
-         [:div {:class "white bg-light-blue bn br3 pa3 link ma1"
-                :title "Cannot download spreadsheet while file upload is in progress."}
-          "Download starter spreadsheet"]
-         [:a {:class "white bg-blue bn br3 pa3 dim link ma1"
-              :href (str (db/get-server-url) "download-starter-spreadsheet")}
-          "Download starter spreadsheet"])
-       [:label {:for "spreadsheet-upload"
-                :class "white bg-blue bn br3 pa3 ma1"}
-        "Import spreadsheet "]
-       [:input {:id "spreadsheet-upload"
-                :name "file"
-                :type "file"
-                :multiple false
-                :class "dn"
-                :ref (fn [el]
-                       (reset! file-input-ref-el el))
-                :on-change (fn [e]
-                             (when-let [file-input @file-input-ref-el]
-                               (go (let [resp (<! (http/post
-                                                   (db/resolve-endpoint "upload-spreadsheet")
-                                                   {:multipart-params
-                                                    [["file" (aget (.-files file-input) 0)]]}))]
-                                     (video-notes/load-notes notes-cursor video-cursor) ; reload notes
-                                     (reset! import-issues (get-in resp [:body :didnt-import]))
-                                     (reset! success-import-counter (get-in resp [:body :successfully-imported]))))))}]
-       (when @success-import-counter
-         [:div {:class "ma2"}
-          (str "Successfully imported " @success-import-counter " notes.")])
-       (when (not (empty? @import-issues))
-         [:div {:class "ma2"}
-          "The following lines were not imported: "
-          [:ul {:class ""}
-           (map (fn [issue]
-                  ^{:key (str (:line issue))}
-                  [:li (str (:line issue) ": " (:reason issue))])
-                @import-issues)]])
+       (when (auth/can-import-spreadsheet)
+         (if (uploads/uploads-in-progress?)
+           [:div {:class "white bg-light-blue bn br3 pa3 link ma1"
+                  :title "Cannot download spreadsheet while file upload is in progress."}
+            "Download starter spreadsheet"]
+           [:a {:class "white bg-blue bn br3 pa3 dim link ma1"
+                :href (str (db/get-server-url) "download-starter-spreadsheet")}
+            "Download starter spreadsheet"]))
+       (when (auth/can-import-spreadsheet)
+         [:<>
+          [:label {:for "spreadsheet-upload"
+                   :class "white bg-blue bn br3 pa3 ma1"}
+           "Import spreadsheet "]
+          [:input {:id "spreadsheet-upload"
+                   :name "file"
+                   :type "file"
+                   :multiple false
+                   :class "dn"
+                   :ref (fn [el]
+                          (reset! file-input-ref-el el))
+                   :on-change (fn [e]
+                                (when-let [file-input @file-input-ref-el]
+                                  (go (let [resp (<! (http/post
+                                                      (db/resolve-endpoint "upload-spreadsheet")
+                                                      {:multipart-params
+                                                       [["file" (aget (.-files file-input) 0)]]}))]
+                                        (video-notes/load-notes notes-cursor video-cursor) ; reload notes
+                                        (reset! import-issues (get-in resp [:body :didnt-import]))
+                                        (reset! success-import-counter (get-in resp [:body :successfully-imported]))))))}]
+          (when @success-import-counter
+            [:div {:class "ma2"}
+             (str "Successfully imported " @success-import-counter " notes.")])
+          (when (not (empty? @import-issues))
+            [:div {:class "ma2"}
+             "The following lines were not imported: "
+             [:ul {:class ""}
+              (map (fn [issue]
+                     ^{:key (str (:line issue))}
+                     [:li (str (:line issue) ": " (:reason issue))])
+                   @import-issues)]])])
        ;; [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
