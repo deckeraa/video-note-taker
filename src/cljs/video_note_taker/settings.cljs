@@ -114,6 +114,9 @@
                             (println "cancel-subscription: " resp))))}))}
    "Cancel subscription"])
 
+;; (defn manage-users []
+;;   (let [username-atom (reagent/atom "")]))
+
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
         success-import-counter (reagent/atom nil)
@@ -181,6 +184,12 @@
        ;; [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
+       (when (auth/can-create-family-member-users)
+         [:<>
+          [:h2 "Manage Users"]
+          ;[landing-page/user-name-picker (reagent/atom "") (reagent/atom "")]
+          ]
+         )
        (when (auth/can-create-groups)
          (let [group-cursor (reagent/atom [])]
            [:div

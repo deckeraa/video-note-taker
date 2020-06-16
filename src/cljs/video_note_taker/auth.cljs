@@ -212,6 +212,72 @@
                                    )))}
         "Change password"]])))
 
+(defn user-name-picker [username-atom validated-username-atom]
+  (let [check-ctr (reagent/atom 0)
+        username-status (reagent/atom :none)]
+    (fn []
+      [:div {:class "flex items-center"}
+       [:div {:class "flex"}
+        [:p {:class "ma1"} "Username: "]
+        [:input {:type :text :value @username-atom
+                 :on-change
+                 (fn [e]
+                   (let [username (-> e .-target .-value)]
+                     (if (empty? username)
+                       (reset! username-status :none)
+                       (reset! username-status nil))
+                     (reset! username-atom username)
+                     (reset! validated-username-atom nil)
+                     (swap! check-ctr inc)
+                     (js/setTimeout
+                      (fn []
+                        (let [username @username-atom]
+                          (when (and
+                                 (= 0 (swap! check-ctr dec))
+                                 (not (empty? username)))
+                            (do
+                              (reset! username-status :checking)
+                              (println "username check TODO" username)
+                              (db/post-to-endpoint
+                               "check-username" {:username username}
+                               (fn [resp]
+                                 (case (keyword (:status resp))
+                                   :available
+                                   (do
+                                     (reset! username-status :validated)
+                                     (reset! validated-username-atom username))
+                                   :taken
+                                   (reset! username-status :taken)
+                                   :invalid
+                                   (reset! username-status :invalid))))))))
+                      350)))}]]
+       (case @username-status
+         :none      [:p {:class ""}      "Please pick a username"]
+         :checking  [:p {:class ""}      "Checking username..."]
+         :taken     [:p {:class "red"}   "Username is taken."]
+         :invalid   [:p {:class "red"}   "Username can only contain letters, numbers, and underscores."]
+         :validated [:p {:class "green"} "Username is available."]
+         nil)])))
+
+(defn password-picker [password-atom]
+  (let [input-atm (reagent/atom "")]
+    (fn []
+      [:div {:class "flex items-center"}
+       [:div {:class "flex"}
+        [:p {:class "ma1"} "Password: "]
+        [:input {:type :password :value @input-atm
+                 :on-change
+                 (fn [e]
+                   (let [value (-> e .-target .-value)]
+                     (reset! input-atm value)
+                     (if (>= (count value) 4)
+                       (reset! password-atom value)
+                       (reset! password-atom nil))))}]]
+       (cond
+         (empty? @input-atm) [:p {:class ""} "Please pick a password"]
+         (empty? @password-atom) [:p {:class "red"} "Password must be at least four characters long"]
+         :default [svg/check {:class "ma1"} "green" "24px"])])))
+
 (defn is-admin?
   ([] (is-admin? atoms/user-cursor))
   ([user-cursor] (contains? (set (:roles @atoms/user-cursor)) "_admin")))
@@ -247,6 +313,7 @@
 (defn can-change-video-share-settings [] (access/can-change-video-share-settings (set (:roles @atoms/user-cursor))))
 (defn can-edit-others-notes [] (access/can-edit-others-notes (set (:roles @atoms/user-cursor))))
 (defn can-import-spreadsheet [] (access/can-import-spreadsheet (set (:roles @atoms/user-cursor))))
+(defn can-create-family-member-users [] (access/can-create-family-member-users (set (:roles @atoms/user-cursor))))
 (defn can-create-groups [] (access/can-create-groups (set (:roles @atoms/user-cursor))))
 
 (defn is-users-note [note] (= (:created-by note) (:name @atoms/user-cursor)))
