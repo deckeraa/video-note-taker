@@ -239,36 +239,40 @@
           (swap! failed-imports conj {:line line :reason "A note within one second of that timestamp already exists."}))))))
 
 (defn download-starter-spreadsheet [req username roles]
-  (let [videos (db/get-view db access/get-hook-fn "videos" "by_user"
-                            {:key username :include_docs true}
-                            username roles (db/get-auth-cookie req))]
-    (as-> videos $
-      (sort-by :display-name $) ; sort
-      (map (fn [video]
-             (str (escape-csv-field (:_id video)) ","
-                  (escape-csv-field (:display-name video)) ","
-                  ","))
-           $)
-      (conj $ "video key,video display name,time in seconds,note text")
-      (clojure.string/join "\n" $)
-      (response/response $)
-      (content-type $ "text/csv")
-      (response/header $ "Content-Disposition" "attachment; filename=\"starter_spreadsheet.csv\""))))
+  (if (not (access-shared/can-import-spreadsheet roles))
+    (not-authorized-response)
+    (let [videos (db/get-view db access/get-hook-fn "videos" "by_user"
+                              {:key username :include_docs true}
+                              username roles (db/get-auth-cookie req))]
+      (as-> videos $
+        (sort-by :display-name $) ; sort
+        (map (fn [video]
+               (str (escape-csv-field (:_id video)) ","
+                    (escape-csv-field (:display-name video)) ","
+                    ","))
+             $)
+        (conj $ "video key,video display name,time in seconds,note text")
+        (clojure.string/join "\n" $)
+        (response/response $)
+        (content-type $ "text/csv")
+        (response/header $ "Content-Disposition" "attachment; filename=\"starter_spreadsheet.csv\"")))))
 
 ;; to test this via cURL, do something like:
 ;; curl -X POST "http://localhost:3000/upload-spreadsheet-handler" -F file=@my-spreadsheet.csv
 (defn upload-spreadsheet-handler [req username roles]
-  (let [notes-by-video (atom {})
-        success-imports-counter (atom 0)
-        failed-imports (atom [])
-        lines (read-csv (io/reader (get-in req [:params "file" :tempfile])))]
-    (doall (map (fn [[video-key video-display-name time-in-seconds note-text :as line]]
-                  (let [time-in-seconds (edn/read-string time-in-seconds)]
-                    (if (number? time-in-seconds) ; filter out the title row, if present
-                      (import-note-spreadsheet-line notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles (db/get-auth-cookie req))
-                      (swap! failed-imports conj {:line line :reason "time-in-seconds not a number"}))))
-                lines))
-    (json-response {:didnt-import @failed-imports :successfully-imported @success-imports-counter})))
+  (if (not (access-shared/can-import-spreadsheet roles))
+    (not-authorized-response)
+    (let [notes-by-video (atom {})
+          success-imports-counter (atom 0)
+          failed-imports (atom [])
+          lines (read-csv (io/reader (get-in req [:params "file" :tempfile])))]
+      (doall (map (fn [[video-key video-display-name time-in-seconds note-text :as line]]
+                    (let [time-in-seconds (edn/read-string time-in-seconds)]
+                      (if (number? time-in-seconds) ; filter out the title row, if present
+                        (import-note-spreadsheet-line notes-by-video success-imports-counter failed-imports video-key video-display-name time-in-seconds note-text line username roles (db/get-auth-cookie req))
+                        (swap! failed-imports conj {:line line :reason "time-in-seconds not a number"}))))
+                  lines))
+      (json-response {:didnt-import @failed-imports :successfully-imported @success-imports-counter}))))
 
 (defn single-video-upload [req username roles {:keys [filename tempfile] :as file}]
   (let [id (uuid/to-string (uuid/v4))
