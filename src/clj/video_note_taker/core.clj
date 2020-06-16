@@ -534,12 +534,12 @@
     (let [groups (db/get-view db access/get-hook-fn "groups" "by_user" {:key username :include_docs true}
                               username roles (db/get-auth-cookie req))
           created-users (set (map :name
-                                  (db/get-view users-db nil "users" "by_creating_user" {:key "dawn" :include_docs true} nil nil nil)))
+                                  (db/get-view users-db nil "users" "by_creating_user" {:key username :include_docs true} nil nil nil)))
           groups-users (apply clojure.set/union (map :users groups))
           users (clojure.set/union groups-users created-users)]
-      ;; (warn "created-users: " created-users)
-      ;; (warn "groups-users: " groups-users)
-      ;; (warn "users: " users)
+      (warn "created-users: " created-users)
+      (warn "groups-users: " groups-users)
+      (warn "users: " users)
       (json-response (vec users)))))
 
 (defn videos-handler [req username roles]
