@@ -181,12 +181,11 @@
        ;; [:a {:class "b--black-10 ba br3 pa3 mt4 dim w6 link"
        ;;      :href (str (db/get-server-url) "/get-notes-spreadsheet")}
        ;;  "Download all notes as spreadsheet"]
-       (when (auth/is-admin?)
+       (when (auth/can-create-groups)
          (let [group-cursor (reagent/atom [])]
            [:div
             [:h2 "Manage Groups"]
             [groups/group-listing]
-;            [groups/groups group-cursor]
             ]))
        (when (auth/is-admin?)
          [:div
