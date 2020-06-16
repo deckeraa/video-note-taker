@@ -86,8 +86,9 @@
        (if (:stripe-mode @pageinfo-atom)
          [:<>
           [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
-          [auth/user-name-picker username-atom validated-username-atom]
-          [auth/password-picker password-atom]
+          [:div {:class "flex flex-column"}
+           [auth/user-name-picker username-atom validated-username-atom]
+           [auth/password-picker password-atom]]
           [:div {:class "ma1"}
            [:input {:type :checkbox :name "TOS" :class "mr1"
                     :checked @tos-checked-atom

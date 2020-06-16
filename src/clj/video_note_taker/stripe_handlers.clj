@@ -17,6 +17,24 @@
   (:import
    com.stripe.net.ApiResource))
 
+(defn stripe-live? []
+  (= "live" (System/getenv "STRIPE_MODE")))
+
+(defn plan-a-one-time-price []
+  (if (stripe-live?)
+    (System/getenv "STRIPE_PLAN_A_ONE_TIME_PRICE_LIVE")
+    (System/getenv "STRIPE_PLAN_A_ONE_TIME_PRICE_TEST")))
+
+(defn plan-a-recurring-price []
+  (if (stripe-live?)
+    (System/getenv "STRIPE_PLAN_A_RECURRING_PRICE_LIVE")
+    (System/getenv "STRIPE_PLAN_A_RECURRING_PRICE_TEST")))
+
+(defn plan-b-recurring-price []
+  (if (stripe-live?)
+    (System/getenv "STRIPE_PLAN_B_RECURRING_PRICE_LIVE")
+    (System/getenv "STRIPE_PLAN_B_RECURRING_PRICE_TEST")))
+
 (defonce temp-users-db (atom {}))
 
 (defn get-temp-users-handler [req username roles]
@@ -35,23 +53,15 @@
        endpoint))
 
 (defn get-stripe-secret-key []
-  (let [stripe-mode (System/getenv "STRIPE_MODE")
-        secret-key  (if (= "live" stripe-mode)
-                     (System/getenv "STRIPE_SECRET_KEY_LIVE")
-                     (System/getenv "STRIPE_SECRET_KEY_TEST"))]
+  (let [secret-key  (if (stripe-live?)
+                      (System/getenv "STRIPE_SECRET_KEY_LIVE")
+                      (System/getenv "STRIPE_SECRET_KEY_TEST"))]
     secret-key))
-
-(defn price-lookup [plan]
-  (case plan
-    :a "price_HOOd5cGclxAn2v"
-    :b "price_HOOdnszH3OSHgU"))
 
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
-        stripe-mode (System/getenv "STRIPE_MODE")
-        secret-key (if (= "live" stripe-mode)
-                     (System/getenv "STRIPE_SECRET_KEY_LIVE")
-                     (System/getenv "STRIPE_SECRET_KEY_TEST"))
+        stripe-mode (stripe-live?)
+        secret-key (get-stripe-secret-key)
         plan (keyword (:plan body))
         username (:username body)
         password (:password body)]
@@ -61,21 +71,24 @@
     (println "username: " username)
     (println "password: " password)
     (println "success-url: " (get-endpoint req "memories"))
+    (println "plan-a-recurring-price: " (plan-a-recurring-price))
+    (println "plan-a-one-time-price: " (plan-a-one-time-price))
     (swap! temp-users-db assoc username password)
-    (if stripe-mode
-      (json-response 
+    (if (nil? stripe-mode)
+      (json-response {:status "failed" :reason "STRIPE_MODE is not set."})
+      (json-response
        (common/with-token secret-key
          (common/execute
           (checkouts/create-checkout-session
            (if (= :a plan)
-             [{:price-id "price_HOOd5cGclxAn2v"           :quantity 1}
-              {:price-id "price_1GpxiCBo2Vr1t1SegLl0iU1K" :quantity 1}]
-             [{:price-id "price_HOOdnszH3OSHgU"           :quantity 1}])
+             [{:price-id (plan-a-recurring-price) :quantity 1}
+              {:price-id (plan-a-one-time-price)  :quantity 1}]
+             [{:price-id (plan-b-recurring-price) :quantity 1}])
            "subscription"
            (get-endpoint req "memories")
            (get-endpoint req "?cancel=true")
            {"username" username}))))
-      (json-response {:status "failed" :reason "STRIPE_MODE is not set."}))))
+      )))
 
 (defn get-user-doc [username]
   (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
@@ -108,7 +121,7 @@
           (println "Checking signature")
           (com.stripe.net.Webhook/constructEvent
            body-str (str sig-header)
-           (if (= "live" (System/getenv "STRIPE_MODE"))
+           (if (stripe-live?)
              (System/getenv "STRIPE_WEBHOOK_SIGNING_SECRET_LIVE")
              (System/getenv "STRIPE_WEBHOOK_SIGNING_SECRET_TEST")))
           (println "Signature check passed!")
@@ -153,7 +166,7 @@
   (let [items (get-in subscription [:items :data])
         item  (first (filter (fn [item]
                                (contains?
-                                #{"price_HOOd5cGclxAn2v" "price_HOOdnszH3OSHgU"}
+                                #{(plan-a-recurring-price) (plan-b-recurring-price)}
                                 (get-in item [:plan :id])))
                              items))]
     item))

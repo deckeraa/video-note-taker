@@ -216,7 +216,7 @@
   (let [check-ctr (reagent/atom 0)
         username-status (reagent/atom :none)]
     (fn []
-      [:div {:class "flex items-center"}
+      [:div {:class "flex items-center flex-wrap flex-nowrap-ns"}
        [:div {:class "flex"}
         [:p {:class "ma1"} "Username: "]
         [:input {:type :text :value @username-atom
@@ -253,8 +253,8 @@
                       350)))}]]
        (case @username-status
          :none      [:p {:class ""}      "Please pick a username"]
-         :checking  [:p {:class ""}      "Checking username..."]
-         :taken     [:p {:class "red"}   "Username is taken."]
+         :checking  [:p {:class ""}      "Checking username...  "]
+         :taken     [:p {:class "red"}   "Username is taken.    "]
          :invalid   [:p {:class "red"}   "Username can only contain letters, numbers, and underscores."]
          :validated [:p {:class "green"} "Username is available."]
          nil)])))
@@ -262,7 +262,7 @@
 (defn password-picker [password-atom]
   (let [input-atm (reagent/atom "")]
     (fn []
-      [:div {:class "flex items-center"}
+      [:div {:class "flex items-center flex-wrap flex-nowrap-ns"}
        [:div {:class "flex"}
         [:p {:class "ma1"} "Password: "]
         [:input {:type :password :value @input-atm
@@ -274,7 +274,7 @@
                        (reset! password-atom value)
                        (reset! password-atom nil))))}]]
        (cond
-         (empty? @input-atm) [:p {:class ""} "Please pick a password"]
+         (empty? @input-atm) [:p {:class ""}         "Please pick a password                       "]
          (empty? @password-atom) [:p {:class "red"} "Password must be at least four characters long"]
          :default [svg/check {:class "ma1"} "green" "24px"])])))
 
