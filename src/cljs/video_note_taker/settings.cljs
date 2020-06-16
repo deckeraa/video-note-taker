@@ -6,6 +6,7 @@
    [video-note-taker.atoms :as atoms]
    [video-note-taker.db :as db]
    [video-note-taker.auth :as auth]
+   [video-note-taker.svg :as svg]
    [video-note-taker.video-notes :as video-notes]
    [video-note-taker.groups :as groups]
    [video-note-taker.listing :as listing]
@@ -114,8 +115,27 @@
                             (println "cancel-subscription: " resp))))}))}
    "Cancel subscription"])
 
-;; (defn manage-users []
-;;   (let [username-atom (reagent/atom "")]))
+(defn manage-users []
+  (let [username-atom (reagent/atom "")
+        password-atom (reagent/atom "")
+        validated-username-atom (reagent/atom nil)]
+    (fn []
+      [:<>
+       [auth/user-name-picker username-atom validated-username-atom]
+       [auth/password-picker password-atom]
+       [:button {:class (str "br3 bn pa3 ma2 white " (if @validated-username-atom " bg-green dim " " bg-light-green "))
+                 :on-click (fn [e]
+                             (db/post-to-endpoint
+                                 "create-user"
+                                 {:user @validated-username-atom
+                                  :pass @password-atom}
+                                 (fn [body]
+                                   (println "User created!")
+                                   (toaster-oven/add-toast "User created" svg/check "green" nil))
+                                 (fn [body raw]
+                                   (println "Couldn't create user:" raw)
+                                   (toaster-oven/add-toast "User not created" svg/x "red" nil))))}
+        "Create new user."]])))
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
@@ -187,7 +207,7 @@
        (when (auth/can-create-family-member-users)
          [:<>
           [:h2 "Manage Users"]
-          ;[landing-page/user-name-picker (reagent/atom "") (reagent/atom "")]
+          [manage-users]
           ]
          )
        (when (auth/can-create-groups)
@@ -206,4 +226,5 @@
                                  (swap! settings-cursor assoc :show-app-state (-> e .-target .-checked))
                                  (db/put-doc @settings-cursor (fn [new-doc] (reset! settings-cursor new-doc))))}]
            [:div "Show app-state atom at the bottom of each page"]]
-          [auth/user-creation]])])))
+          ;[auth/user-creation]
+          ])])))
