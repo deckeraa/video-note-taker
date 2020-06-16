@@ -249,5 +249,19 @@
                  username roles)
         (catch Exception e
           (error "Didn't install _design/notes")))
+      (try
+        (put-doc users-db (fn [doc _ _] doc)
+                 {:_id "_design/users"
+                  :views
+                  {:by_creating_user
+                   {:map "function (doc) {
+                             if(doc[\"created-by\"]){
+                                emit(doc[\"created-by\"],doc._id);
+                             }
+                    }"}}
+                  :language "javascript"}
+                 username roles)
+        (catch Exception e
+          (error "Didn't install _design/users in users-db")))
       (json-response true))
     (json-response false)))
