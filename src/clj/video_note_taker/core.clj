@@ -588,6 +588,7 @@
         ["get-user-usage" (wrap-cookie-auth get-user-usage-handler)]
         ["add-subscription" (wrap-cookie-auth stripe-handlers/add-subscription-handler)]
         ["inc-subscription" (wrap-cookie-auth stripe-handlers/inc-subscription-handler)]
+        ["dec-subscription" (wrap-cookie-auth stripe-handlers/dec-subscription-handler)]
         ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"

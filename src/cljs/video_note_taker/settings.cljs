@@ -83,20 +83,21 @@
                             (println "inc-subscription: " resp))))}))}
    "Add 50GB and 15 users"])
 
-(defn dec-subscription-button []
-  [:button {:class "white bg-red br3 bn pa3 ma2 dim"
-            :on-click
-            (fn [e]
-              (toaster-oven/add-toast
-               "Remove 50 additional GB of storage?" nil nil
-               {:cancel-fn (fn [])
-                :ok-fn (fn []
-                         (db/post-to-endpoint
-                          "dec-subscription" {}
-                          (fn [resp]
-                            (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
-                            (println "dec-subscription: " resp))))}))}
-   "Remove 50GB of storage"])
+(defn dec-subscription-button [user-cursor]
+  (when (> (:gb-limit @user-cursor) 50)
+    [:button {:class "white bg-red br3 bn pa3 ma2 dim"
+              :on-click
+              (fn [e]
+                (toaster-oven/add-toast
+                 "Remove 50 additional GB of storage?" nil nil
+                 {:cancel-fn (fn [])
+                  :ok-fn (fn []
+                           (db/post-to-endpoint
+                            "dec-subscription" {}
+                            (fn [resp]
+                              (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                              (println "dec-subscription: " resp))))}))}
+     "Remove 50GB of storage"]))
 
 (defn cancel-subscription-button []
   [:button {:class "white bg-red br3 bn pa3 ma2 dim"
@@ -124,7 +125,7 @@
        ;; [add-subscription-button :a]
        ;; [add-subscription-button :b]
        [inc-subscription-button]
-       [dec-subscription-button]
+       [dec-subscription-button user-cursor]
        [cancel-subscription-button]
        [:h2 "Import & Export"]
        [:a (merge {:style {:text-align :center}}

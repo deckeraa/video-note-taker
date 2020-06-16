@@ -202,24 +202,19 @@
       (json-response {:status "false" :reason ":subcription not present in user record."})
       (let [stripe-resp (inc-subscription-quantity (:subscription user))
             success? (nil? (get stripe-resp "error"))]
-        ;; (warn user)
-        ;; (warn stripe-resp)
-        ;; (warn success?)
+        (when success?
+          (db/put-doc users-db nil (update user :gb-limit + 50) nil nil))
         (json-response success?)))))
 
-;; (defn dec-subscription-handler [req username roles]
-;;   (let [user (get-user-doc username)
-;;         body (get-body req)
-;;         price (price-lookup (keyword (:plan body)))
-;;         stripe-resp
-;;         ;(json/read-str)
-;;         (common/with-token (get-stripe-secret-key)
-;;           (common/execute (subscriptions/subscribe-customer
-;;                            (common/plan price)
-;;                            (common/customer (:customer user))
-;;                            (subscriptions/do-not-prorate))))
-;;         cancel-success? (nil? (get stripe-resp "error"))]
-;;     (warn price)
-;;     (warn cancel-success?)
-;;     (warn stripe-resp)
-;;     (json-response "foo")))
+(defn dec-subscription-handler [req username roles]
+  (let [user (get-user-doc username)]
+    (warn "dec-subscription-handler: " user)
+    (if (<= (:gb-limit user) 50)
+      (json-response {:status false :reason "Don't have enough GB to remove storage. Use the cancel button to cancel the service all together."})
+      (if (not (:subscription user))
+        (json-response {:status false :reason ":subcription not present in user record."})
+        (let [stripe-resp (dec-subscription-quantity (:subscription user))
+              success? (nil? (get stripe-resp "error"))]
+          (when success?
+            (db/put-doc users-db nil (update user :gb-limit - 50) nil nil))
+          (json-response {:status success?}))))))
