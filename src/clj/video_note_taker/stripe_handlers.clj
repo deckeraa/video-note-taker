@@ -184,11 +184,42 @@
        "items[0][quantity]" quantity}))))
 
 (defn modify-subscription-quantity [mutate-fn subscription-id]
-  (let [item (get-subscription-item
-              (common/with-token (get-stripe-secret-key)
-                (common/execute
-                 (subscriptions/get-subscription subscription-id))))]
+  (let [subscription (common/with-token (get-stripe-secret-key)
+                       (common/execute
+                        (subscriptions/get-subscription subscription-id)))
+        item (get-subscription-item subscription)]
+    (warn "subscription: " subscription)
+    (warn "item: " item)
     (update-quantity subscription-id (:id item) (mutate-fn (:quantity item)))))
 
 (def inc-subscription-quantity (partial modify-subscription-quantity inc))
 (def dec-subscription-quantity (partial modify-subscription-quantity dec))
+
+(defn inc-subscription-handler [req username roles]
+  (let [user (get-user-doc username)]
+    (warn "inc-subscription-handler: " user)
+    (if (not (:subscription user))
+      (json-response {:status "false" :reason ":subcription not present in user record."})
+      (let [stripe-resp (inc-subscription-quantity (:subscription user))
+            success? (nil? (get stripe-resp "error"))]
+        ;; (warn user)
+        ;; (warn stripe-resp)
+        ;; (warn success?)
+        (json-response success?)))))
+
+;; (defn dec-subscription-handler [req username roles]
+;;   (let [user (get-user-doc username)
+;;         body (get-body req)
+;;         price (price-lookup (keyword (:plan body)))
+;;         stripe-resp
+;;         ;(json/read-str)
+;;         (common/with-token (get-stripe-secret-key)
+;;           (common/execute (subscriptions/subscribe-customer
+;;                            (common/plan price)
+;;                            (common/customer (:customer user))
+;;                            (subscriptions/do-not-prorate))))
+;;         cancel-success? (nil? (get stripe-resp "error"))]
+;;     (warn price)
+;;     (warn cancel-success?)
+;;     (warn stripe-resp)
+;;     (json-response "foo")))

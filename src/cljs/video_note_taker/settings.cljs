@@ -68,6 +68,36 @@
      :a "Add 50 GB and 15 users for $5/month."
      :b "Add 50 GB and 15 users for $55/year.")])
 
+(defn inc-subscription-button []
+  [:button {:class "white bg-green br3 bn pa3 ma2 dim"
+            :on-click
+            (fn [e]
+              (toaster-oven/add-toast
+               "Purchase 50 additional GB of storage, and 15 additional users?" nil nil
+               {:cancel-fn (fn [])
+                :ok-fn (fn []
+                         (db/post-to-endpoint
+                          "inc-subscription" {}
+                          (fn [resp]
+                            (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                            (println "inc-subscription: " resp))))}))}
+   "Add 50GB and 15 users"])
+
+(defn dec-subscription-button []
+  [:button {:class "white bg-red br3 bn pa3 ma2 dim"
+            :on-click
+            (fn [e]
+              (toaster-oven/add-toast
+               "Remove 50 additional GB of storage?" nil nil
+               {:cancel-fn (fn [])
+                :ok-fn (fn []
+                         (db/post-to-endpoint
+                          "dec-subscription" {}
+                          (fn [resp]
+                            (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                            (println "dec-subscription: " resp))))}))}
+   "Remove 50GB of storage"])
+
 (defn cancel-subscription-button []
   [:button {:class "white bg-red br3 bn pa3 ma2 dim"
             :on-click
@@ -91,8 +121,10 @@
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
        [usage-monitor user-cursor]
-       [add-subscription-button :a]
-       [add-subscription-button :b]
+       ;; [add-subscription-button :a]
+       ;; [add-subscription-button :b]
+       [inc-subscription-button]
+       [dec-subscription-button]
        [cancel-subscription-button]
        [:h2 "Import & Export"]
        [:a (merge {:style {:text-align :center}}
