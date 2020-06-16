@@ -324,8 +324,10 @@
     (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 
 (defn get-user-handler [req username roles]
-  (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))]
-    (json-response user-doc)))
+  (if (= username "admin")
+    (json-response {:name "admin" :roles ["_admin"]})
+    (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))]
+      (json-response user-doc))))
 
 (defn get-user-usage [username]
   (let [view-resp (db/get-view db nil "videos" "content_length_by_user"
