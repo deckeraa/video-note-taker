@@ -11,7 +11,7 @@
       :refer [log  trace  debug  info  warn  error  fatal  report
               logf tracef debugf infof warnf errorf fatalf reportf
               spy get-env]]
-   [video-note-taker.db :as db :refer [db]]
+   [video-note-taker.db :as db :refer [db users-db]]
    [video-note-taker.access-shared :as access-shared]))
 
 (defn load-groups-for-user
@@ -144,13 +144,36 @@
                                     )))
   )
 
+(defn get-connected-users [username roles]
+  (if (contains? (set roles) "_admin")
+    ;; admins get all users
+    (let [resp (db/couch-request users-db :get "_all_docs" {} {} nil)]
+      (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
+                (:rows resp))
+           (remove nil?)))
+    ;; non-admins get all users that they are in a group with and any users they created
+    ;; (db/get-view users-db nil "users" "by_creating_user" {:key "dawn" :include_docs true} nil nil nil)
+    (let [groups (db/get-view db get-hook-fn "groups" "by_user" {:key username :include_docs true}
+                              username roles nil)
+          created-users (set (map :name
+                                  (db/get-view users-db nil "users" "by_creating_user" {:key username :include_docs true} nil nil nil)))
+          groups-users (apply clojure.set/union (map :users groups))
+          users (clojure.set/union groups-users created-users)]
+      (warn "created-users: " created-users)
+      (warn "groups-users: " groups-users)
+      (warn "users: " users)
+      users))
+  )
+
 (defn video-put-hook [real-doc req-doc username roles]
-  (let [users (apply clojure.set/union
-                     (map :users (db/get-view
-                                  db get-hook-fn "groups" "by_user"
-                                  {:key username :include_docs true}
-                                  username roles
-                                  nil)))]
+  (let [users (get-connected-users username roles)
+        ;; users (apply clojure.set/union
+        ;;              (map :users (db/get-view
+        ;;                           db get-hook-fn "groups" "by_user"
+        ;;                           {:key username :include_docs true}
+        ;;                           username roles
+        ;;                           nil)))
+        ]
     (as-> req-doc $
       (audit-video-key-display-name real-doc $ username roles)
       (audit-video-key-users real-doc $ username roles users))))

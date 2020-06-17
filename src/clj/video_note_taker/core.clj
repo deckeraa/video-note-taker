@@ -521,26 +521,28 @@
       (error "update-video-permissions-handler e: " e))))
 
 (defn get-connected-users-handler [req username roles]
+  (json-response (access/get-connected-users username roles))
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
-  (if (contains? (set roles) "_admin")
-    ;; admins get all users
-    (let [resp (db/couch-request users-db :get "_all_docs" {} {} (db/get-auth-cookie req))]
-      (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
-                (:rows resp))
-           (remove nil?)
-           (json-response)))
-    ;; non-admins get all users that they are in a group with and any users they created
-    ;; (db/get-view users-db nil "users" "by_creating_user" {:key "dawn" :include_docs true} nil nil nil)
-    (let [groups (db/get-view db access/get-hook-fn "groups" "by_user" {:key username :include_docs true}
-                              username roles (db/get-auth-cookie req))
-          created-users (set (map :name
-                                  (db/get-view users-db nil "users" "by_creating_user" {:key username :include_docs true} nil nil nil)))
-          groups-users (apply clojure.set/union (map :users groups))
-          users (clojure.set/union groups-users created-users)]
-      (warn "created-users: " created-users)
-      (warn "groups-users: " groups-users)
-      (warn "users: " users)
-      (json-response (vec users)))))
+  ;; (if (contains? (set roles) "_admin")
+  ;;   ;; admins get all users
+  ;;   (let [resp (db/couch-request users-db :get "_all_docs" {} {} (db/get-auth-cookie req))]
+  ;;     (->> (map (fn [row] (second (re-matches #"org\.couchdb\.user\:(.*)" (:id row))))
+  ;;               (:rows resp))
+  ;;          (remove nil?)
+  ;;          (json-response)))
+  ;;   ;; non-admins get all users that they are in a group with and any users they created
+  ;;   ;; (db/get-view users-db nil "users" "by_creating_user" {:key "dawn" :include_docs true} nil nil nil)
+  ;;   (let [groups (db/get-view db access/get-hook-fn "groups" "by_user" {:key username :include_docs true}
+  ;;                             username roles (db/get-auth-cookie req))
+  ;;         created-users (set (map :name
+  ;;                                 (db/get-view users-db nil "users" "by_creating_user" {:key username :include_docs true} nil nil nil)))
+  ;;         groups-users (apply clojure.set/union (map :users groups))
+  ;;         users (clojure.set/union groups-users created-users)]
+  ;;     (warn "created-users: " created-users)
+  ;;     (warn "groups-users: " groups-users)
+  ;;     (warn "users: " users)
+  ;;     (json-response (vec users))))
+  )
 
 (defn videos-handler [req username roles]
   (let [video-id (second (re-matches #"/videos/(.*)\..*" (:uri req)))
