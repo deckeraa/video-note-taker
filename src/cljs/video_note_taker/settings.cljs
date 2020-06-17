@@ -127,10 +127,12 @@
     (fn [settings-cursor]
       [:div {:class "w-100 pa3 flex flex-column items-start"}
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
-       [usage-monitor user-cursor]
-       [inc-subscription-button]
-       [dec-subscription-button user-cursor]
-       [cancel-subscription-button]
+       (when (auth/can-modify-subscription)
+         [:<>
+          [usage-monitor user-cursor]
+          [inc-subscription-button]
+          [dec-subscription-button user-cursor]
+          [cancel-subscription-button]])
        [:h2 "Import & Export"]
        [:a (merge {:style {:text-align :center}}
                 (if (uploads/uploads-in-progress?)

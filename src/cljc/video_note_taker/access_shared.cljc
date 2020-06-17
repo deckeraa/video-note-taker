@@ -11,3 +11,4 @@
 (defn can-import-spreadsheet [user-roles] (has-role? user-roles #{"_admin" "spreadsheet_import"}))
 (defn can-create-family-member-users [user-roles] (has-role? user-roles #{"_admin" "family_lead" "business_user"}))
 (defn can-create-groups [user-roles] (has-role? user-roles #{"_admin" "family_lead" "business_user"}))
+(defn can-modify-subscription [user-roles] (has-role? user-roles #{"_admin" "family_lead"}))

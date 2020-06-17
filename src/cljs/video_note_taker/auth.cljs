@@ -315,6 +315,7 @@
 (defn can-import-spreadsheet [] (access/can-import-spreadsheet (set (:roles @atoms/user-cursor))))
 (defn can-create-family-member-users [] (access/can-create-family-member-users (set (:roles @atoms/user-cursor))))
 (defn can-create-groups [] (access/can-create-groups (set (:roles @atoms/user-cursor))))
+(defn can-modify-subscription [] (access/can-modify-subscription (set (:roles @atoms/user-cursor))))
 
 (defn is-users-note [note] (= (:created-by note) (:name @atoms/user-cursor)))
 
