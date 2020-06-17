@@ -1,5 +1,6 @@
 (ns video-note-taker.access
   (:require
+   [clojure.data]
    [clojure.test :refer [deftest is run-tests]]
    [cljc.java-time.zoned-date-time :as zd]
    [cljc.java-time.duration :as dur]
@@ -165,16 +166,45 @@
       users))
   )
 
+(defn audit-video-rev-and-content-length
+  "Checks to see if the only difference is that the content-length got added in the background"
+  [real-doc req-doc]
+  (let [new-things (second (clojure.data/diff req-doc real-doc))]
+    (if (= (set (keys new-things))
+           #{:_rev :content-length}) ;; ensure the only new things are the content length and the rev being updated
+      (merge req-doc new-things) ;; use the new rev and content-length
+      req-doc ;; otherwise make no modifications
+      )))
+
+(deftest test-audit-video-rev-and-content-length []
+  (let [real-doc {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                  :_rev "2-1asdfsadfsadfasfsadfsadfasdfsadf"
+                  :type "video"
+                  :users ["alpha"]
+                  :content-length 12345}
+        real-doc-with-extras {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                              :_rev "2-1asdfsadfsadfasfsadfsadfasdfsadf"
+                              :type "video"
+                              :users ["alpha"]
+                              :content-length 12345
+                              :something-else :got-updated}
+        req-doc  {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                  :_rev "1-d2a270c168b742c4fa1fb15df0927df4"
+                  :type "video"
+                  :users ["alpha" "bravo"]}
+        expected {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                  :_rev "2-1asdfsadfsadfasfsadfsadfasdfsadf"
+                  :type "video"
+                  :users ["alpha" "bravo"]
+                  :content-length 12345}]
+    (is (= (audit-video-rev-and-content-length real-doc req-doc) expected))
+    (is (= (audit-video-rev-and-content-length real-doc-with-extras req-doc) req-doc))))
+
 (defn video-put-hook [real-doc req-doc username roles]
   (let [users (get-connected-users username roles)
-        ;; users (apply clojure.set/union
-        ;;              (map :users (db/get-view
-        ;;                           db get-hook-fn "groups" "by_user"
-        ;;                           {:key username :include_docs true}
-        ;;                           username roles
-        ;;                           nil)))
         ]
     (as-> req-doc $
+      (audit-video-rev-and-content-length real-doc $)
       (audit-video-key-display-name real-doc $ username roles)
       (audit-video-key-users real-doc $ username roles users))))
 
