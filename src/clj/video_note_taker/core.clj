@@ -355,7 +355,9 @@
         id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)
-        params (assoc params :file-name new-short-filename)]
+        params (assoc params :file-name new-short-filename)
+        ;;params (assoc params "Content-Disposition" (str "attachment; filename=\"" filename "\""))
+        ]
     (info "filename: " filename)
     (info "updated params: " params)
     ;; TODO GB limit check could go here
