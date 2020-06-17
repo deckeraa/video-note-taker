@@ -14,7 +14,7 @@
                             "groups" "by_user"
                             {:key username :include_docs true}
                             username roles (db/get-auth-cookie req))]
-    (json-response groups)))
+    (json-response (vec (set groups)))))
 
 (defn delete-group-handler [req username roles]
   (let [req-group   (util/get-body req)
