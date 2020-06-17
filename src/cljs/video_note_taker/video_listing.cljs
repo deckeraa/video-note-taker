@@ -62,6 +62,7 @@
                                         (if (= 200 (:status resp))
                                           (do
                                             (toaster-oven/add-toast "Video deleted" svg/check "green" nil)
+                                            (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
                                             (load-video-listing video-listing-cursor))
                                           (toaster-oven/add-toast (str "Couldn't delete video. " (get-in resp [:body :reason])) svg/x "red" nil)
                                           ))))}))}
