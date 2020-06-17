@@ -167,12 +167,13 @@
   )
 
 (defn audit-video-rev-and-content-length
-  "Checks to see if the only difference is that the content-length got added in the background"
+  "Checks to see if content-length got added in the background"
   [real-doc req-doc]
-  (let [new-things (second (clojure.data/diff req-doc real-doc))]
-    (if (= (set (keys new-things))
-           #{:_rev :content-length}) ;; ensure the only new things are the content length and the rev being updated
-      (merge req-doc new-things) ;; use the new rev and content-length
+  (let [new-things (second (clojure.data/diff req-doc real-doc))
+        new-keys (set (keys new-things))]
+    (if (and (contains? new-keys :_rev)
+             (contains? new-keys :content-length)) 
+      (merge req-doc (select-keys new-things [:_rev :content-length])) ;; use the new rev and content-length
       req-doc ;; otherwise make no modifications
       )))
 
@@ -182,12 +183,6 @@
                   :type "video"
                   :users ["alpha"]
                   :content-length 12345}
-        real-doc-with-extras {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
-                              :_rev "2-1asdfsadfsadfasfsadfsadfasdfsadf"
-                              :type "video"
-                              :users ["alpha"]
-                              :content-length 12345
-                              :something-else :got-updated}
         req-doc  {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
                   :_rev "1-d2a270c168b742c4fa1fb15df0927df4"
                   :type "video"
@@ -197,8 +192,24 @@
                   :type "video"
                   :users ["alpha" "bravo"]
                   :content-length 12345}]
-    (is (= (audit-video-rev-and-content-length real-doc req-doc) expected))
-    (is (= (audit-video-rev-and-content-length real-doc-with-extras req-doc) req-doc))))
+    (is (= (audit-video-rev-and-content-length real-doc req-doc) expected))))
+
+(deftest test-audit-video-rev-and-content-length-with-removing-things []
+  (let [real-doc {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                  :_rev "2-1asdfsadfsadfasfsadfsadfasdfsadf"
+                  :type "video"
+                  :users ["alpha"]
+                  :content-length 12345}
+        req-doc  {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                  :_rev "1-d2a270c168b742c4fa1fb15df0927df4"
+                  :type "video"
+                  :users []}
+        expected {:_id "79ce7e8c-fbde-4a12-b1d3-217d938b0a23"
+                  :_rev "2-1asdfsadfsadfasfsadfsadfasdfsadf"
+                  :type "video"
+                  :users []
+                  :content-length 12345}]
+    (is (= (audit-video-rev-and-content-length real-doc req-doc) expected))))
 
 (defn video-put-hook [real-doc req-doc username roles]
   (let [users (get-connected-users username roles)
