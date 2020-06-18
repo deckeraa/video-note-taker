@@ -358,8 +358,8 @@
         params (assoc params :file-name new-short-filename)
         ;;params (assoc params "Content-Disposition" (str "attachment; filename=\"" filename "\""))
         ]
-    (info "filename: " filename)
-    (info "updated params: " params)
+    (warn "filename: " filename)
+    (warn "updated params: " params)
     ;; TODO GB limit check could go here
     (if (has-user-exceeded-limits? username)
       {:status 402 ; payment required

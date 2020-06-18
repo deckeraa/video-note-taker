@@ -267,16 +267,14 @@
                              (let [remove-delegate-atm (reagent/atom (fn [] nil))]
                                (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
         [svg/share-graph {:class "white"} "white" "32px"]])
-     [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
-                (if (uploads/uploads-in-progress?)
-                  {:title "Cannot download video while upload is in progress."}
-                  {:title "Download video"
-                   :href
-                   (if-let [presigned-url (:presigned-url @video-cursor)]
-                     presigned-url
-                     (str (db/get-server-url) "download-video?video-id=" (:_id @video-cursor)))
-                   :download (:display-name @video-cursor)}))
-      [:img {:src "./video-download-2.svg" :class "white" :color "white" :width "32px"}]]
+     (when (not (:presigned-url @video-cursor))
+       [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
+                  (if (uploads/uploads-in-progress?)
+                    {:title "Cannot download video while upload is in progress."}
+                    {:title "Download video"
+                     :href
+                     (str (db/get-server-url) "download-video?video-id=" (:_id @video-cursor))}))
+        [:img {:src "./video-download-2.svg" :class "white" :color "white" :width "32px"}]])
      [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
                 (if (uploads/uploads-in-progress?)
                   {:title "Cannot download spreadsheet of notes while upload is in progress."
