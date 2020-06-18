@@ -73,8 +73,7 @@
     (when-let [files (file-objects file-input-ref-atom)]
       (let [file (get files 0)]
 ;;        (println "file" file upload-id)
-        (put! upload-queue {:file file :identifier upload-id
-                            :metadata {"Content-Disposition" "attachment; filename=\"39892_ou_futurelearn_mc1008_vid_008-540.mp4\""}})
+        (put! upload-queue {:file file :identifier upload-id})
         (swap! uploads-cursor assoc upload-id (cursor-entry upload-id [file] :s3))
         (go-loop []
           (let [update (<! uploaded)]
