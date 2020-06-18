@@ -148,7 +148,9 @@
   (str (escape-csv-field (:video note)) ","
        (escape-csv-field (:video-display-name note)) ","
        (float (/ (Math/round (float (* 100 (:time note)))) 100)) ","
-       (escape-csv-field (:text note))))
+       (escape-csv-field (:text note)) ","
+       (escape-csv-field (:created-by note)) ","
+       (escape-csv-field (:last-editor note))))
 
 (defn get-notes-spreadsheet-handler
   "Generates a spreadsheet of video notes. Pass ?video-id=<your video id> to get notes for a specific
@@ -175,7 +177,7 @@
     (as-> notes $
       (sort-by :time $) ; sort
       (map generate-spreadsheet-line $)
-      (conj $ "video key,video display name,time in seconds,note text")
+      (conj $ "video key,video display name,time in seconds,note text,created by,last editor")
       (clojure.string/join "\n" $)
       (response/response $)
       (content-type $ "text/csv")
