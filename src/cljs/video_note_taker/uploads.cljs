@@ -66,28 +66,34 @@
   (not (empty? uploads)))
 
 (defn upload-files-to-s3 [uploads-cursor file-input-ref-atom success-fn]
-  (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))
+  (let [
         uploaded (chan)
         upload-queue (s3-pipe uploaded {:server-url (db/resolve-endpoint "spaces-upload")
                                         :progress-events? true})]
     (when-let [files (file-objects file-input-ref-atom)]
-      (let [file (get files 0)]
-;;        (println "file" file upload-id)
-        (put! upload-queue {:file file :identifier upload-id})
-        (swap! uploads-cursor assoc upload-id (cursor-entry upload-id [file] :s3))
-        (go-loop []
-          (let [update (<! uploaded)]
- ;;           (println "From upload-queue: " update)
-            (when (= :progress (:type update))
-              (let [processed-update
-                    (-> update
-                        ;; rename keys to match up with what we get through Ring's file progress fn
-                        (clojure.set/rename-keys {:bytes-sent :bytes-read :bytes-total :content-length})
-                        (select-keys [:bytes-read :content-length]))]
-                (swap! uploads-cursor assoc-in [upload-id :progress]
-                       processed-update)))
-            (when (and success-fn (= :success (:type update))) (success-fn))
-            (recur)))))))
+      (println "Starting to upload files: " files)
+      (doall (map (fn [file]
+                    (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
+                      (println "file: " file)
+                      (put! upload-queue {:file file :identifier upload-id})
+                      (println "Successfully put " upload-id " on the queue")
+                      (swap! uploads-cursor assoc upload-id (cursor-entry upload-id [file] :s3))
+                      (println "uploads-cursor is now: " @uploads-cursor)
+                      (go-loop []
+                        (let [update (<! uploaded)]
+                          ;;           (println "From upload-queue: " update)
+                          (when (= :progress (:type update))
+                            (println "update: " update)
+                            (let [processed-update
+                                  (-> update
+                                      ;; rename keys to match up with what we get through Ring's file progress fn
+                                      (clojure.set/rename-keys {:bytes-sent :bytes-read :bytes-total :content-length})
+                                      (select-keys [:bytes-read :content-length]))]
+                              (swap! uploads-cursor assoc-in [upload-id :progress]
+                                     processed-update)))
+                          (when (and success-fn (= :success (:type update))) (success-fn))
+                          (recur)))))
+                  files)))))
 
 (defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
   (when-let [files (file-objects file-input-ref-atom)]
