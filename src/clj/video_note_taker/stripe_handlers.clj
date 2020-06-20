@@ -52,6 +52,12 @@
        "/"
        endpoint))
 
+(defn get-stripe-public-key []
+  (let [secret-key  (if (stripe-live?)
+                      (System/getenv "STRIPE_PUBLIC_KEY_LIVE")
+                      (System/getenv "STRIPE_PUBLIC_KEY_TEST"))]
+    secret-key))
+
 (defn get-stripe-secret-key []
   (let [secret-key  (if (stripe-live?)
                       (System/getenv "STRIPE_SECRET_KEY_LIVE")

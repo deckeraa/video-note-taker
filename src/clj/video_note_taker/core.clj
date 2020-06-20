@@ -638,6 +638,7 @@
              (slurp "./resources/public/index.html")
              "PAGEINFO"
              (pr-str {:stripe-mode (System/getenv "STRIPE_MODE")
+                      :stripe-public-key (stripe-handlers/get-stripe-public-key)
                       :landing-page-video-url (System/getenv "LANDING_PAGE_VIDEO_URL")})
              ))
            "text/html")

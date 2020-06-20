@@ -24,8 +24,6 @@
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(def stripe-public-key "pk_test_SXM3FqTZVdax1V17XeTEgvCJ003ySTXbMq")
-
 (def pageinfo-atom (reagent/atom {}))
 
 (defn purchase-handler [loading-stripe-atom validated-username-atom password-atom plan e]
@@ -39,7 +37,7 @@
      (println "resp:" resp)
      (let [id (:id resp)]
        (when id
-         (let [stripe (js/Stripe. stripe-public-key)]
+         (let [stripe (js/Stripe. (:stripe-public-key @pageinfo-atom))]
            (.redirectToCheckout stripe (js-obj "sessionId" id))))))
    (fn [resp raw-resp]
      (println "Stripe endpoint failed: " raw-resp))))
