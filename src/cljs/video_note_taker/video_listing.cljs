@@ -181,9 +181,7 @@
        [:input {:id "file-upload"
                 :name "file"
                 :type "file"
-                :multiple (if (:local (keyword (:upload-location? @atoms/settings-cursor)))
-                            true
-                            false)
+                :multiple true
                 :class "dn"
                 :ref (fn [el]
                        (reset! file-input-ref-atom el))
