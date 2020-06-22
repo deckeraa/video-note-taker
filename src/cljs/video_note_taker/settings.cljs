@@ -212,4 +212,4 @@
           ;[auth/user-creation]
           ])
        [:h2 "Support"]
-       [:p "Need help or found an issue with the software? Please email aaron@stronganchortech.com ."]])))
+       [:p "Need help or found an issue with the software? Please email familymemorystreamsupport@stronganchortech.com."]])))

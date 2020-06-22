@@ -109,7 +109,7 @@
            ]
           [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
 extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]]
-         [:p "Contact aaron@stronganchortech.com to get started."])
+         [:p "Contact familymemorystreamsupport@stronganchortech.com to get started."])
        ])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
