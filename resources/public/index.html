@@ -9,33 +9,40 @@
   </head>
   <body class="h-100">
     <div id="app" class="sans-serif h-100">
-      <div class="h-100 flex flex-column">
-        <div class="white bg-blue pl2-ns">
-          <p class="f1 ma0">Family<wbr>Memory<wbr>Stream</p>
-          <div class="flex flex-wrap items-center justify-between">
-            <p class="f3 i ma1">Helping your family reminisce together</p>
-            <a class="f3 white ba bw1 br4 b--white pa2 pv2 ma1 mr2 hover-blue hover-bg-white link" href="./memories">Login</a>
+      <div class="h-100 w-100 flex flex-column items-center" style="background: #d5f6ffff">
+        <div class="fixed bottom-0 w-100" style="background: url('launch_screen.svg') no-repeat center 1%; height: 800px; z-index: 1;"></div>
+        <div class="flex flex-wrap justify-between w-100" style="z-index: 2;">
+          <div class="f1 blue bg-white-80 br4 pa3 ma2">Family<wbr>Memory<wbr>Stream</div>
+          <div class="f1 bg-white-80 br4 pa3 ma2 flex flex-wrap">
+            <a class="f3 blue ba bw1 br4 b--blue pa2 pv2 ma1 mr2 hover-white hover-bg-blue link">
+              Sign Up
+            </a>
+            <a class="f3 blue ba bw1 br4 b--blue pa2 pv2 ma1 mr2 hover-white hover-bg-blue link"
+               href="./memories">
+              Login
+            </a>
           </div>
         </div>
-        <p class="f4 ml1 tc">When you host your family videos with FamilyMemoryStream, your family can:</p>
-        <div class="flex flex-column flex-row-ns justify-between-ns">
-          <div class="flex flex-column items-center pa3 ma3-ns">
+        <!-- <p class="f4 ml1 tc">When you host your family videos with FamilyMemoryStream, your family can:</p> -->
+        <!-- 3 headers -->
+        <div class="flex flex-column flex-row-ns justify-around-ns flex-wrap" style="z-index: 2;">
+          <div class="flex flex-column items-center pa3 ma3 br3 bg-white-90 w6" style="width: 22rem;">
             <img src="streaming_icon.svg" width="64px" height="64px"/>
             <p class="f4 ma1">Stream videos to their computer or mobile device.</p>
             <p class="f5 ma1 i">No need to pass around massive video files or DVDs.</p>
           </div>
-          <div class="flex flex-column items-center pa3 ma3-ns">
+          <div class="flex flex-column items-center pa3 ma3 br3 bg-white-90 w6" style="width: 22rem;">
             <img src="note_taking_icon.svg" width="64px" height="64px"/>
             <p class="f4 ma1">Highlight their favorite memories by adding notes.</p>
             <p class="f5 ma1 i">Notes can be added by any family member and correspond to a timestamp in a video, making it easy to jump to their favorite memories.</p>
           </div>
-          <div class="flex flex-column items-center pa3 ma3-ns">
+          <div class="flex flex-column items-center pa3 ma3 br3 bg-white-90" style="width: 22rem;">
             <img src="magnifying_glass.svg" width="64px" height="64px"/>
             <p class="f4 ma1">Find memories with built-in search.</p>
             <p class="f5 ma1 i">Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips.</p>
           </div>
         </div>
-        <div id="dynamic-content" class="flex flex-column items-center">
+        <div id="dynamic-content" class="flex flex-column items-center" style="z-index: 2;">
           <img src="tapefish_animation.gif" width="200px"/>
           Loading...
         </div>
