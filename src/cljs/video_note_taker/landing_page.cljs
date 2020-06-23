@@ -47,7 +47,7 @@
                                 (or (empty? @validated-username-atom)
                                     (empty? @password-atom)
                                     (not @tos-atom)))]
-    [:button {:class (str "bn white pa3 ma2 flex items-center "
+    [:button {:class (str "bn white pa3 ma2 flex items-center justify-between "
                           (if payment-button-inactive
                             "bg-light-green"
                             "bg-green dim"))
@@ -59,7 +59,7 @@
         [:img {:src "tapefish_animation.gif" :width "200px"}]
         [:p {:class "f3 b"} "Loading Stripe payment page..."]]
        [:<>
-        [:div {:class "mr1"}
+        [:div {:class "mr1 tl"}
          [:p {:class "f3 b"}
           (case plan
             :a "$15 first month, then $5/month afterwards"
@@ -95,12 +95,19 @@
                  :target "_blank"}
              "Terms of Service"]
             "."]]
-          [:div {:class "flex flex-row flex-wrap"}
+          [:div {:class "flex flex-column"}
            [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :a]
+           "or"
            [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :b]
            ]
-          [:p {:class "ma1 f5 i"} "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members. Example: if you want to host 100GB of videos and pay monthly, that would be an
-extra $5 a month, so you would pay $20 the first month and $10/month afterwards."]]
+          [:p {:class "ma1 f5 i"}
+           "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members."
+           [:br]
+           "Example: if you want to host 100GB of videos and pay monthly, that would be an
+extra $5 a month,"
+           [:br]
+           " so you would pay $20 the first month and $10/month afterwards."
+           ]]
          [:p "Contact familymemorystreamsupport@stronganchortech.com to get started."])
        ])))
 
