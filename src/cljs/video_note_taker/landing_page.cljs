@@ -77,13 +77,9 @@
         show-tos (reagent/atom false)]
     (fn []
       [:<>
-       (when (:landing-page-video-url @pageinfo-atom)
-         [:video {:controls true
-                  :width "85%"
-                  :src (:landing-page-video-url @pageinfo-atom)}])
        (if (:stripe-mode @pageinfo-atom)
          [:<>
-          [:h2 {:class "f2 ml1 tc"} "Get started sharing memories"]
+           [:h2 {:class ""} "Get Started"]
           [:div {:class "flex flex-column"}
            [auth/user-name-picker username-atom validated-username-atom]
            [auth/password-picker password-atom]]
@@ -96,11 +92,7 @@
             "I agree with the "
             [:a {:class "link underline blue hover-orange"
                  :href "./tos.html"
-                 :target "_blank"
-                 ;; :on-click (fn [e]
-                 ;;             (reset! show-tos true)
-                 ;;             )
-                 }
+                 :target "_blank"}
              "Terms of Service"]
             "."]]
           [:div {:class "flex flex-row flex-wrap"}

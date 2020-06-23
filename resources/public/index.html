@@ -9,7 +9,7 @@
   </head>
   <body class="h-100">
     <div id="app" class="sans-serif h-100">
-      <div class="h-100 w-100 flex flex-column items-center" style="background: #d5f6ffff">
+      <div class="w-100 flex flex-column items-center" style="background: #d5f6ffff">
         <div class="fixed bottom-0 w-100" style="background: url('launch_screen.svg') no-repeat center 1%; height: 800px; z-index: 1;"></div>
         <div class="flex flex-wrap justify-between w-100" style="z-index: 2;">
           <div class="f1 blue bg-white-80 br4 pa3 ma2">Family<wbr>Memory<wbr>Stream</div>
@@ -42,11 +42,63 @@
             <p class="f5 ma1 i">Got a wedding coming up and looking for some cute/awkward baby videos? The search capability shows you all relevant clips.</p>
           </div>
         </div>
-        <div id="dynamic-content" class="flex flex-column items-center" style="z-index: 2;">
+        <!-- Pitch and Demo Video -->
+        <video class="ma3 w-90 w-80-ns" src="https://vnt-spaces-0.nyc3.digitaloceanspaces.com/b2c_video.mp4" style="z-index: 2;"></video>
+        <!-- Feature Comparison Table -->
+        <div class="br3 bg-white-90 ma3 pa3"
+             style="z-index: 2;">
+          <h2 class="ma1">Feature Comparison</h2>
+          <table style="border-spacing: 1rem;">
+            <tbody>
+              <tr> <td></td> <td>FamilyMemoryStream</td> <td>YouTube</td></tr>
+              <tr>
+                <td>Stream videos to any device</td>
+                <td><img src="./check.svg"/></td>
+                <td><img src="./check.svg"/></td>
+              </tr>
+              <tr>
+                <td>Share videos privately</td>
+                <td><img src="./check.svg"/></td>
+                <td><img src="./x.svg"/></td>
+              </tr>
+              <tr>
+                <td>Add notes or comments to videos</td>
+                <td><img src="./check.svg"/></td>
+                <td><img src="./check.svg"/></td>
+              </tr>
+              <tr>
+                <td>Search notes</td>
+                <td><img src="./check.svg"/></td>
+                <td><img src="./x.svg"/></td>
+              </tr>
+              <tr>
+                <td>Associate a timestamp with a note</td>
+                <td class="items-center"> <!-- flex seems to break this -->
+                  <img class="mr2" src="./check.svg"></img>
+                  <!-- <span>Automatic</span> -->
+                </td>
+                <td class="flex items-center"><img class="mr2" src="./x.svg"/><span>Very clunky</span></td>
+              </tr>
+              <tr>
+                <td>Download notes in a spreadsheet</td>
+                <td><img src="./check.svg"/></td>
+                <td><img src="./x.svg"/></td>
+              </tr>
+              <tr>
+                <td>Support model</td>
+                <td>$5/mo or $55/year</td>
+                <td>Shows ads and sells your data</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Dynamic Content -->
+        <div id="dynamic-content" class="flex flex-column items-center br3 bg-white-90 ma3 pa3" style="z-index: 2;">
+          <h2 class="ma1">Get Started</h2>
           <img src="tapefish_animation.gif" width="200px"/>
           Loading...
         </div>
-        <p class="tc">
+        <p class="br3 bg-white-90 ma3 pa3 tc" style="z-index: 2;">
           Contact: familymemorystreamsupport@stronganchortech.com
         </p>
       </div>
