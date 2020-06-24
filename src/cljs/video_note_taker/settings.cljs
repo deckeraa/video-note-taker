@@ -129,11 +129,12 @@
        [auth/manage-identity login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
        (when (auth/can-modify-subscription)
          [:<>
+          [:h2 {:class "mt5"} "Your subscription"]
           [usage-monitor user-cursor]
           [inc-subscription-button]
           [dec-subscription-button user-cursor]
           [cancel-subscription-button]])
-       [:h2 "Import & Export"]
+       [:h2 {:class "mt5"} "Import & Export"]
        [:a (merge {:style {:text-align :center}}
                 (if (uploads/uploads-in-progress?)
                   {:title "Cannot download spreadsheet of notes while upload is in progress."
@@ -189,19 +190,19 @@
        ;;  "Download all notes as spreadsheet"]
        (when (auth/can-create-family-member-users)
          [:<>
-          [:h2 "Manage Users"]
+          [:h2 {:class "mt5"} "Manage Users"]
           [manage-users]
           ]
          )
        (when (auth/can-create-groups)
          (let [group-cursor (reagent/atom [])]
            [:div
-            [:h2 "Manage Groups"]
+            [:h2 {:class "mt5"} "Manage Groups"]
             [groups/group-listing]
             ]))
        (when (auth/is-admin?)
          [:div
-          [:h2 "Developer settings"]
+          [:h2 {:class "mt5"} "Developer settings"]
           [:div {:class "flex items-center"}
            [:input {:type :checkbox :class "ma2"
                     :checked (:show-app-state @settings-cursor)
@@ -211,5 +212,5 @@
            [:div "Show app-state atom at the bottom of each page"]]
           ;[auth/user-creation]
           ])
-       [:h2 "Support"]
+       [:h2 {:class "mt5"} "Support"]
        [:p "Need help or found an issue with the software? Please email familymemorystreamsupport@stronganchortech.com."]])))

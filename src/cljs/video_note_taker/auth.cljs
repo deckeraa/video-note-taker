@@ -290,8 +290,7 @@
   "Reagent component used in the Settings screen that allows a user do various profile edit activites such as changing a password or logging out."
   [logged-in-atm notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor]
   [:div
-   [:h2 "Manage Identity"]
-   [:div {} "Hello " (:name @atoms/user-cursor) "."]
+   [:h2 {} "Hello " (:name @atoms/user-cursor) "."]
    (when (is-admin?)
      [:div {} "You are an admin."])
    [:h3 "Log out"]
