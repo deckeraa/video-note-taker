@@ -8,13 +8,23 @@
   </head>
   <body class="h-100">
     <div id="app" class="sans-serif h-100">
-      <div class="h-100 flex flex-column">
-        <div class="white bg-blue pl2-ns">
-          <p class="f1 ma0">Family<wbr>Memory<wbr>Stream</p>
-          <p class="f3 i ma1">Helping your family reminisce together</p>
+      <div class="h-100 flex flex-column" style="background: #d5f6ffff">
+        <div class="fixed bottom-0 w-100" style="background: url('launch_screen.svg') no-repeat center 1%; height: 800px; z-index: 1;"></div>
+        <div class="flex flex-wrap justify-between w-100" style="z-index: 2;">
+          <div class="f1 blue bg-white-80 br4 pa3 ma2">Family<wbr>Memory<wbr>Stream</div>
+          <div class="f1 bg-white-80 br4 pa3 ma2 flex flex-wrap">
+            <a class="f3 blue ba bw1 br4 b--blue pa2 pv2 ma1 mr2 hover-white hover-bg-blue link"
+               href="./#sign-up">
+              Sign Up
+            </a>
+            <a class="f3 blue ba bw1 br4 b--blue pa2 pv2 ma1 mr2 hover-white hover-bg-blue link"
+               href="./memories">
+              Login
+            </a>
+          </div>
         </div>
-        <div class="ma2">
-          <h1 class="f2 ma0 pa0">Terms of Service</h1>
+        <div class="ma2 pa3 ma3 br3 bg-white-90" style="z-index: 2;">
+          <h2 class="ma0 pa0">Terms of Service</h2>
           <ul class="f3">
             <li> FamilyMemoryStore will <b>not</b> sell or share your data with other third parties.</li>
             <li>Do not store any of the following:</li>
@@ -32,7 +42,7 @@
             <li>Videos are stored by Digital Ocean
               <a href="https://www.digitalocean.com/docs/spaces/"> Spaces</a>
               . Nevertheless, we encourage you to keep your own backups.</li>
-            <li>This service can be cancelled at any time inside the app or by emailing aaron AT stronganchortech.com.</li>
+            <li>This service can be cancelled at any time inside the app or by emailing familymemorystreamsupport@stronganchortech.com.</li>
           </ul>
         </div>
       </div>
