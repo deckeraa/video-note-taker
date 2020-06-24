@@ -42,31 +42,66 @@
    (fn [resp raw-resp]
      (println "Stripe endpoint failed: " raw-resp))))
 
+(defn get-prompt-message [needs-username needs-password needs-tos]
+  (if (and (not needs-username) (not needs-password) (not needs-tos))
+    ""
+    (str
+     "Please "
+     (cond (and needs-username needs-password)
+           "pick a username and password"
+           needs-username
+           "pick a username"
+           needs-password
+           "pick a password")
+     (when (and (or needs-username needs-password) needs-tos)
+       " and ")
+     (when needs-tos
+       "check the Terms of Service box")
+     ".")))
+
+(deftest test-get-prompt-message
+  (is (= (get-prompt-message true true true)
+         "Please pick a username and password and check the Terms of Service box."))
+  (is (= (get-prompt-message true false true)
+         "Please pick a username and check the Terms of Service box."))
+  (is (= (get-prompt-message false true true)
+         "Please pick a password and check the Terms of Service box."))
+  (is (= (get-prompt-message false false true)
+         "Please check the Terms of Service box.")))
+
 (defn payment-button [loading-stripe-atom validated-username-atom password-atom tos-atom plan]
-  (let [payment-button-inactive (or @loading-stripe-atom
-                                (or (empty? @validated-username-atom)
-                                    (empty? @password-atom)
-                                    (not @tos-atom)))]
-    [:button {:class (str "bn white pa3 ma2 flex items-center justify-between "
-                          (if payment-button-inactive
-                            "bg-light-green"
-                            "bg-green dim"))
-              :on-click (fn [e]
-                          (when (not payment-button-inactive)
-                            (purchase-handler loading-stripe-atom validated-username-atom password-atom plan e)))}
-     (if (= plan @loading-stripe-atom)
-       [:div
-        [:img {:src "tapefish_animation.gif" :width "200px"}]
-        [:p {:class "f3 b"} "Loading Stripe payment page..."]]
-       [:<>
-        [:div {:class "mr1 tl"}
-         [:p {:class "f3 b"}
-          (case plan
-            :a "$15 first month, then $5/month afterwards"
-            :b "$55/year"
-            "Undefined payment plan")]
-         [:p {:class "f4"} "50 GB total, shared with up to 15 family members"]]
-        [svg/chevron-right {} "white" "64px"]])]))
+  (let [show-click-message? (reagent/atom false)]
+    (fn []
+      (let [payment-button-inactive (or @loading-stripe-atom
+                                        (or (empty? @validated-username-atom)
+                                            (empty? @password-atom)
+                                            (not @tos-atom)))]
+        [:<>
+         [:button {:class (str "bn white pa3 ma2 flex items-center justify-between "
+                               (if payment-button-inactive
+                                 "bg-light-green"
+                                 "bg-green dim"))
+                   :on-click (fn [e]
+                               (if (not payment-button-inactive)
+                                 (purchase-handler loading-stripe-atom validated-username-atom password-atom plan e)
+                                 (reset! show-click-message? true)))}
+          (if (= plan @loading-stripe-atom)
+            [:div
+             [:img {:src "tapefish_animation.gif" :width "200px"}]
+             [:p {:class "f3 b"} "Loading Stripe payment page..."]]
+            [:<>
+             [:div {:class "mr1 tl"}
+              [:p {:class "f3 b"}
+               (case plan
+                 :a "$15 first month, then $5/month afterwards"
+                 :b "$55/year"
+                 "Undefined payment plan")]
+              [:p {:class "f4"} "50 GB total, shared with up to 15 family members"]]
+             [svg/chevron-right {} "white" "64px"]])]
+         (when @show-click-message?
+           [:p {:class ""}
+            (get-prompt-message (nil? @validated-username-atom) (empty? @password-atom) (not @tos-atom))
+            ])]))))
 
 (defn my-page []
   (let [loading-stripe (reagent/atom false)
