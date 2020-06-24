@@ -124,7 +124,7 @@ extra $5 a month,"
   (println "landing-page.cljs")
   (reset! pageinfo-atom (cljs.reader/read-string (.-textContent (.getElementById js/document "pageinfo"))))
   (reagent.dom/render [my-page atoms/app-state]
-                      (.getElementById js/document "dynamic-content")))
+                      (.getElementById js/document "sign-up")))
 
 (defn ^:export landing-page []
   (dev-setup)
