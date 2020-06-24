@@ -274,7 +274,7 @@
                        (reset! password-atom value)
                        (reset! password-atom nil))))}]]
        (cond
-         (empty? @input-atm) [:p {:class "pl3"}         "Please pick a password                              "]
+         (empty? @input-atm) [:p {:class ""}         "Please pick a password                              "]
          (empty? @password-atom) [:p {:class "red"} "Password must be at " [:br] "least four characters long"]
          :default [svg/check {:class "ma1"} "green" "24px"])])))
 
