@@ -101,7 +101,8 @@
 (defn manage-users []
   (let [username-atom (reagent/atom "")
         password-atom (reagent/atom "")
-        validated-username-atom (reagent/atom nil)]
+        validated-username-atom (reagent/atom nil)
+        connected-users-atom (reagent/atom nil)]
     (fn []
       [:<>
        [auth/user-name-picker username-atom validated-username-atom]
@@ -118,7 +119,21 @@
                                  (fn [body raw]
                                    (println "Couldn't create user:" raw)
                                    (toaster-oven/add-toast "User not created" svg/x "red" nil))))}
-        "Create new user."]])))
+        "Create new user."]
+       (let [cnt (count @connected-users-atom)]
+         [:p "You've created " cnt " users" (if (> cnt 0) ":" ".")])
+       [listing/listing {:data-cursor connected-users-atom
+                         :card-fn (fn [item remove-delegate]
+                                    [:div {:class ""}
+                                     (str @item)])
+                         :load-fn (fn [atm]
+                                    (groups/load-connected-users
+                                     atm
+                                     vec
+                                     ;; (fn [users]
+                                     ;;   (mapv (fn [s] [:_id s :text s]) users))
+                                     )
+                                    )}]])))
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)

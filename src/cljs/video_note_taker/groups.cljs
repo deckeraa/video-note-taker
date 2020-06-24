@@ -34,11 +34,13 @@
   "Loads the list of connects users. Used to populate the list of options for the share dialog.
   At present, each user is connected to each other user in the Alpha Deploy.
   This will change in the future when a user connection workflow is implemented."
-  [user-list-atm]
-  (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
-                               {}))
-            users (set (:body resp))]
-        (reset! user-list-atm users))))
+  ([user-list-atm]
+   (load-connected-users user-list-atm identity))
+  ([user-list-atm xform-fn]
+   (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
+                                {}))
+             users (set (:body resp))]
+         (reset! user-list-atm (xform-fn users))))))
 
 (defn load-groups [data-cursor]
   (db/put-endpoint-in-atom "get-groups" {} data-cursor))
