@@ -65,7 +65,7 @@
             :a "$15 first month, then $5/month afterwards"
             :b "$55/year"
             "Undefined payment plan")]
-         [:p {:class "f4"} "50 GB, up to 15 family members"]]
+         [:p {:class "f4"} "50 GB total, shared with up to 15 family members"]]
         [svg/chevron-right {} "white" "64px"]])]))
 
 (defn my-page []
@@ -101,9 +101,9 @@
            [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :b]
            ]
           [:p {:class "ma1 f5 i"}
-           "Additional storage and users can be purchased in-app in blocks of 50GB and 15 family members."
+           "Additional storage and users can be purchased in-app in groups of 50GB and 15 family members."
            [:br]
-           "Example: if you want to host 100GB of videos and pay monthly, that would be an
+           "Example: if you want to host 100GB of videos shared with up to 30 others and pay monthly, that would be an
 extra $5 a month,"
            [:br]
            " so you would pay $20 the first month and $10/month afterwards."
