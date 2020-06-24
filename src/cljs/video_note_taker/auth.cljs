@@ -216,10 +216,12 @@
   (let [check-ctr (reagent/atom 0)
         username-status (reagent/atom :none)]
     (fn []
-      [:div {:class "flex items-center flex-wrap flex-nowrap-ns"}
+      [:div {:class "flex items-center flex-wrap flex-nowrap-ns h2"}
        [:div {:class "flex"}
-        [:p {:class "ma1"} "Username: "]
+        [:p {:class "ma1" :style {:width "5em"}} "Username: "]
         [:input {:type :text :value @username-atom
+                 :style {:width "15em"}
+                 :class "mr2"
                  :on-change
                  (fn [e]
                    (let [username (-> e .-target .-value)]
@@ -256,16 +258,18 @@
          :checking  [:p {:class ""}      "Checking username...  "]
          :taken     [:p {:class "red"}   "Username is taken.    "]
          :invalid   [:p {:class "red"}   "Username can only contain letters, numbers, and underscores."]
-         :validated [:p {:class "green"} "Username is available."]
-         nil)])))
+         :validated [:p {:class "green "} "Username is available."]
+         [:p {:class "" :style {:width "12em"}}])])))
 
 (defn password-picker [password-atom]
   (let [input-atm (reagent/atom "")]
     (fn []
-      [:div {:class "flex items-center flex-wrap flex-nowrap-ns"}
+      [:div {:class "flex items-center flex-wrap flex-nowrap-ns mv2 h2"}
        [:div {:class "flex"}
-        [:p {:class "ma1"} "Password: "]
+        [:p {:class "ma1" :style {:width "5em"}} "Password: "]
         [:input {:type :password :value @input-atm
+                 :style {:width "15em"}
+                 :class "mr2"
                  :on-change
                  (fn [e]
                    (let [value (-> e .-target .-value)]
