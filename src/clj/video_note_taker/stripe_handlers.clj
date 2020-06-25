@@ -141,7 +141,8 @@
                  username password ["family_lead"]
                  (merge
                   (select-keys data-object [:customer :subscription])
-                  {:gb-limit 50}))
+                  {:gb-limit 50
+                   :user-limit 15}))
               (do
                 (swap! temp-users-db dissoc username)
                 (json-response {:status "Web hook succeeded!"}))
@@ -165,7 +166,7 @@
       (warn (get stripe-resp "error"))
       ;; Set their upload limit to 0GB. This will leave existing videos in place. Those will need cleaned up manually.
       (when cancel-success?
-        (db/put-doc users-db nil (assoc user :gb-limit 0) nil nil))
+        (db/put-doc users-db nil (merge user {:gb-limit 0 :user-limit 0}) nil nil))
       (json-response cancel-success?))))
 
 (defn- get-subscription-item [subscription]
@@ -205,7 +206,8 @@
       (let [stripe-resp (inc-subscription-quantity (:subscription user))
             success? (nil? (get stripe-resp "error"))]
         (when success?
-          (db/put-doc users-db nil (update user :gb-limit + 50) nil nil))
+          (db/put-doc users-db nil (update (update user :gb-limit + 50)
+                                           :user-limit + 15) nil nil))
         (json-response success?)))))
 
 (defn dec-subscription-handler [req username roles]
@@ -218,5 +220,6 @@
         (let [stripe-resp (dec-subscription-quantity (:subscription user))
               success? (nil? (get stripe-resp "error"))]
           (when success?
-            (db/put-doc users-db nil (update user :gb-limit - 50) nil nil))
+            (db/put-doc users-db nil (update (update user :gb-limit - 50)
+                                             :user-limit - 15) nil nil))
           (json-response {:status success?}))))))
