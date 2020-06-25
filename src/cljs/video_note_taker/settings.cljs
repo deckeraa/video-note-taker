@@ -125,13 +125,12 @@
        [listing/listing {:data-cursor connected-users-atom
                          :card-fn (fn [item remove-delegate]
                                     [:div {:class ""}
-                                     (str @item)])
+                                     (:text @item)])
                          :load-fn (fn [atm]
                                     (groups/load-connected-users
                                      atm
-                                     vec
-                                     ;; (fn [users]
-                                     ;;   (mapv (fn [s] [:_id s :text s]) users))
+                                     (fn [users]
+                                       (mapv (fn [s] {:_id s :text s}) users))
                                      )
                                     )}]])))
 

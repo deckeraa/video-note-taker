@@ -40,6 +40,7 @@
    (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
                                 {}))
              users (set (:body resp))]
+         (println "users: " users (xform-fn users))
          (reset! user-list-atm (xform-fn users))))))
 
 (defn load-groups [data-cursor]
