@@ -98,7 +98,7 @@
                             (println "cancel-subscription: " resp))))}))}
    "Cancel subscription"])
 
-(defn manage-users []
+(defn manage-users [user-cursor]
   (let [username-atom (reagent/atom "")
         password-atom (reagent/atom "")
         validated-username-atom (reagent/atom nil)
@@ -120,8 +120,16 @@
                                    (println "Couldn't create user:" raw)
                                    (toaster-oven/add-toast "User not created" svg/x "red" nil))))}
         "Create new user."]
-       (let [cnt (count @connected-users-atom)]
-         [:p "You've created " cnt " users" (if (> cnt 0) ":" ".")])
+       (let [cnt        (count @connected-users-atom)
+             user-limit (:user-limit @user-cursor)]
+         [:p
+          "You've created "
+          (when (= cnt user-limit)
+            "all ")
+          cnt " users"
+          (when user-limit 
+            (str " of your " user-limit " available users"))
+          (if (> cnt 0) ":" ".")])
        [listing/listing {:data-cursor connected-users-atom
                          :card-fn (fn [item remove-delegate]
                                     [:div {:class ""}
@@ -207,7 +215,7 @@
        (when (auth/can-create-family-member-users)
          [:<>
           [:h2 {:class "mt5"} "Manage Users"]
-          [manage-users]
+          [manage-users user-cursor]
           ]
          )
        (when (auth/can-create-groups)
