@@ -559,10 +559,14 @@
 (defn create-user-handler [req username roles]
   (warn "User is being created by: " username)
   (if (access-shared/can-create-family-member-users roles)
-    (let [params (get-body req)
-          name  (:user params)
-          pass  (:pass params)]
-      (json-response (auth/create-user name pass ["family_member"] {:created-by username})))
+    (let [user-doc (db/get-doc users-db access/get-hook-fn (str "org.couchdb.user:" username) username roles (db/get-auth-cookie req))
+          users (access/get-connected-users username roles)]
+      (if (< (count users) (:user-limit user-doc))
+        (let [params (get-body req)
+              name  (:user params)
+              pass  (:pass params)]
+          (json-response (auth/create-user name pass ["family_member"] {:created-by username})))
+        (not-authorized-response)))
     (not-authorized-response)))
 
 (defn wrap-login [handler]
