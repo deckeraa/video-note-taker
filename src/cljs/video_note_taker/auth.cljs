@@ -261,26 +261,28 @@
          :validated [:p {:class "green "} "Username is available."]
          [:p {:class "" :style {:width "12em"}}])])))
 
-(defn password-picker [password-atom]
-  (let [input-atm (reagent/atom "")]
-    (fn []
-      [:div {:class "flex items-center flex-wrap flex-nowrap-ns mv2 h2"}
-       [:div {:class "flex"}
-        [:p {:class "ma1" :style {:width "5em"}} "Password: "]
-        [:input {:type :password :value @input-atm
-                 :style {:width "15em"}
-                 :class "mr2"
-                 :on-change
-                 (fn [e]
-                   (let [value (-> e .-target .-value)]
-                     (reset! input-atm value)
-                     (if (>= (count value) 4)
-                       (reset! password-atom value)
-                       (reset! password-atom nil))))}]]
-       (cond
-         (empty? @input-atm) [:p {:class ""}         "Please pick a password                              "]
-         (empty? @password-atom) [:p {:class "red"} "Password must be at " [:br] "least four characters long"]
-         :default [svg/check {:class "ma1"} "green" "24px"])])))
+(defn password-picker
+  ([password-atom]
+   [password-picker password-atom (reagent/atom "")])
+  ([password-atom input-atm]
+   (fn []
+     [:div {:class "flex items-center flex-wrap flex-nowrap-ns mv2 h2"}
+      [:div {:class "flex"}
+       [:p {:class "ma1" :style {:width "5em"}} "Password: "]
+       [:input {:type :password :value @input-atm
+                :style {:width "15em"}
+                :class "mr2"
+                :on-change
+                (fn [e]
+                  (let [value (-> e .-target .-value)]
+                    (reset! input-atm value)
+                    (if (>= (count value) 4)
+                      (reset! password-atom value)
+                      (reset! password-atom nil))))}]]
+      (cond
+        (empty? @input-atm) [:p {:class ""}         "Please pick a password                              "]
+        (empty? @password-atom) [:p {:class "red"} "Password must be at " [:br] "least four characters long"]
+        :default [svg/check {:class "ma1"} "green" "24px"])])))
 
 (defn is-admin?
   ([] (is-admin? atoms/user-cursor))
