@@ -116,38 +116,40 @@
                                                      (mapv (fn [s] {:_id s :text s})
                                                            users))))))}]
     (fn []
-      [:<>
-       [auth/user-name-picker username-atom validated-username-atom]
-       [auth/password-picker password-atom password-input-atom]
-       [:button {:class (str "br3 bn pa3 ma2 white " (if @validated-username-atom " bg-green dim " " bg-light-green "))
-                 :on-click (fn [e]
-                             (db/post-to-endpoint
-                                 "create-user"
-                                 {:user @validated-username-atom
-                                  :pass @password-atom}
-                                 (fn [body]
-                                   (println "User created!")
-                                   (toaster-oven/add-toast "User created" svg/check "green" nil)
-                                   (listing/reload listing-config)
-                                   (reset! validated-username-atom nil)
-                                   (reset! username-atom nil)
-                                   (reset! password-input-atom nil)
-                                   (reset! password-atom nil))
-                                 (fn [body raw]
-                                   (println "Couldn't create user:" raw)
-                                   (toaster-oven/add-toast "User not created" svg/x "red" nil))))}
-        "Create new user."]
-       (let [cnt        (count @connected-users-atom)
-             user-limit (:user-limit @user-cursor)]
+      (let [num-users  (count @connected-users-atom)
+            user-limit (:user-limit @user-cursor)]
+        [:<>
+         (when (< num-users user-limit)
+           [:<>
+            [auth/user-name-picker username-atom validated-username-atom]
+            [auth/password-picker password-atom password-input-atom]])
+         [:button {:class (str "br3 bn pa3 ma2 white " (if @validated-username-atom " bg-green dim " " bg-light-green "))
+                   :on-click (fn [e]
+                               (db/post-to-endpoint
+                                "create-user"
+                                {:user @validated-username-atom
+                                 :pass @password-atom}
+                                (fn [body]
+                                  (println "User created!")
+                                  (toaster-oven/add-toast "User created" svg/check "green" nil)
+                                  (listing/reload listing-config)
+                                  (reset! validated-username-atom nil)
+                                  (reset! username-atom nil)
+                                  (reset! password-input-atom nil)
+                                  (reset! password-atom nil))
+                                (fn [body raw]
+                                  (println "Couldn't create user:" raw)
+                                  (toaster-oven/add-toast "User not created" svg/x "red" nil))))}
+          "Create new user."]
          [:p
           "You've created "
-          (when (= cnt user-limit)
+          (when (= num-users user-limit)
             "all ")
-          cnt " users"
+          num-users " users"
           (when user-limit 
             (str " of your " user-limit " available users"))
-          (if (> cnt 0) ":" ".")])
-       [listing/listing listing-config]])))
+          (if (> num-users 0) ":" ".")]
+         [listing/listing listing-config]]))))
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
