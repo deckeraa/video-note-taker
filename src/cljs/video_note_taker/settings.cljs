@@ -130,7 +130,9 @@
                                     (groups/load-connected-users
                                      atm
                                      (fn [users]
-                                       (mapv (fn [s] {:_id s :text s}) users))
+                                       (vec (sort-by :text
+                                                     (mapv (fn [s] {:_id s :text s})
+                                                           users))))
                                      )
                                     )}]])))
 
