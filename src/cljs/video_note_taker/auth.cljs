@@ -216,7 +216,7 @@
   (let [check-ctr (reagent/atom 0)
         username-status (reagent/atom :none)]
     (fn []
-      [:div {:class "flex items-center flex-wrap flex-nowrap-ns h2"}
+      [:div {:class "flex items-center flex-wrap flex-nowrap-ns" :style {:min-height "2rem"}}
        [:div {:class "flex"}
         [:p {:class "ma1" :style {:width "5em"}} "Username: "]
         [:input {:type :text :value @username-atom
@@ -266,7 +266,7 @@
    [password-picker password-atom (reagent/atom "")])
   ([password-atom input-atm]
    (fn []
-     [:div {:class "flex items-center flex-wrap flex-nowrap-ns mv2 h2"}
+     [:div {:class "flex items-center flex-wrap flex-nowrap-ns mv2" :style {:min-height "2rem"}}
       [:div {:class "flex"}
        [:p {:class "ma1" :style {:width "5em"}} "Password: "]
        [:input {:type :password :value @input-atm
