@@ -102,7 +102,18 @@
   (let [username-atom (reagent/atom "")
         password-atom (reagent/atom "")
         validated-username-atom (reagent/atom nil)
-        connected-users-atom (reagent/atom nil)]
+        connected-users-atom (reagent/atom nil)
+        listing-config {:data-cursor connected-users-atom
+                         :card-fn (fn [item remove-delegate]
+                                    [:div {:class ""}
+                                     (:text @item)])
+                         :load-fn (fn [atm]
+                                    (groups/load-connected-users
+                                     atm
+                                     (fn [users]
+                                       (vec (sort-by :text
+                                                     (mapv (fn [s] {:_id s :text s})
+                                                           users))))))}]
     (fn []
       [:<>
        [auth/user-name-picker username-atom validated-username-atom]
@@ -115,7 +126,8 @@
                                   :pass @password-atom}
                                  (fn [body]
                                    (println "User created!")
-                                   (toaster-oven/add-toast "User created" svg/check "green" nil))
+                                   (toaster-oven/add-toast "User created" svg/check "green" nil)
+                                   (listing/reload listing-config))
                                  (fn [body raw]
                                    (println "Couldn't create user:" raw)
                                    (toaster-oven/add-toast "User not created" svg/x "red" nil))))}
@@ -130,19 +142,7 @@
           (when user-limit 
             (str " of your " user-limit " available users"))
           (if (> cnt 0) ":" ".")])
-       [listing/listing {:data-cursor connected-users-atom
-                         :card-fn (fn [item remove-delegate]
-                                    [:div {:class ""}
-                                     (:text @item)])
-                         :load-fn (fn [atm]
-                                    (groups/load-connected-users
-                                     atm
-                                     (fn [users]
-                                       (vec (sort-by :text
-                                                     (mapv (fn [s] {:_id s :text s})
-                                                           users))))
-                                     )
-                                    )}]])))
+       [listing/listing listing-config]])))
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
