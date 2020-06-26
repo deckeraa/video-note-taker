@@ -193,7 +193,9 @@
           (when user-limit 
             (str " of your " user-limit " available users"))
           (if (> num-users 0) ":" ".")]
-         [listing/listing listing-config]]))))
+         [listing/listing listing-config]
+         (when (> num-users 0)
+           [:p "If you wish to delete an existing user, please email familymemorystreamsupport@stronganchortech.com."])]))))
 
 (defn settings [settings-cursor login-cursor notes-cursor video-listing-cursor video-cursor screen-cursor uploads-cursor user-cursor]
   (let [file-input-ref-el (reagent/atom nil)
