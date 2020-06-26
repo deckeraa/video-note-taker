@@ -79,35 +79,51 @@
       [:div {:class "f3 i"} "Loading usage information."])))
 
 (defn inc-subscription-button []
-  [:button {:class "white bg-green br3 bn pa3 ma2 dim"
-            :on-click
-            (fn [e]
-              (toaster-oven/add-toast
-               "Purchase 50 additional GB of storage, and 15 additional users?" nil nil
-               {:cancel-fn (fn [])
-                :ok-fn (fn []
-                         (db/post-to-endpoint
-                          "inc-subscription" {}
-                          (fn [resp]
-                            (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
-                            (println "inc-subscription: " resp))))}))}
-   (str "Add 50GB and 15 users for " (recurring-price))])
+  (let [loading? (reagent/atom false)]
+    (fn []
+      (if @loading?
+        [:div
+         [:img {:src "tapefish_animation.gif" :width "100px"}]
+         [:p {:class "f4"} "Updating subscription..."]]
+        [:button {:class "white bg-green br3 bn pa3 ma2 dim"
+                  :on-click
+                  (fn [e]
+                    (toaster-oven/add-toast
+                     "Purchase 50 additional GB of storage, and 15 additional users?" nil nil
+                     {:cancel-fn (fn [])
+                      :ok-fn (fn []
+                               (reset! loading? true)
+                               (db/post-to-endpoint
+                                "inc-subscription" {}
+                                (fn [resp]
+                                  (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                                  (reset! loading? false)
+                                  (println "inc-subscription: " resp))))}))}
+         (str "Add 50GB and 15 users for " (recurring-price))]))))
 
 (defn dec-subscription-button [user-cursor]
-  (when (> (:gb-limit @user-cursor) 50)
-    [:button {:class "white bg-red br3 bn pa3 ma2 dim"
-              :on-click
-              (fn [e]
-                (toaster-oven/add-toast
-                 "Remove 50 additional GB of storage?" nil nil
-                 {:cancel-fn (fn [])
-                  :ok-fn (fn []
-                           (db/post-to-endpoint
-                            "dec-subscription" {}
-                            (fn [resp]
-                              (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
-                              (println "dec-subscription: " resp))))}))}
-     "Remove 50GB and 15 users, lowering the cost by " (recurring-price)]))
+  (let [loading? (reagent/atom false)]
+    (fn []
+      (when (> (:gb-limit @user-cursor) 50)
+        (if @loading?
+          [:div
+           [:img {:src "tapefish_animation.gif" :width "100px"}]
+           [:p {:class "f4"} "Updating subscription..."]]
+          [:button {:class "white bg-red br3 bn pa3 ma2 dim"
+                    :on-click
+                    (fn [e]
+                      (toaster-oven/add-toast
+                       "Remove 50 additional GB of storage and 15 users?" nil nil
+                       {:cancel-fn (fn [])
+                        :ok-fn (fn []
+                                 (reset! loading? true)
+                                 (db/post-to-endpoint
+                                  "dec-subscription" {}
+                                  (fn [resp]
+                                    (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                                    (reset! loading? false)
+                                    (println "dec-subscription: " resp))))}))}
+           "Remove 50GB and 15 users, lowering the cost by " (recurring-price)])))))
 
 (defn cancel-subscription-button []
   [:button {:class "white bg-red br3 bn pa3 ma2 dim"
