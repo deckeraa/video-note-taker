@@ -97,6 +97,7 @@
                                 "inc-subscription" {}
                                 (fn [resp]
                                   (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                                  (db/put-endpoint-in-atom "get-subscription-info" {} atoms/subscription-cursor)
                                   (reset! loading? false)
                                   (println "inc-subscription: " resp))))}))}
          (str "Add 50GB and 15 users for " (recurring-price))]))))
@@ -121,6 +122,7 @@
                                   "dec-subscription" {}
                                   (fn [resp]
                                     (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
+                                    (db/put-endpoint-in-atom "get-subscription-info" {} atoms/subscription-cursor)
                                     (reset! loading? false)
                                     (println "dec-subscription: " resp))))}))}
            "Remove 50GB and 15 users, lowering the cost by " (recurring-price)])))))
