@@ -37,6 +37,24 @@
   [:div {}
    [highlight-str "Abby absolutely abhors slabs of drab tabs." "ab"]])
 
+(defn subscription-display []
+  (let [subscription @atoms/subscription-cursor
+        quantity (:quantity subscription)
+        unit-price (/ (get-in subscription [:plan :amount]) 100)
+        interval (get-in subscription [:plan :interval])]
+    [:p {:class "f4 mt1"}
+     quantity
+     "x at $"
+     unit-price
+     "/"
+     interval
+     " for a total of $"
+     (* quantity unit-price)
+     "/"
+     interval
+     "."
+     ]))
+
 (defn usage-monitor [user-cursor]
   (fn []
     (if @atoms/usage-cursor
@@ -161,6 +179,7 @@
        (when (auth/can-modify-subscription)
          [:<>
           [:h2 {:class "mt5"} "Your subscription"]
+          [subscription-display]
           [usage-monitor user-cursor]
           [inc-subscription-button]
           [dec-subscription-button user-cursor]

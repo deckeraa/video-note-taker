@@ -186,6 +186,20 @@
       {"items[0][id]" item-id
        "items[0][quantity]" quantity}))))
 
+(defn get-subscription-info [subscription-id]
+  (let [subscription (common/with-token (get-stripe-secret-key)
+                       (common/execute
+                        (subscriptions/get-subscription subscription-id)))
+        item (get-subscription-item subscription)]
+    (warn "subscription: " subscription)
+    (warn "item: " item)
+    item))
+
+(defn get-subscription-info-handler [req username roles]
+  (let [user (get-user-doc username)]
+    ;(json-response user)
+    (json-response (get-subscription-info (:subscription user)))))
+
 (defn modify-subscription-quantity [mutate-fn subscription-id]
   (let [subscription (common/with-token (get-stripe-secret-key)
                        (common/execute
@@ -202,7 +216,7 @@
   (let [user (get-user-doc username)]
     (warn "inc-subscription-handler: " user)
     (if (not (:subscription user))
-      (json-response {:status "false" :reason ":subcription not present in user record."})
+      (json-response {:status "false" :reason ":subscription not present in user record."})
       (let [stripe-resp (inc-subscription-quantity (:subscription user))
             success? (nil? (get stripe-resp "error"))]
         (when success?

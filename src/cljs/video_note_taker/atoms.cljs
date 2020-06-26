@@ -20,6 +20,7 @@
                  :login-atm 0
                  :user nil
                  :usage nil
+                 :subscription nil
                  }))
 
 (defonce screen-cursor    (reagent/cursor app-state [:screen-stack]))
@@ -34,3 +35,4 @@
 (defonce user-cursor      (reagent/cursor app-state [:user]))
 (defonce uploads-cursor   (reagent/cursor app-state [:uploads]))
 (defonce usage-cursor     (reagent/cursor app-state [:usage]))
+(defonce subscription-cursor     (reagent/cursor app-state [:subscription]))

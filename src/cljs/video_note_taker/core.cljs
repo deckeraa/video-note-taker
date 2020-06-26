@@ -65,6 +65,8 @@
           ;; Auto-load data if needed
           (when (compare-and-set! atoms/user-cursor nil {})
             (auth/load-user-cursor atoms/user-cursor))
+          (when (compare-and-set! atoms/subscription-cursor nil {})
+            (db/put-endpoint-in-atom "get-subscription-info" {} atoms/subscription-cursor))
           (when (compare-and-set! atoms/video-listing-cursor nil [])
             (listing/load-video-listing atoms/video-listing-cursor))
           (when (not @_auto-loaded-settings)
