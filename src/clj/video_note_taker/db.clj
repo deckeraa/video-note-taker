@@ -140,7 +140,7 @@
 (defn delete-doc [db delete-hook-fn doc username roles auth-cookie]
   (let [real-doc (couch-request db :get (:_id doc) {} {} auth-cookie)]
     (if (and (:_id doc) (delete-hook-fn real-doc doc username roles))
-      (couch-request db :delete (:_id doc) nil {:query-params {:rev (:_rev doc)}} auth-cookie)
+      (couch-request db :delete (:_id doc) nil {:query-params {:rev (:_rev real-doc)}} auth-cookie)
       false)))
 
 (defn delete-doc-handler [db delete-hook-fn req username roles]
