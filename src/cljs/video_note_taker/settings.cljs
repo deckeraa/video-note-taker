@@ -55,6 +55,14 @@
      "."
      ]))
 
+(defn recurring-price []
+  (let [subscription @atoms/subscription-cursor
+        quantity (:quantity subscription)
+        unit-price (/ (get-in subscription [:plan :amount]) 100)
+        interval (get-in subscription [:plan :interval])]
+    (str "$" unit-price "/" interval)
+    ))
+
 (defn usage-monitor [user-cursor]
   (fn []
     (if @atoms/usage-cursor
@@ -83,7 +91,7 @@
                           (fn [resp]
                             (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
                             (println "inc-subscription: " resp))))}))}
-   "Add 50GB and 15 users"])
+   (str "Add 50GB and 15 users for " (recurring-price))])
 
 (defn dec-subscription-button [user-cursor]
   (when (> (:gb-limit @user-cursor) 50)
@@ -99,7 +107,7 @@
                             (fn [resp]
                               (db/put-endpoint-in-atom "get-current-user" {} atoms/user-cursor)
                               (println "dec-subscription: " resp))))}))}
-     "Remove 50GB of storage"]))
+     "Remove 50GB and 15 users, lowering the cost by " (recurring-price)]))
 
 (defn cancel-subscription-button []
   [:button {:class "white bg-red br3 bn pa3 ma2 dim"
