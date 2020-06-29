@@ -26,13 +26,14 @@
 
 (def pageinfo-atom (reagent/atom {}))
 
-(defn purchase-handler [loading-stripe-atom validated-username-atom password-atom plan e]
+(defn purchase-handler [loading-stripe-atom validated-username-atom password-atom coupon-code-atom plan e]
   (reset! loading-stripe-atom plan)
   (db/post-to-endpoint
    "create-checkout-session"
    {:plan plan
     :username @validated-username-atom
-    :password @password-atom}
+    :password @password-atom
+    :coupon @coupon-code-atom}
    (fn [resp]
      (println "resp:" resp)
      (let [id (:id resp)]
@@ -69,7 +70,7 @@
   (is (= (get-prompt-message false false true)
          "Please check the Terms of Service box.")))
 
-(defn payment-button [loading-stripe-atom validated-username-atom password-atom tos-atom plan]
+(defn payment-button [loading-stripe-atom validated-username-atom password-atom tos-atom coupon-code-atom plan]
   (let [show-click-message? (reagent/atom false)]
     (fn []
       (let [payment-button-inactive (or @loading-stripe-atom
@@ -83,7 +84,7 @@
                                  "bg-green dim"))
                    :on-click (fn [e]
                                (if (not payment-button-inactive)
-                                 (purchase-handler loading-stripe-atom validated-username-atom password-atom plan e)
+                                 (purchase-handler loading-stripe-atom validated-username-atom password-atom coupon-code-atom plan e)
                                  (reset! show-click-message? true)))}
           (if (= plan @loading-stripe-atom)
             [:div
@@ -109,7 +110,8 @@
         password-atom (reagent/atom "")
         validated-username-atom (reagent/atom nil)
         tos-checked-atom (reagent/atom false)
-        show-tos (reagent/atom false)]
+        show-tos (reagent/atom false)
+        coupon-code-atom (reagent/atom "")]
     (fn []
       [:<>
        (if (:stripe-mode @pageinfo-atom)
@@ -130,10 +132,16 @@
                  :target "_blank"}
              "Terms of Service"]
             "."]]
+          [:div {:class "ma1"}
+           [:label {:for "coupon-code"} "Optional coupon code: "]
+           [:input {:type :text :value @coupon-code-atom
+                    :id "coupon-code"
+                    :on-change (fn [e]
+                                 (reset! coupon-code-atom (-> e .-target .-value)))}]]
           [:div {:class "flex flex-column"}
-           [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :a]
+           [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom coupon-code-atom :a]
            "or"
-           [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom :b]
+           [payment-button loading-stripe validated-username-atom password-atom tos-checked-atom coupon-code-atom :b]
            ]
           [:p {:class "ma1 f5 i"}
            "Additional storage and users can be purchased in-app in groups of 50GB and 15 family members."

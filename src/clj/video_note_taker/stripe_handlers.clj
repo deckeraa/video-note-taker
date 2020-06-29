@@ -64,13 +64,22 @@
                       (System/getenv "STRIPE_SECRET_KEY_TEST"))]
     secret-key))
 
+(defn coupon-id-from-coupon-code [coupon-code]
+  (let [coupons (clojure.edn/read-string (System/getenv "VNT_COUPONS"))
+        coupon-code (if (string? coupon-code)
+                      (clojure.string/lower-case coupon-code)
+                      nil)]
+    (when (map? coupons)
+          (get coupons coupon-code))))
+
 (defn create-checkout-session-handler [req]
   (let [body (get-body req)
         stripe-mode (stripe-live?)
         secret-key (get-stripe-secret-key)
         plan (keyword (:plan body))
         username (:username body)
-        password (:password body)]
+        password (:password body)
+        coupon-code (:coupon body)]
     (println "In STRIPE_MODE: " stripe-mode)
     (println "Using STRIPE_SECRET_KEY: " secret-key)
     (println "plan: " plan)
@@ -93,7 +102,9 @@
            "subscription"
            (get-endpoint req "memories")
            (get-endpoint req "?cancel=true")
-           {"username" username}))))
+           {"username" username}
+           (coupon-id-from-coupon-code coupon-code)
+           ))))
       )))
 
 (defn get-user-doc [username]

@@ -26,6 +26,8 @@ Environment="STRIPE_PLAN_A_RECURRING_PRICE_LIVE=price_REPLACE_THIS"
 Environment="STRIPE_PLAN_A_RECURRING_PRICE_TEST=price_REPLACE_THIS"
 Environment="STRIPE_PLAN_B_RECURRING_PRICE_LIVE=price_REPLACE_THIS"
 Environment="STRIPE_PLAN_B_RECURRING_PRICE_TEST=price_REPLACE_THIS"
+# Here's a sample coupon code setup
+Environment="VNT_COUPONS='{\"htbt\" \"TNwFl1tQ\"}'"
 
 
 
