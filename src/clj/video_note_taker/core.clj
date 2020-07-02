@@ -569,6 +569,10 @@
         (not-authorized-response)))
     (not-authorized-response)))
 
+(defn report-error-handler [req username roles]
+  (warn "report-error-handler: " (get-body req))
+  (json-response true))
+
 (defn wrap-login [handler]
   (fn [req]
     (let [resp (handler req)]
@@ -622,6 +626,7 @@
         ["inc-subscription" (wrap-cookie-auth stripe-handlers/inc-subscription-handler)]
         ["dec-subscription" (wrap-cookie-auth stripe-handlers/dec-subscription-handler)]
         ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]
+        ["report-error" (wrap-cookie-auth report-error-handler)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"
         ;;                  metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key id)]

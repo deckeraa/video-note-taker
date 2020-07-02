@@ -56,7 +56,7 @@
                      :class "mb3"
                      :controls true
                      ;;:src  src
-                     :width 620
+                     :width "80%" ;;620
                      ;;:type (str "video/" (get-file-extension filename))
                      :on-time-update (fn [e]
                                        ;; when the time updates, check to see if we made it to the requested time
@@ -71,8 +71,8 @@
                                              (swap! video-options-cursor dissoc :requested-time)))))
                      :on-error (fn [e]
                                  (println "Playback error: " e)
-                                 (.log js/console e)
-                                 (reset! playback-error? true))
+                                 (reset! playback-error? true)
+                                 (db/post-to-endpoint "report-error" {:message "Playback error." :obj @video-cursor}))
                      :ref (fn [el]
                             (when el
                               (do
@@ -86,7 +86,10 @@
                        }]
              [:p "Video not supported by your browser :("]]
             (when @playback-error?
-              [:p "Your browser cannot play this format of video."])]))))))
+              [:p {:class "white bg-red br3 pa2 w-80"}
+               "Your browser has indicated that it cannot play this format of video.
+                If you email familymemorystreamsupport@stronganchortech.com we can convert
+                the video over to a commonly-supported format at no charge to you."])]))))))
 
 (defcard-rg video-card
   (let [video-ref-atm (reagent/atom nil)
