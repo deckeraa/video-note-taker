@@ -41,58 +41,54 @@
        :requested-time - time in seconds of where the video should seek to upon instantiation
     options: overrides used for testing
        :src-override - overrides the filename in the video-cursor"
-   (let [playback-error? (reagent/atom false)]
-     (fn []
-       (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
-         (let [src (if (:src-override options)
-                     (db/resolve-endpoint filename)
-                     (let [presigned-url (:presigned-url @video-cursor)]
-                       (if presigned-url
-                         presigned-url ;; TODO should add some way to check for presigned URLs that have expired (unlikely) and re-sign if needed
-                         (db/resolve-endpoint (str "videos/" filename))))
-                     )]
-           [:<>
-            [:video {:id "main-video"
-                     :class "mb3"
-                     :controls true
-                     ;;:src  src
-                     :width 620
-                     ;;:type (str "video/" (get-file-extension filename))
-                     :on-time-update (fn [e]
-                                       ;; when the time updates, check to see if we made it to the requested time
-                                       (let [current-time   (.-currentTime (-> e .-target))
-                                             requested-time (:requested-time @video-options-cursor)]
-                                         (when requested-time
-                                           (if (< (Math/abs (- requested-time current-time)) 1)
-                                             ;; If so, dissoc the :requested-time
-                                             ;; Previously, this contained logic to continue making
-                                             ;; calls to set currentTime until it reached the requested time.
-                                             ;; However, after implementing partial content requests (using wrap-partial-content), all tested browsers appear to be seeking directly to the requested time in a single set.
-                                             (swap! video-options-cursor dissoc :requested-time)))))
-                     ;; :on-error (fn [e]
-                     ;;             (println "Playback error: " e (.-type e))
-                                 
-                     ;;             (.log js/console e)
-                     ;;             ;; (reset! playback-error? true)
-                     ;;             ;; (db/post-to-endpoint "report-error" {:message "Playback error." :obj @video-cursor})
-                     ;;             )
-                     :ref (fn [el]
-                            (when el
-                              (do
-                                ;; Save off the video reference
-                                (reset! video-ref-atm el)
-                                ;; If we have a requested time in the video, seek to that time.
-                                (when-let [requested-time (:requested-time @video-options-cursor)]
-                                  (set! (.-currentTime el) requested-time)))))}
-             [:source {:src src
-                       :type (str "video/" (get-file-extension filename))
-                       }]
-             [:p "Video not supported by your browser :("]]
-            (when @playback-error?
-              [:p {:class "white bg-red br3 pa2 w-80"}
-               "Your browser has indicated that it cannot play this format of video.
-                If you email familymemorystreamsupport@stronganchortech.com we can convert
-                the video over to a commonly-supported format at no charge to you."])]))))))
+   (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
+     (let [src (if (:src-override options)
+                 (db/resolve-endpoint filename)
+                 (let [presigned-url (:presigned-url @video-cursor)]
+                   (if presigned-url
+                     presigned-url ;; TODO should add some way to check for presigned URLs that have expired (unlikely) and re-sign if needed
+                     (db/resolve-endpoint (str "videos/" filename))))
+                 )
+           file-extension (get-file-extension filename)]
+       [:<>
+        [:video {:id "main-video"
+                 :class "mb3"
+                 :controls true
+                 ;;:src  src
+                 :width 620
+                 ;;:type (str "video/" (get-file-extension filename))
+                 :on-time-update (fn [e]
+                                   ;; when the time updates, check to see if we made it to the requested time
+                                   (let [current-time   (.-currentTime (-> e .-target))
+                                         requested-time (:requested-time @video-options-cursor)]
+                                     (when requested-time
+                                       (if (< (Math/abs (- requested-time current-time)) 1)
+                                         ;; If so, dissoc the :requested-time
+                                         ;; Previously, this contained logic to continue making
+                                         ;; calls to set currentTime until it reached the requested time.
+                                         ;; However, after implementing partial content requests (using wrap-partial-content), all tested browsers appear to be seeking directly to the requested time in a single set.
+                                         (swap! video-options-cursor dissoc :requested-time)))))
+                 :ref (fn [el]
+                        (when el
+                          (do
+                            ;; Save off the video reference
+                            (reset! video-ref-atm el)
+                            ;; If we have a requested time in the video, seek to that time.
+                            (when-let [requested-time (:requested-time @video-options-cursor)]
+                              (set! (.-currentTime el) requested-time)))))}
+         [:source {:src src
+                   :type (str "video/" file-extension)
+                   }]
+         [:p "Video not supported by your browser :("]]
+        (when (not (contains? #{"mp4" "avi" "webm" "mov" "ogg" "oga" "ogm" "ogv" "ogx"} (clojure.string/lower-case file-extension)))
+          [:div {:class "white bg-orange br3 ph2 w-80"}
+           [:p {:class "f3"}
+            "Your browser might not be able to play this format of video: " (get-file-extension filename) "."]
+           [:p {:class "f4"}
+            "If you email familymemorystreamsupport"
+            [:wbr]
+            "@stronganchortech.com we can convert
+            the video over to a commonly-supported format at no charge to you."]])]))))
 
 (defcard-rg video-card
   (let [video-ref-atm (reagent/atom nil)
