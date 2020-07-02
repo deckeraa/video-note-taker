@@ -56,7 +56,7 @@
                      :class "mb3"
                      :controls true
                      ;;:src  src
-                     :width "80%" ;;620
+                     :width 620
                      ;;:type (str "video/" (get-file-extension filename))
                      :on-time-update (fn [e]
                                        ;; when the time updates, check to see if we made it to the requested time
@@ -69,10 +69,13 @@
                                              ;; calls to set currentTime until it reached the requested time.
                                              ;; However, after implementing partial content requests (using wrap-partial-content), all tested browsers appear to be seeking directly to the requested time in a single set.
                                              (swap! video-options-cursor dissoc :requested-time)))))
-                     :on-error (fn [e]
-                                 (println "Playback error: " e)
-                                 (reset! playback-error? true)
-                                 (db/post-to-endpoint "report-error" {:message "Playback error." :obj @video-cursor}))
+                     ;; :on-error (fn [e]
+                     ;;             (println "Playback error: " e (.-type e))
+                                 
+                     ;;             (.log js/console e)
+                     ;;             ;; (reset! playback-error? true)
+                     ;;             ;; (db/post-to-endpoint "report-error" {:message "Playback error." :obj @video-cursor})
+                     ;;             )
                      :ref (fn [el]
                             (when el
                               (do
