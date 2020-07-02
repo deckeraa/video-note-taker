@@ -41,40 +41,52 @@
        :requested-time - time in seconds of where the video should seek to upon instantiation
     options: overrides used for testing
        :src-override - overrides the filename in the video-cursor"
-   (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
-     (let [src (if (:src-override options)
-                 (db/resolve-endpoint filename)
-                 (let [presigned-url (:presigned-url @video-cursor)]
-                   (if presigned-url
-                     presigned-url ;; TODO should add some way to check for presigned URLs that have expired (unlikely) and re-sign if needed
-                     (db/resolve-endpoint (str "videos/" filename))))
-                 )]
-       [:video {:id "main-video"
-                :class "mb3"
-                :controls true
-                :src  src
-                :width 620
-                :type (str "video/" (get-file-extension filename))
-                :on-time-update (fn [e]
-                                  ;; when the time updates, check to see if we made it to the requested time
-                                  (let [current-time   (.-currentTime (-> e .-target))
-                                        requested-time (:requested-time @video-options-cursor)]
-                                    (when requested-time
-                                      (if (< (Math/abs (- requested-time current-time)) 1)
-                                        ;; If so, dissoc the :requested-time
-                                        ;; Previously, this contained logic to continue making
-                                        ;; calls to set currentTime until it reached the requested time.
-                                        ;; However, after implementing partial content requests (using wrap-partial-content), all tested browsers appear to be seeking directly to the requested time in a single set.
-                                        (swap! video-options-cursor dissoc :requested-time)))))
-                :ref (fn [el]
-                       (when el
-                         (do
-                           ;; Save off the video reference
-                           (reset! video-ref-atm el)
-                           ;; If we have a requested time in the video, seek to that time.
-                           (when-let [requested-time (:requested-time @video-options-cursor)]
-                             (set! (.-currentTime el) requested-time)))))}
-        "Video not supported by your browser :("]))))
+   (let [playback-error? (reagent/atom false)]
+     (fn []
+       (when-let [filename (or (:src-override options) (:file-name @video-cursor))]
+         (let [src (if (:src-override options)
+                     (db/resolve-endpoint filename)
+                     (let [presigned-url (:presigned-url @video-cursor)]
+                       (if presigned-url
+                         presigned-url ;; TODO should add some way to check for presigned URLs that have expired (unlikely) and re-sign if needed
+                         (db/resolve-endpoint (str "videos/" filename))))
+                     )]
+           [:<>
+            [:video {:id "main-video"
+                     :class "mb3"
+                     :controls true
+                     ;;:src  src
+                     :width 620
+                     ;;:type (str "video/" (get-file-extension filename))
+                     :on-time-update (fn [e]
+                                       ;; when the time updates, check to see if we made it to the requested time
+                                       (let [current-time   (.-currentTime (-> e .-target))
+                                             requested-time (:requested-time @video-options-cursor)]
+                                         (when requested-time
+                                           (if (< (Math/abs (- requested-time current-time)) 1)
+                                             ;; If so, dissoc the :requested-time
+                                             ;; Previously, this contained logic to continue making
+                                             ;; calls to set currentTime until it reached the requested time.
+                                             ;; However, after implementing partial content requests (using wrap-partial-content), all tested browsers appear to be seeking directly to the requested time in a single set.
+                                             (swap! video-options-cursor dissoc :requested-time)))))
+                     :on-error (fn [e]
+                                 (println "Playback error: " e)
+                                 (.log js/console e)
+                                 (reset! playback-error? true))
+                     :ref (fn [el]
+                            (when el
+                              (do
+                                ;; Save off the video reference
+                                (reset! video-ref-atm el)
+                                ;; If we have a requested time in the video, seek to that time.
+                                (when-let [requested-time (:requested-time @video-options-cursor)]
+                                  (set! (.-currentTime el) requested-time)))))}
+             [:source {:src src
+                       :type (str "video/" (get-file-extension filename))
+                       }]
+             [:p "Video not supported by your browser :("]]
+            (when @playback-error?
+              [:p "Your browser cannot play this format of video."])]))))))
 
 (defcard-rg video-card
   (let [video-ref-atm (reagent/atom nil)
