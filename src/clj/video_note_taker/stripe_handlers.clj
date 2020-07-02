@@ -202,9 +202,10 @@
                        (common/execute
                         (subscriptions/get-subscription subscription-id)))
         item (get-subscription-item subscription)]
-    (warn "subscription: " subscription)
-    (warn "item: " item)
-    item))
+    (info "subscription: " subscription)
+    (info "item: " item)
+    (or item {}) ;; sometimes item ends up being nil, so return an empty object
+    ))
 
 (defn get-subscription-info-handler [req username roles]
   (let [user (get-user-doc username)]
