@@ -77,7 +77,7 @@
                             (when-let [requested-time (:requested-time @video-options-cursor)]
                               (set! (.-currentTime el) requested-time)))))}
          [:source {:src src
-                   :type (str "video/" file-extension)
+                   ;;:type (str "video/" file-extension) ;; certain MIME types like video/mov appear to cause breakage in Firefox, while leaving this altogether works
                    }]
          [:p "Video not supported by your browser :("]]
         (when (not (contains? #{"mp4" "avi" "webm" "mov" "ogg" "oga" "ogm" "ogv" "ogx"} (clojure.string/lower-case file-extension)))
