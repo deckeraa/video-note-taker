@@ -150,6 +150,8 @@
     (json-response resp)))
 
 (defn get-view [db get-hook-fn design-doc-name view-name options username roles auth-cookie]
+  (println "options: " options)
+  (println "updated options: " (update-in options [:key] json/write-str))
   (let [couch-resp (couch-request
                     db :get
                     (str "_design/" design-doc-name "/_view/" view-name)

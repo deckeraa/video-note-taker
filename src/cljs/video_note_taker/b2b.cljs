@@ -6,10 +6,17 @@
    [video-note-taker.auth :as auth]
    [video-note-taker.db :as db]))
 
-(defn new-end-user-creation []
+(defn load-in-progress-users [atm]
+  (db/put-endpoint-in-atom "get-in-progress-users" {} atm))
+
+(defn new-end-user-creation [selected-end-user-atom]
   (let [username-atom (reagent/atom "")
-        validated-username-atom (reagent/atom "")]
+        validated-username-atom (reagent/atom "")
+        in-progress-users-atom (reagent/atom nil)
+        _ (load-in-progress-users in-progress-users-atom)
+        ]
     (fn []
+      (println "rendering new-end-user-creation")
       [:div
        [:h2 {} "Create a new end-user"]
        [auth/user-name-picker username-atom validated-username-atom]
@@ -25,9 +32,24 @@
                                   "create-user"
                                   {:user username
                                    :req-role "family_lead"}))))}
-        "Create new end-user"]])))
+        "Create new end-user"]
+       [:h2 {} "Or select an existing user"]
+       [:select {:name "foo" :value @selected-end-user-atom
+                 :on-change (fn [e] (reset! selected-end-user-atom (-> e .-target .-value))) }
+        (map (fn [{:keys [id key value]}]
+               (let [username (second (re-matches #"org\.couchdb\.user\:(.*)" id))]
+                 ^{:key username}
+                 [:option {:value username} username]))
+             @in-progress-users-atom
+         )
+        ]
+       ;; [:button {:on-click (fn [] (load-in-progress-users in-progress-users-atom))}
+       ;;  "Load in-progress-users"]
+       ;;[:p (str "the atom: " @in-progress-users-atom)]
+       ])))
 
 (defn business-view []
-  [:<>
-   [:div "This is the business view."]
-   [new-end-user-creation]])
+  (let [selected-end-user-atom (reagent/atom nil)]
+    [:<>
+     [:div "This is the business view."]
+     [new-end-user-creation selected-end-user-atom]]))
