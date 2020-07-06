@@ -4,7 +4,8 @@
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
    [video-note-taker.auth :as auth]
-   [video-note-taker.db :as db]))
+   [video-note-taker.db :as db]
+   [video-note-taker.listing :as listing]))
 
 (defn load-in-progress-users [atm]
   (db/put-endpoint-in-atom "get-in-progress-users" {} atm))
@@ -16,7 +17,6 @@
         _ (load-in-progress-users in-progress-users-atom)
         ]
     (fn []
-      (println "rendering new-end-user-creation")
       [:div
        [:h2 {} "Create a new end-user"]
        [auth/user-name-picker username-atom validated-username-atom]
@@ -48,8 +48,17 @@
        ;;[:p (str "the atom: " @in-progress-users-atom)]
        ])))
 
+(defn family-member-listing [selected-end-user-atom]
+  (let [family-members (reagent/atom nil)]
+    (fn []
+      [:div
+       [:h2 {} "Family Members"]
+       ;[listing/listing ]
+       ])))
+
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom nil)]
     [:<>
      [:div "This is the business view."]
-     [new-end-user-creation selected-end-user-atom]]))
+     [new-end-user-creation selected-end-user-atom]
+     [family-member-listing]]))
