@@ -258,6 +258,12 @@
                              if(doc[\"created-by\"]){
                                 emit(doc[\"created-by\"],doc._id);
                              }
+                    }"}
+                   :in_progress_end_users_by_business_user
+                   {:map "function (doc) {
+                              if(doc.type === \"user\" && doc.password === null) {
+                                 emit(doc[\"b2b-user\"], doc._id);
+                              }
                     }"}}
                   :language "javascript"}
                  username roles)
