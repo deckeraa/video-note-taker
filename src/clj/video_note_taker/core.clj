@@ -564,8 +564,21 @@
       (if (< (count users) (:user-limit user-doc))
         (let [params (get-body req)
               name  (:user params)
-              pass  (:pass params)]
-          (json-response (auth/create-user name pass ["family_member"] {:created-by username})))
+              pass  (:pass params)
+              business-user? (contains? (set roles) "business_user")
+              req-role (:req-role params)
+              family-lead (:family-lead params)]
+          (json-response (auth/create-user
+                          name pass
+                          (if business-user?
+                            (if (= req-role "family_lead")
+                              ["family_lead"]
+                              ["family_member"])
+                            ["family_member"])
+                          (if business-user?
+                            {:created-by (or family-lead username)
+                             :b2b-user username}
+                            {:created-by username}))))
         (not-authorized-response)))
     (not-authorized-response)))
 

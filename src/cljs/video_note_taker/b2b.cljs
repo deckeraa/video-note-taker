@@ -3,7 +3,8 @@
    [reagent.core :as reagent]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
-   [video-note-taker.auth :as auth]))
+   [video-note-taker.auth :as auth]
+   [video-note-taker.db :as db]))
 
 (defn new-end-user-creation []
   (let [username-atom (reagent/atom "")
@@ -17,9 +18,13 @@
                                "bg-light-green"
                                "bg-green dim"))
                  :on-click (fn []
-                             (when (not (empty? @validated-username-atom))
-                               ;; user creation goes here
-                               ))}
+                             (let [username @validated-username-atom]
+                               (when (not (empty? username))
+                                 ;; user creation goes here
+                                 (db/post-to-endpoint
+                                  "create-user"
+                                  {:user username
+                                   :req-role "family_lead"}))))}
         "Create new end-user"]])))
 
 (defn business-view []
