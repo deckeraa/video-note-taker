@@ -22,4 +22,4 @@
   (let [body (get-body req)
         family-lead (:family-lead body) ;; TODO check that the business user hass access to the family lead
         ]
-    (json-response (db/get-view db/users-db access/get-hook-fn "users" "by_creating_user" {:key family-lead} nil nil nil))))
+    (json-response (db/get-view db/users-db access/get-hook-fn "users" "by_creating_user" {:key family-lead :include_docs true} nil nil nil))))

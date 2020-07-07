@@ -8,7 +8,9 @@
    [video-note-taker.listing :as listing]))
 
 (defn xform-username [id]
-  (second (re-matches #"org\.couchdb\.user\:(.*)" id)))
+  (if id
+    (second (re-matches #"org\.couchdb\.user\:(.*)" id))
+    ""))
 
 (defn load-in-progress-users
   ([atm selected-user-atom]
@@ -76,8 +78,12 @@
 
 (defn family-member-listing-card [family-member-cursor]
   (let [family-member @family-member-cursor]
-    ^{:key (:id family-member)}
-    [:p {} (xform-username (:id family-member))]))
+    ^{:key (:_id family-member)}
+    [:div {:class "flex"}
+     [:p {:class "ma2"} (xform-username (:_id family-member))]
+     [:p {:class "ma2"} (:email family-member)]
+;;     [:p {} family-member]
+     ]))
 
 (defn family-member-listing [selected-end-user-atom selected-end-user-update-set]
   (let [family-members (reagent/atom nil)
@@ -89,7 +95,8 @@
                                 :card-fn family-member-listing-card
                                 }
         family-member-username (reagent/atom nil)
-        family-member-validated-username (reagent/atom nil)]
+        family-member-validated-username (reagent/atom nil)
+        email-atom (reagent/atom nil)]
     (swap! selected-end-user-update-set conj (fn [] (listing/reload family-listing-options)))
     (fn []
       [:div
@@ -98,6 +105,8 @@
        [listing/listing family-listing-options]
        [:h3 {} "Create a new family member"]
        [auth/user-name-picker family-member-username family-member-validated-username]
+       [:label {:for "email"} "Email: "]
+       [:input {:id "email" :type :text :value @email-atom :on-change #(reset! email-atom (-> % .-target .-value))}]
        [:button {:class (str "br3 white bn pa3 "
                              (if (empty? @family-member-validated-username)
                                "bg-light-green"
@@ -110,7 +119,8 @@
                                   "create-user"
                                   {:user username
                                    :req-role "family_member"
-                                   :family-lead @selected-end-user-atom}
+                                   :family-lead @selected-end-user-atom
+                                   :metadata {:email @email-atom}}
                                   (fn [] (listing/reload family-listing-options))))))}
         "Create new end-user"]
        ])))
