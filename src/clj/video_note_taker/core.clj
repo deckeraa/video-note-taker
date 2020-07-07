@@ -642,6 +642,7 @@
         ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]
         ["report-error" (wrap-cookie-auth report-error-handler)]
         ["get-in-progress-users" (wrap-cookie-auth b2b/get-in-progress-users-handler)]
+        ["get-family-members-of-users" (wrap-cookie-auth b2b/get-family-members-of-users)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"
         ;;                  metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key id)]
