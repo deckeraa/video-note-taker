@@ -13,12 +13,15 @@
     ""))
 
 (defn load-in-progress-users
-  ([atm selected-user-atom]
+  ([atm selected-user-atom selected-end-user-update-set]
    (db/post-to-endpoint "get-in-progress-users" {}
                         (fn [vals]
                           (println "vals: " vals)
                           (reset! atm vals)
-                          (reset! selected-user-atom (xform-username (:id (first vals)))))))
+                          (reset! selected-user-atom (xform-username (:id (first vals))))
+                          (doall (map (fn [reactive-fn] (reactive-fn val))
+                                      @selected-end-user-update-set))
+                          )))
   ([atm]
    (db/put-endpoint-in-atom "get-in-progress-users" {} atm)))
 
@@ -27,7 +30,7 @@
         validated-username-atom (reagent/atom "")
         in-progress-users-atom (reagent/atom nil)
         family-members (reagent/atom nil)
-        _ (load-in-progress-users in-progress-users-atom selected-end-user-atom)
+        _ (load-in-progress-users in-progress-users-atom selected-end-user-atom selected-end-user-update-set)
         ]
     (fn []
       [:div
