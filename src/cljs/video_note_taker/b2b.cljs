@@ -86,7 +86,7 @@
                                              "get-family-members-of-users"
                                              {:family-lead @selected-end-user-atom}
                                              family-members))
-                                :card-fn family-member-listing-card ;(fn [foo] [:p "foo"])
+                                :card-fn family-member-listing-card
                                 }
         family-member-username (reagent/atom nil)
         family-member-validated-username (reagent/atom nil)]

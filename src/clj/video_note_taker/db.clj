@@ -263,7 +263,7 @@
                     }"}
                    :in_progress_end_users_by_business_user
                    {:map "function (doc) {
-                              if(doc.type === \"user\" && doc.password === null) {
+                              if(doc.type === \"user\" && doc.password === null && doc[\"created-by\"] === doc[\"b2b-user\"]) {
                                  emit(doc[\"b2b-user\"], doc._id);
                               }
                     }"}}
