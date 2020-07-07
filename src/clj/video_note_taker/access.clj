@@ -234,6 +234,18 @@
       "video" (video-put-hook real-doc doc username roles)
       doc)))
 
+(defn users-put-hook-fn [doc username roles]
+  (println "About to look up doc: " (:_id doc) doc)
+  (let [real-doc (try
+                   (db/couch-request users-db :get (:_id doc) {} {} nil)
+                   (catch Exception e
+                     {}))]
+    (println "users-put-hook-fn: " real-doc)
+    (println "new doc: " (merge real-doc doc {:_rev (:_rev real-doc)}))
+    (if (:b2b-user real-doc)
+      (merge real-doc doc {:_rev (:_rev real-doc)})
+      nil)))
+
 (defn delete-hook-fn [real-doc req-doc username roles]
   (case (:type req-doc)
     "video" (= username (:uploaded-by real-doc))

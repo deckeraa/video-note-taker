@@ -5,7 +5,8 @@
    [video-note-taker.svg :as svg]
    [video-note-taker.auth :as auth]
    [video-note-taker.db :as db]
-   [video-note-taker.listing :as listing]))
+   [video-note-taker.listing :as listing]
+   [video-note-taker.editable-field :as editable-field]))
 
 (defn xform-username [id]
   (if id
@@ -79,13 +80,20 @@
        ;;[:p (str "the atom: " @in-progress-users-atom)]
        ])))
 
-(defn family-member-listing-card [family-member-cursor]
+(defn family-member-listing-card [family-member-cursor options]
   (let [family-member @family-member-cursor]
     ^{:key (:_id family-member)}
-    [:div {:class "flex"}
-     [:p {:class "ma2"} (xform-username (:_id family-member))]
-     [:p {:class "ma2"} (:email family-member)]
-;;     [:p {} family-member]
+    [:div {:class "flex items-center br3 shadow-4 ma2"}
+     [:p {:class "ma2 mr4"} (xform-username (:_id family-member))]
+     ;; [:p {:class "ma2"} (:email family-member)]
+     [editable-field/editable-field
+      (:email family-member)
+      (fn [val done-fn]
+        (db/post-to-endpoint "put-user-doc" (assoc family-member :email val)
+                             (fn []
+                               (done-fn)
+                               (listing/reload options)
+                               )))]
      ]))
 
 (defn family-member-listing [selected-end-user-atom selected-end-user-update-set]
@@ -133,9 +141,6 @@
         selected-end-user-update-set (reagent/atom #{})]
     [:<>
      [:div "This is the business view."]
-     ;; [:video {:src "FMS - B2C - Pitch Video_with Smooth Background Music__Final.mp4" :controls true
-     ;;          :type "video/mp4"}
-     ;;  ]
      [new-end-user-creation selected-end-user-atom selected-end-user-update-set]
      [family-member-listing selected-end-user-atom selected-end-user-update-set]
      ]))

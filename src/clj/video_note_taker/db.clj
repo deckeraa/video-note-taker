@@ -124,6 +124,8 @@
          (if put-hook-fn
            (put-hook-fn doc username roles)
            doc)
+         _ (println "audited-doc: " audited-doc)
+         ;; [db method endpoint form-params http-options auth-cookie]
          couch-resp
          (couch-request db :post "" audited-doc {} auth-cookie)]
      (when (not (:ok couch-resp))
@@ -135,7 +137,12 @@
 (defn put-doc-handler [db put-hook-fn req username roles]
   (let [doc (get-body req)
         cookie (get-auth-cookie req)]
-    (json-response (put-doc db put-hook-fn doc username roles cookie))))
+    (json-response (put-doc db put-hook-fn doc username roles))))
+
+;; (defn put-user-doc-handler [db put-hook-fn req username roles]
+;;   (let [doc (get-body req)
+;;         cookie (get-auth-cookie req)]
+;;     (json-response (put-doc users-db put-hook-fn doc username roles cookie))))
 
 (defn delete-doc [db delete-hook-fn doc username roles auth-cookie]
   (let [real-doc (couch-request db :get (:_id doc) {} {} auth-cookie)]
