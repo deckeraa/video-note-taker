@@ -105,8 +105,9 @@
   At present, each user is connected to each other user in the Alpha Deploy.
   This will change in the future when a user connection workflow is implemented."
   [user-list-atm]
-  (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
-                               {}))
+  (go (let [resp (<! (http/post (db/resolve-endpoint "get-connected-users")
+                               {:json-params {}
+                                :with-credentials true}))
             users (set (:body resp))]
         (reset! user-list-atm users))))
 

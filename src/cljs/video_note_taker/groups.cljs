@@ -37,8 +37,9 @@
   ([user-list-atm]
    (load-connected-users user-list-atm identity))
   ([user-list-atm xform-fn]
-   (go (let [resp (<! (http/get (db/resolve-endpoint "get-connected-users")
-                                {}))
+   (go (let [resp (<! (http/post (db/resolve-endpoint "get-connected-users")
+                                {:json-params {}
+                                 :with-credentials true}))
              users (set (:body resp))]
          (println "users: " users (xform-fn users))
          (reset! user-list-atm (xform-fn users))))))
@@ -55,56 +56,59 @@
             (apply merge (map (fn [v] {(str (:_id v)) v}) groups)))))
   )
 
-(defn group-card [group-cursor options]
-  (let [users-cursor (reagent/cursor group-cursor [:users])
-        is-editing? (reagent/atom false)]
-    (fn []
-      [:div
-       (if @is-editing?
-         [:div {:class "br3 shadow-4 pv3 pl3"}
-          [editable-field/editable-field
-           (:name @group-cursor)
-           (fn [v close-fn]
-             (swap! group-cursor assoc :name v)
-             (close-fn)
-;             (db/post-to-endpoint "group" @group-cursor close-fn)
-             )]
-          [pick-list
-           {
-            :data-cursor           users-cursor
-            :option-load-fn        load-connected-users
-            :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))
-            :caption               "Select a user:"
-            :remove-delegate-atom  (reagent/atom (fn [] nil))
-            :cancel-fn #(reset! is-editing? false)
-            :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor
-                                               (fn []
-                                                 (listing/reload options)
-                                                 (reset! is-editing? false))))
-            }]]
-         [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
-          ;;          [:div (str @group-cursor)]
-          [:div
-           [:div {:class "f3"} (:name @group-cursor)]
-           [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
-          [:div {:class "flex flex-columns"}
-           [svg/pencil {:class "mh3" :on-click #(reset! is-editing? true)} "grey" "18px"]
-           (when (= (:created-by @group-cursor) (:name @atoms/user-cursor))
-             [svg/trash {:class "mr2"
-                         :on-click
-                         (fn []
-                           (toaster-oven/add-toast
-                            "Delete group permanently?" nil nil
-                            {:cancel-fn (fn [] nil)
-                             :ok-fn (fn []
-                                      (db/post-to-endpoint
-                                       "delete-group"
-                                       @group-cursor
-                                       (fn []
-                                         (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
-                                         ; Reload the list after deletion
-                                         (listing/reload options))))}))}
-              "grey" "18px"])]])])))
+(defn group-card
+  ([group-cursor options]
+   [group-card group-cursor options nil])
+  ([group-cursor options connected-users-fn]
+   (let [users-cursor (reagent/cursor group-cursor [:users])
+         is-editing? (reagent/atom false)]
+     (fn []
+       [:div
+        (if @is-editing?
+          [:div {:class "br3 shadow-4 pv3 pl3"}
+           [editable-field/editable-field
+            (:name @group-cursor)
+            (fn [v close-fn]
+              (swap! group-cursor assoc :name v)
+              (close-fn)
+                                        ;             (db/post-to-endpoint "group" @group-cursor close-fn)
+              )]
+           [pick-list
+            {
+             :data-cursor           users-cursor
+             :option-load-fn        (or connected-users-fn load-connected-users)
+             :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))
+             :caption               "Select a user:"
+             :remove-delegate-atom  (reagent/atom (fn [] nil))
+             :cancel-fn #(reset! is-editing? false)
+             :ok-fn (fn [] (db/post-to-endpoint "group" @group-cursor
+                                                (fn []
+                                                  (listing/reload options)
+                                                  (reset! is-editing? false))))
+             }]]
+          [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
+           ;;          [:div (str @group-cursor)]
+           [:div
+            [:div {:class "f3"} (:name @group-cursor)]
+            [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
+           [:div {:class "flex flex-columns"}
+            [svg/pencil {:class "mh3" :on-click #(reset! is-editing? true)} "grey" "18px"]
+            (when (= (:created-by @group-cursor) (:name @atoms/user-cursor))
+              [svg/trash {:class "mr2"
+                          :on-click
+                          (fn []
+                            (toaster-oven/add-toast
+                             "Delete group permanently?" nil nil
+                             {:cancel-fn (fn [] nil)
+                              :ok-fn (fn []
+                                       (db/post-to-endpoint
+                                        "delete-group"
+                                        @group-cursor
+                                        (fn []
+                                          (toaster-oven/add-toast "Group deleted." svg/check "green" nil)
+                                        ; Reload the list after deletion
+                                          (listing/reload options))))}))}
+               "grey" "18px"])]])]))))
 
 (defn group-listing []
   (let [data-cursor (reagent/atom [])]

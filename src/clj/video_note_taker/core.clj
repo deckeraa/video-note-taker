@@ -526,7 +526,12 @@
       (error "update-video-permissions-handler e: " e))))
 
 (defn get-connected-users-handler [req username roles]
-  (json-response (access/get-connected-users username roles))
+  (println "get-connected-users-handler req: " req)
+  (let [body (get-body req)
+        username (if (and (contains? (set roles) "business_user") (:username body))
+                   (:username body)
+                   username)]
+    (json-response (access/get-connected-users username roles)))
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
   ;; (if (contains? (set roles) "_admin")
   ;;   ;; admins get all users

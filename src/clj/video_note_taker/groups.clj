@@ -7,12 +7,16 @@
               spy get-env]]
    [video-note-taker.db :as db :refer [db]]
    [video-note-taker.access :as access]
-   [video-note-taker.util :as util]))
+   [video-note-taker.util :as util :refer [get-body]]))
 
 (defn get-groups-handler [req username roles]
-  (let [groups (db/get-view db access/get-hook-fn
+  (let [body (get-body req)
+        username-for-view (if (and (contains? roles "business_user") (:username body))
+                            (:username body)
+                            username)
+        groups (db/get-view db access/get-hook-fn
                             "groups" "by_user"
-                            {:key username :include_docs true}
+                            {:key username-for-view :include_docs true}
                             username roles (db/get-auth-cookie req))]
     (json-response (vec (set groups)))))
 

@@ -1,12 +1,16 @@
 (ns video-note-taker.b2b
   (:require
    [reagent.core :as reagent]
+   [cljs-http.client :as http]
    [video-note-taker.atoms :as atoms]
    [video-note-taker.svg :as svg]
    [video-note-taker.auth :as auth]
    [video-note-taker.db :as db]
    [video-note-taker.listing :as listing]
-   [video-note-taker.editable-field :as editable-field]))
+   [video-note-taker.editable-field :as editable-field]
+   [video-note-taker.groups :as groups])
+  (:require-macros
+   [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn xform-username [id]
   (if id
@@ -136,11 +140,54 @@
         "Create new end-user"]
        ])))
 
+(defn load-connected-users
+  "Loads the list of connects users. Used to populate the list of options for the share dialog.
+  At present, each user is connected to each other user in the Alpha Deploy.
+  This will change in the future when a user connection workflow is implemented."
+  ([selected-end-user-atom user-list-atm]
+   (load-connected-users selected-end-user-atom user-list-atm identity))
+  ([selected-end-user-atom user-list-atm xform-fn]
+   (println "In load-connected-users " selected-end-user-atom user-list-atm xform-fn)
+   (go (let [resp (<! (http/post (db/resolve-endpoint "get-connected-users")
+                                {:json-params {:username @selected-end-user-atom}
+                                                :with-credentials true}))
+             users (set (:body resp))]
+         (println "new load-connected-users resp: " resp)
+         (println "users: " users (xform-fn users))
+         (reset! user-list-atm (xform-fn users))))))
+
+(defn group-listing [selected-end-user-atom selected-end-user-update-set]
+  ;; copied from groups.cljs
+  (let [data-cursor (reagent/atom [])]
+    (fn []
+      [listing/listing
+       {:data-cursor data-cursor
+        :card-fn (fn [group-cursor options]
+                   [groups/group-card group-cursor options
+                    (partial load-connected-users selected-end-user-atom)])
+        :load-fn (partial db/put-endpoint-in-atom "get-groups"
+                          {:username @selected-end-user-atom} data-cursor)
+        :new-async-fn (fn [call-with-new-data-fn]
+                  ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
+                  ;;   {:_id uuid :name "My Untitled Group"})
+                        (db/post-to-endpoint "group" {:name "My Untitled Group"}
+                                             (fn [doc]
+                                               (println "doc from post-to-endpoint: " doc)
+                                               (call-with-new-data-fn doc))))
+        :add-caption "Create new group"}])))
+
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom "")
         selected-end-user-update-set (reagent/atom #{})]
     [:<>
      [:div "This is the business view."]
+     [:button {:on-click
+               (fn [e]
+                 (go (let [resp (<! (http/post (db/resolve-endpoint "get-connected-users")
+                                               {:json-params {:username @selected-end-user-atom}
+                                                :with-credentials true}))]
+                       (println "resp " resp))))} "load-connected-users"]
      [new-end-user-creation selected-end-user-atom selected-end-user-update-set]
      [family-member-listing selected-end-user-atom selected-end-user-update-set]
+     [group-listing selected-end-user-atom selected-end-user-update-set]
      ]))
