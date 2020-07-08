@@ -158,23 +158,26 @@
 
 (defn group-listing [selected-end-user-atom selected-end-user-update-set]
   ;; copied from groups.cljs
-  (let [data-cursor (reagent/atom [])]
+  (let [data-cursor (reagent/atom [])
+        group-listing-options
+        {:data-cursor data-cursor
+         :card-fn (fn [group-cursor options]
+                    [groups/group-card group-cursor options
+                     (partial load-connected-users selected-end-user-atom)])
+         :load-fn (partial db/put-endpoint-in-atom "get-groups"
+                           {:username @selected-end-user-atom} data-cursor)
+         :new-async-fn (fn [call-with-new-data-fn]
+                         ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
+                         ;;   {:_id uuid :name "My Untitled Group"})
+                         (db/post-to-endpoint "group" {:name "My Untitled Group"}
+                                              (fn [doc]
+                                                (println "doc from post-to-endpoint: " doc)
+                                                (call-with-new-data-fn doc))))
+         :add-caption "Create new group"}]
+    (swap! selected-end-user-update-set conj (fn [] (listing/reload group-listing-options)))
     (fn []
       [listing/listing
-       {:data-cursor data-cursor
-        :card-fn (fn [group-cursor options]
-                   [groups/group-card group-cursor options
-                    (partial load-connected-users selected-end-user-atom)])
-        :load-fn (partial db/put-endpoint-in-atom "get-groups"
-                          {:username @selected-end-user-atom} data-cursor)
-        :new-async-fn (fn [call-with-new-data-fn]
-                  ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
-                  ;;   {:_id uuid :name "My Untitled Group"})
-                        (db/post-to-endpoint "group" {:name "My Untitled Group"}
-                                             (fn [doc]
-                                               (println "doc from post-to-endpoint: " doc)
-                                               (call-with-new-data-fn doc))))
-        :add-caption "Create new group"}])))
+       group-listing-options])))
 
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom "")
