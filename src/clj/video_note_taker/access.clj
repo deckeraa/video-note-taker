@@ -248,7 +248,9 @@
 
 (defn delete-hook-fn [real-doc req-doc username roles]
   (case (:type req-doc)
-    "video" (= username (:uploaded-by real-doc))
+    "video" (or
+             (= username (:uploaded-by real-doc))
+             (= username (:b2b-user real-doc)))
     "note"  (or (= (:created-by real-doc) username)
                 (access-shared/can-edit-others-notes roles)) 
     "group" (= username (:created-by real-doc))
