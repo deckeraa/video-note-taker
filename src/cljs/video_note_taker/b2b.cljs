@@ -186,8 +186,16 @@
         {:data-cursor data-cursor
          :card-fn (fn [video-cursor options]
                     [:p {} (str "video" @video-cursor)])
-         :load-fn (partial db/put-endpoint-in-atom "get-video-listing"
-                           {:username @selected-end-user-atom} data-cursor)
+         :load-fn (fn []
+                    (println "b2b video-listing load-fn is running")
+                    (db/post-to-endpoint
+                     "get-video-listing"
+                     {:username @selected-end-user-atom}
+                     (fn [result]
+                       (println "b2b video-listing load-fn result: " result)
+                       (reset! data-cursor result))))
+         ;; (partial db/put-endpoint-in-atom "get-video-listing"
+                  ;;          {:username @selected-end-user-atom} data-cursor)
          ;; :new-async-fn (fn [call-with-new-data-fn]
          ;;                 ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
          ;;                 ;;   {:_id uuid :name "My Untitled Group"})
@@ -197,12 +205,14 @@
          ;;                                        (call-with-new-data-fn doc))))
          ;; :add-caption "Upload video"
          }]
-    ;; (swap! selected-end-user-update-set conj (fn [] (listing/reload group-listing-options)))
+    (swap! selected-end-user-update-set conj (fn [] (listing/reload video-listing-options)))
     (println "Re-rendering video-listing!!!")
+    (println "video-listing-options: " video-listing-options)
     (fn []
-      [listing/listing
-       video-listing-options]
-      [video-listing/upload-card selected-end-user-atom data-cursor]
+      [:<>
+       [listing/listing
+        video-listing-options]
+       [video-listing/upload-card selected-end-user-atom data-cursor]]
       )))
 
 (defn business-view []

@@ -119,7 +119,7 @@
 
 (defn get-video-listing-handler [req username roles]
   (let [body (get-body req)
-        username (or (:username req) username)
+        username (or (:username body) username)
         groups (load-groups-for-user username)
         query {"selector"
                {"$and" [{"type"
