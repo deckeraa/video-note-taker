@@ -96,27 +96,33 @@
                           (recur)))))
                   files)))))
 
-(defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
-  (when-let [files (file-objects file-input-ref-atom)]
-    (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
-      ;; Send the POST to the upload endpoint
-      (go (let [resp (<! (http/post
-                          (db/resolve-endpoint upload-endpoint)
-                          {:multipart-params
-                           (mapv (fn [file] ["file" file]) files)          
-                           ;; (vec (map (fn [idx]
-                           ;;             ["file" (aget (.-files file-input) idx)])
-                           ;;           (range (alength (.-files file-input)))))
-                           :query-params {:id upload-id}
-                           }))]
-            (if (= 200 (:status resp))
-              (when success-fn (success-fn (:body resp) resp))
-              (when fail-fn    (fail-fn    (:body resp) resp)))
-            ;; nothing to do here, since file upload progress is tracked separately
-            ))
-      ;; Add in this upload to the uploads cursor.
-      ;; This enables the file upload progress tracker to 
-      (swap! uploads-cursor assoc upload-id (cursor-entry upload-id files :local)))))
+(defn upload-files
+  ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
+   (upload-files uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn nil))
+  ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn username]
+   (when-let [files (file-objects file-input-ref-atom)]
+     (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
+       ;; Send the POST to the upload endpoint
+       (go (let [resp (<! (http/post
+                           (db/resolve-endpoint upload-endpoint)
+                           {:multipart-params
+                            (mapv (fn [file] ["file" file]) files)          
+                            ;; (vec (map (fn [idx]
+                            ;;             ["file" (aget (.-files file-input) idx)])
+                            ;;           (range (alength (.-files file-input)))))
+                            :query-params (merge {:id upload-id}
+                                                 (if username
+                                                   {:username username}
+                                                   {}))
+                            }))]
+             (if (= 200 (:status resp))
+               (when success-fn (success-fn (:body resp) resp))
+               (when fail-fn    (fail-fn    (:body resp) resp)))
+             ;; nothing to do here, since file upload progress is tracked separately
+             ))
+       ;; Add in this upload to the uploads cursor.
+       ;; This enables the file upload progress tracker to 
+       (swap! uploads-cursor assoc upload-id (cursor-entry upload-id files :local))))))
 
 (defn upload-progress-updater
   ([uploads-cursor repeat?]

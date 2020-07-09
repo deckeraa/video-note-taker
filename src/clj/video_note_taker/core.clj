@@ -118,7 +118,9 @@
   (vec (map :id (db/get-view db nil "groups" "by_user_in_group" {:key username} nil nil nil))))
 
 (defn get-video-listing-handler [req username roles]
-  (let [groups (load-groups-for-user username)
+  (let [body (get-body req)
+        username (or (:username req) username)
+        groups (load-groups-for-user username)
         query {"selector"
                {"$and" [{"type"
                          {"$eq" "video"}}
@@ -278,11 +280,21 @@
       (json-response {:didnt-import @failed-imports :successfully-imported @success-imports-counter}))))
 
 (defn single-video-upload [req username roles {:keys [filename tempfile] :as file}]
-  (let [id (uuid/to-string (uuid/v4))
+  (let [body {}
+        uploaded-by-username (or (and (contains? (set roles) "business_user")
+                                      (get-in req [:params "username"]))
+                                 username)
+        id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
-        new-short-filename (str id "." file-ext)]
+        new-short-filename (str id "." file-ext)
+        ]
     (info "filename: " filename)
-    (info "username " username)
+    (info "(contains? (set roles) \"business_user\")" (contains? (set roles) "business_user"))
+    (info "params" (type (get-in req [:params])) (get-in req [:params]))
+    (info (get-in req [:params "username"]))
+    (info (and (contains? (set roles) "business_user")
+               (get-in req [:params "username"])))
+    (info "username: " username uploaded-by-username)
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy tempfile
              (io/file (str "./resources/private/" new-short-filename)))
@@ -291,13 +303,17 @@
     ;; put some video metadata into Couch
     (let [video-doc (db/put-doc
                      db access/put-hook-fn
-                     {:_id id
-                      :type "video"
-                      :display-name filename
-                      :file-name new-short-filename
-                      :users [username]
-                      :uploaded-by username
-                      :uploaded-datetime (.toString (new java.util.Date))}
+                     (merge
+                      {:_id id
+                       :type "video"
+                       :display-name filename
+                       :file-name new-short-filename
+                       :users [uploaded-by-username]
+                       :uploaded-by uploaded-by-username
+                       :uploaded-datetime (.toString (new java.util.Date))}
+                      (if (= uploaded-by-username username)
+                        {}
+                        {:b2b-user username}))
                      username
                      roles (db/get-auth-cookie req))]
       video-doc)))
@@ -323,6 +339,7 @@
   (let [file-array (if (vector? (get-in req [:params "file"]))
                      (get-in req [:params "file"])
                      [(get-in req [:params "file"])])]
+    (info "(:params req)" (:params req))
     (info "file-array: " (remove nil? file-array) file-array)
     (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 

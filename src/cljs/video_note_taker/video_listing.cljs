@@ -18,10 +18,14 @@
    [devcards.core :refer [defcard defcard-rg deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn load-video-listing [video-listing-cursor]
-  (db/post-to-endpoint "get-video-listing" {}
-                       (fn [video-listing]
-                         (reset! video-listing-cursor (sort-by :display-name video-listing)))))
+(defn load-video-listing
+  ([video-listing-cursor]
+   (load-video-listing nil video-listing-cursor))
+  ([username video-listing-cursor]
+   (println "video-listing-cursor: " video-listing-cursor)
+   (db/post-to-endpoint "get-video-listing" (if username {:username username} {})
+                        (fn [video-listing]
+                          (reset! video-listing-cursor (sort-by :display-name video-listing))))))
 
 (defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
   (let [hover-atm (reagent/atom false)]
@@ -158,56 +162,61 @@
    [upload-toast (fn [] nil) {:bytes-read 1000 :content-length 2000}]
    [upload-toast (fn [] nil) {:bytes-read 1000000 :content-length 3000000}]])
 
-(defn upload-card [video-listing-cursor]
-  (let [file-input-ref-atom (reagent/atom nil)]
-    (fn [video-listing-cursor]
-      [:div {:class "br3 shadow-4 mt3 flex"
-             :style {:position :relative}}
-       [:label {:for "file-upload"
-                :class
-                (if (and
-                     (:upload-location? @atoms/settings-cursor)
-                     (uploads/user-has-not-exceeded-available-storage))
-                  "f2 bg-green white b br3 dib pa2 w-100 tc dim"
-                  "f2 bg-light-green white b br3 dib pa2 w-100 tc")
-                :title
-                (if (:upload-location? @atoms/settings-cursor)
-                  ""
-                  "Upload location has not been set. This is something that FamilyMemoryStream must set, so if you can see this message, please file a support ticket."
-                  )}
-        (if (uploads/user-has-not-exceeded-available-storage)
-          "Upload video"
-          "Your available storage has been used.")]
-       [:input {:id "file-upload"
-                :name "file"
-                :type "file"
-                :multiple true
-                :class "dn"
-                :ref (fn [el]
-                       (reset! file-input-ref-atom el))
-                :on-click (fn [e]
-                            ;; Don't open up the dialog when it's not enabled.
-                            (when (not (uploads/user-has-not-exceeded-available-storage))
-                              (.preventDefault e)))
-                :on-change (fn [e]
-                             ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
-                             (case (keyword (:upload-location? @atoms/settings-cursor))
-                               :spaces
-                               (uploads/upload-files-to-s3
-                                atoms/uploads-cursor
-                                file-input-ref-atom
-                                (fn []
-                                  (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
-                                  (load-video-listing video-listing-cursor)))
-                               :local
-                               (uploads/upload-files
-                                atoms/uploads-cursor file-input-ref-atom "upload-video"
-                                #(load-video-listing video-listing-cursor)
-                                (fn [body]
-                                  (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)})))
-                               ;; default
-                               (println "Upload method has not been set."))
-                             )}]])))
+(defn upload-card
+  ([video-listing-cursor]
+   [upload-card nil video-listing-cursor])
+  ([username-atom video-listing-cursor]
+   (let [file-input-ref-atom (reagent/atom nil)]
+     (fn []
+       [:div {:class "br3 shadow-4 mt3 flex"
+              :style {:position :relative}}
+        [:label {:for "file-upload"
+                 :class
+                 (if (and
+                      (:upload-location? @atoms/settings-cursor)
+                      (uploads/user-has-not-exceeded-available-storage))
+                   "f2 bg-green white b br3 dib pa2 w-100 tc dim"
+                   "f2 bg-light-green white b br3 dib pa2 w-100 tc")
+                 :title
+                 (if (:upload-location? @atoms/settings-cursor)
+                   ""
+                   "Upload location has not been set. This is something that FamilyMemoryStream must set, so if you can see this message, please file a support ticket."
+                   )}
+         (if (uploads/user-has-not-exceeded-available-storage)
+           "Upload video"
+           "Your available storage has been used.")]
+        [:input {:id "file-upload"
+                 :name "file"
+                 :type "file"
+                 :multiple true
+                 :class "dn"
+                 :ref (fn [el]
+                        (reset! file-input-ref-atom el))
+                 :on-click (fn [e]
+                             ;; Don't open up the dialog when it's not enabled.
+                             (when (not (uploads/user-has-not-exceeded-available-storage))
+                               (.preventDefault e)))
+                 :on-change (fn [e]
+                              ;; cancelling out of the browser-supplied file upload dialog doesn't trigger this event
+                              (println "In on-change, video-listing-cursor is " video-listing-cursor)
+                              (case (keyword (:upload-location? @atoms/settings-cursor))
+                                :spaces
+                                (uploads/upload-files-to-s3
+                                 atoms/uploads-cursor
+                                 file-input-ref-atom
+                                 (fn []
+                                   (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
+                                   (load-video-listing (if username-atom @username-atom nil) video-listing-cursor)))
+                                :local
+                                (uploads/upload-files
+                                 atoms/uploads-cursor file-input-ref-atom "upload-video"
+                                 #(load-video-listing (if username-atom @username-atom nil) video-listing-cursor)
+                                 (fn [body]
+                                   (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)}))
+                                 (if username-atom @username-atom nil))
+                                ;; default
+                                (println "Upload method has not been set."))
+                              )}]]))))
 
 (defn video-listing [video-listing-cursor video-cursor notes-cursor screen-cursor]
   [:div

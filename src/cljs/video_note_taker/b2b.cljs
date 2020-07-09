@@ -8,7 +8,8 @@
    [video-note-taker.db :as db]
    [video-note-taker.listing :as listing]
    [video-note-taker.editable-field :as editable-field]
-   [video-note-taker.groups :as groups])
+   [video-note-taker.groups :as groups]
+   [video-note-taker.video-listing :as video-listing])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -179,6 +180,31 @@
       [listing/listing
        group-listing-options])))
 
+(defn video-listing [selected-end-user-atom selected-end-user-update-set]
+  (let [data-cursor (reagent/atom [])
+        video-listing-options
+        {:data-cursor data-cursor
+         :card-fn (fn [video-cursor options]
+                    [:p {} (str "video" @video-cursor)])
+         :load-fn (partial db/put-endpoint-in-atom "get-video-listing"
+                           {:username @selected-end-user-atom} data-cursor)
+         ;; :new-async-fn (fn [call-with-new-data-fn]
+         ;;                 ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
+         ;;                 ;;   {:_id uuid :name "My Untitled Group"})
+         ;;                 (db/post-to-endpoint "group" {:name "My Untitled Group"}
+         ;;                                      (fn [doc]
+         ;;                                        (println "doc from post-to-endpoint: " doc)
+         ;;                                        (call-with-new-data-fn doc))))
+         ;; :add-caption "Upload video"
+         }]
+    ;; (swap! selected-end-user-update-set conj (fn [] (listing/reload group-listing-options)))
+    (println "Re-rendering video-listing!!!")
+    (fn []
+      [listing/listing
+       video-listing-options]
+      [video-listing/upload-card selected-end-user-atom data-cursor]
+      )))
+
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom "")
         selected-end-user-update-set (reagent/atom #{})]
@@ -193,4 +219,5 @@
      [new-end-user-creation selected-end-user-atom selected-end-user-update-set]
      [family-member-listing selected-end-user-atom selected-end-user-update-set]
      [group-listing selected-end-user-atom selected-end-user-update-set]
+     [video-listing selected-end-user-atom selected-end-user-update-set]
      ]))
