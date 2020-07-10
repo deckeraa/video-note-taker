@@ -194,34 +194,42 @@
         video-listing-options
         {:data-cursor data-cursor
          :card-fn (fn [video-cursor options]
-                    (let [video @video-cursor]
-                      [:div {:class "br3 shadow-4 ma2 pa2 flex justify-between items-center"
-                           :title (:_id video)}
-                       [:div {} (:display-name video)]
-                       [:div {:class "ma2"} "users: " (:users video)]
-                       [:div {:class "ma2"} "groups: " (:groups video)]
-                       [svg/trash {:on-click
-                     (fn [e]
-                       (.stopPropagation e) ;; prevent this click from registing as a click on the video
-                       (toaster-oven/add-toast
-                        "Delete video permanently?" nil nil
-                        {:cancel-fn (fn [] nil)
-                         :ok-fn (fn []
-                                  (go (let [resp (<! (http/post (db/resolve-endpoint "delete-video")
-                                                                {:json-params video
-                                                                 :with-credentials true}))]
-                                        (if (= 200 (:status resp))
-                                          (do
-                                            (toaster-oven/add-toast "Video deleted" svg/check "green" nil)
-                                            (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
-                                            (load-fn))
-                                          (toaster-oven/add-toast (str "Couldn't delete video. " (get-in resp [:body :reason])) svg/x "red" nil)
-                                          ))))}))}
-          "gray" "24px"]
-                       ]))
+                    (let [video @video-cursor
+                          hover-atm (reagent/atom false)]
+                      (fn []
+                        [:div {:class "br3 shadow-4 ma2 pa2 flex justify-between items-center"
+                               :title (:_id video)
+                               :on-mouse-over (fn [e] (reset! hover-atm true))
+                               :on-mouse-out  (fn [e] (reset! hover-atm false))}
+                         [:div {} (:display-name video)]
+                         [:div {:class "ma2"} "users: " (:users video)]
+                         [:div {:class "ma2"} "groups: " (:groups video)]
+                         (if @hover-atm
+                           [svg/trash {:on-click
+                                       (fn [e]
+                                         (.stopPropagation e) ;; prevent this click from registing as a click on the video
+                                         (toaster-oven/add-toast
+                                          "Delete video permanently?" nil nil
+                                          {:cancel-fn (fn [] nil)
+                                           :ok-fn (fn []
+                                                    (go (let [resp (<! (http/post (db/resolve-endpoint "delete-video")
+                                                                                  {:json-params video
+                                                                                   :with-credentials true}))]
+                                                          (if (= 200 (:status resp))
+                                                            (do
+                                                              (toaster-oven/add-toast "Video deleted" svg/check "green" nil)
+                                                              (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
+                                                              (load-fn))
+                                                            (toaster-oven/add-toast (str "Couldn't delete video. " (get-in resp [:body :reason])) svg/x "red" nil)
+                                                            ))))}))}
+                            "gray" "24px"]
+                           [:div {:style {:width "24px"}}
+                            ;; empty div to reserve space for the trash can on hover
+                            ])
+                         ])))
          :load-fn load-fn
          ;; (partial db/put-endpoint-in-atom "get-video-listing"
-                  ;;          {:username @selected-end-user-atom} data-cursor)
+         ;;          {:username @selected-end-user-atom} data-cursor)
          ;; :new-async-fn (fn [call-with-new-data-fn]
          ;;                 ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]
          ;;                 ;;   {:_id uuid :name "My Untitled Group"})
