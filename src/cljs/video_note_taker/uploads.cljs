@@ -138,6 +138,7 @@
                                        (db/resolve-endpoint "get-upload-progress")
                                        {:query-params {:id upload-id}}))
                              updated-progress (:body resp)]
+                         ;;(println "upload-progress-updater: " resp)
                          (if (= 200 (:status resp))
                            (do
                              (swap! uploads-cursor assoc-in [upload-id :progress] updated-progress))                         
