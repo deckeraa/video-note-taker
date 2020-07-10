@@ -44,7 +44,8 @@
                                         ; Are they listed in the :users key?
        (not (empty? (filter #(= username %) (:users video))))
                                         ; Is one of the groups of which they are part listed in the :groups key?
-       (not (empty? (clojure.set/intersection (set groups) (set (:groups video)))))))))
+       (not (empty? (clojure.set/intersection (set groups) (set (:groups video)))))
+       (= (:b2b-user video) username)))))
 
 (defn user-has-access-to-note [username note]
   (contains? (set (:users note)) username))

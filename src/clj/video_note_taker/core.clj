@@ -514,6 +514,7 @@
 
 (defn update-video-permissions-handler [req username roles]
   (try
+    (println "Running update-video-permissions-handler" username roles)
     (let [video (get-body req)
           current-video (get-doc (:_id video) nil nil nil)
           listed-users (set (:users video))

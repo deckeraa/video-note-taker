@@ -121,7 +121,7 @@
         ]
     (compare-and-set! groups-cursor nil []) ;; initialize groups if needed
     (compare-and-set! users-cursor nil []) ;; initialize users if needed
-    (fn [remove-delegate-atm video-cursor notes-cursor]
+    (fn []
       [:div {:class "flex flex-column"}
        ;; List out the current users selected to be on the video
        [pick-list/pick-list
@@ -153,7 +153,8 @@
                                (fn [new-doc]
                                  (reset! video-cursor new-doc)
                                  (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
-                                 (load-notes notes-cursor video-cursor))))}
+                                 (when notes-cursor
+                                   (load-notes notes-cursor video-cursor)))))}
          "Ok"]]])))
 
 (defcard-rg test-share-dialog

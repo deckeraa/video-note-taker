@@ -10,6 +10,7 @@
    [video-note-taker.editable-field :as editable-field]
    [video-note-taker.groups :as groups]
    [video-note-taker.video-listing :as video-listing]
+   [video-note-taker.video-notes :as video-notes]
    [video-note-taker.toaster-oven :as toaster-oven])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -91,7 +92,7 @@
     ^{:key (:_id family-member)}
     [:div {:class "flex items-center br3 shadow-4 ma2"}
      [:p {:class "ma2 mr4"} (xform-username (:_id family-member))]
-     ;; [:p {:class "ma2"} (:email family-member)]
+     [:p {:class "ma2"} (:email family-member)]
      [editable-field/editable-field
       (:email family-member)
       (fn [val done-fn]
@@ -184,12 +185,10 @@
 (defn video-listing [selected-end-user-atom selected-end-user-update-set]
   (let [data-cursor (reagent/atom [])
         load-fn (fn []
-                    (println "b2b video-listing load-fn is running")
                     (db/post-to-endpoint
                      "get-video-listing"
                      {:username @selected-end-user-atom}
                      (fn [result]
-                       (println "b2b video-listing load-fn result: " result)
                        (reset! data-cursor result))))
         video-listing-options
         {:data-cursor data-cursor
@@ -202,6 +201,13 @@
                                :on-mouse-over (fn [e] (reset! hover-atm true))
                                :on-mouse-out  (fn [e] (reset! hover-atm false))}
                          [:div {} (:display-name video)]
+                         [:button {:class "bn pa2 ma2 br3 dim bg-white"
+                                   :title "Share"
+                                   :on-click (fn [e]
+                                               (let [remove-delegate-atm (reagent/atom (fn [] nil))]
+                                                 (toaster-oven/add-toast
+                                                  [video-notes/share-dialog remove-delegate-atm video-cursor nil] remove-delegate-atm atoms/toaster-cursor)))}
+                          [svg/share-graph {:class "bg-white"} "gray" "32px"]]
                          [:div {:class "ma2"} "users: " (:users video)]
                          [:div {:class "ma2"} "groups: " (:groups video)]
                          (if @hover-atm
