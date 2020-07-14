@@ -11,7 +11,7 @@
 
 (defn get-groups-handler [req username roles]
   (let [body (get-body req)
-        username-for-view (if (and (contains? roles "business_user") (:username body))
+        username-for-view (if (and (contains? (set roles) "business_user") (:username body))
                             (:username body)
                             username)
         groups (db/get-view db access/get-hook-fn
@@ -61,7 +61,9 @@
   (let [req-group   (util/get-body req)
         saved-group (db/get-doc db access/get-hook-fn (:_id req-group)
                                 username roles (db/get-auth-cookie req))]
+    (println "saved-group: " saved-group)
     (if saved-group
+      ;; Update an existing group -- this involves updating the denormalized :users on video
       (if (= (:created-by saved-group) username)
         (let [updated-group (db/put-doc db access/put-hook-fn req-group
                                         username roles (db/get-auth-cookie req))
@@ -78,5 +80,6 @@
           (doall (map denormalize-users-on-video affected-videos))
           (json-response updated-group))
         (util/not-authorized-response))
-      (json-response (db/put-doc db access/put-hook-fn (merge req-group {:type "group" :created-by username :users []})
+      ;; Create a new group
+      (json-response (db/put-doc db access/put-hook-fn (merge req-group {:type "group" :users []})
                                  username roles (db/get-auth-cookie req))))))

@@ -68,7 +68,7 @@
        :syslog-options (byte 0x03)
        :facility :log-user})}}))
 
-(timbre/set-level! :debug)
+(timbre/set-level! :warn)
 
 (def bucket (System/getenv "VNT_BUCKET"))
 (def access-key (System/getenv "AWS_ACCESS_KEY_ID"))
