@@ -208,7 +208,6 @@
                     (let [hover-atm (reagent/atom false)]
                       (fn []
                         (let [video @video-cursor]
-                          (println "Running card-fn: " @video-cursor)
                           [:div {:class "br3 shadow-4 ma2 pa2 flex justify-between items-center"
                                  :title (:_id video)
                                  :on-mouse-over (fn [e] (reset! hover-atm true))
@@ -222,15 +221,22 @@
                                                     [video-notes/share-dialog remove-delegate-atm video-cursor (fn [] (println "Reloading the video listing") (load-fn)) selected-end-user-atom]
                                                     remove-delegate-atm atoms/toaster-cursor)))}
                             [svg/share-graph {:class "bg-white"} "gray" "32px"]]
-                           [:div {:class "ma2"} "users: " (:users video)]
-                           [:div {:class "ma2"} "groups: " (apply str (map
-                                                                       (fn [group-id]
-                                                                         (:name
-                                                                          (first
-                                                                           (get
-                                                                            (group-by :_id @groups-cursor)
-                                                                            group-id))))
-                                                                       (:groups video)))]
+                           [:div {:class "ma2 flex flex-column"} "Users: "
+                            [:ul {:class "list pl0"}
+                             (map (fn [user] ^{:key user} [:li user])
+                                  (:users video))]
+                            ]
+                           [:div {:class "ma2"} "Groups: "
+                            [:ul {:class "list pl0"}
+                             (map (fn [user] ^{:key user} [:li user])
+                                  (map
+                                   (fn [group-id]
+                                     (:name
+                                      (first
+                                       (get
+                                        (group-by :_id @groups-cursor)
+                                        group-id))))
+                                   (:groups video)))]]
                            (if @hover-atm
                              [svg/trash {:on-click
                                          (fn [e]
