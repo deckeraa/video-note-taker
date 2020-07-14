@@ -221,7 +221,7 @@
                                                     [video-notes/share-dialog remove-delegate-atm video-cursor (fn [] (println "Reloading the video listing") (load-fn)) selected-end-user-atom]
                                                     remove-delegate-atm atoms/toaster-cursor)))}
                             [svg/share-graph {:class "bg-white"} "gray" "32px"]]
-                           [:div {:class "ma2 flex flex-column"} "Users: "
+                           [:div {:class "ma2 flex flex-column em"} "Users"
                             [:ul {:class "list pl0"}
                              (map (fn [user] ^{:key user} [:li user])
                                   (:users video))]
@@ -279,6 +279,7 @@
       [:<>
        [listing/listing
         video-listing-options]
+       [:p {} (str @data-cursor)]
        [video-listing/upload-card selected-end-user-atom data-cursor]]
       )))
 

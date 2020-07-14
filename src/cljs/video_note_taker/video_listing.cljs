@@ -25,7 +25,7 @@
    (println "video-listing-cursor: " video-listing-cursor)
    (db/post-to-endpoint "get-video-listing" (if username {:username username} {})
                         (fn [video-listing]
-                          (reset! video-listing-cursor (sort-by :display-name video-listing))))))
+                          (reset! video-listing-cursor (vec (sort-by :display-name video-listing)))))))
 
 (defn single-video-listing [video video-cursor notes-cursor screen-cursor video-listing-cursor]
   (let [hover-atm (reagent/atom false)]
