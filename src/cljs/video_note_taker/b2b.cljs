@@ -194,7 +194,7 @@
       [listing/listing
        group-listing-options])))
 
-(defn video-listing [selected-end-user-atom selected-end-user-update-set]
+(defn video-listing [groups-cursor selected-end-user-atom selected-end-user-update-set]
   (let [data-cursor (reagent/atom [])
         load-fn (fn []
                     (db/post-to-endpoint
@@ -218,11 +218,19 @@
                                    :on-click (fn [e]
                                                (let [remove-delegate-atm (reagent/atom (fn [] nil))]
                                                  (toaster-oven/add-toast
-                                                  [video-notes/share-dialog remove-delegate-atm video-cursor nil] remove-delegate-atm atoms/toaster-cursor)))}
+                                                  [video-notes/share-dialog remove-delegate-atm video-cursor nil selected-end-user-atom]
+                                                  remove-delegate-atm atoms/toaster-cursor)))}
                           [svg/share-graph {:class "bg-white"} "gray" "32px"]]
                          [:div {:class "ma2"} "users: " (:users video)]
-                         [:div {:class "ma2"} "groups: " (apply str (:groups video))]
-                         [:div {:class "ma2"} (str video)]
+                         [:div {:class "ma2"} "groups: " (apply str (map
+                                                               (fn [group-id]
+                                                                 (:name
+                                                                  (first
+                                                                   (get
+                                                                    (group-by :_id @groups-cursor)
+                                                                    group-id))))
+                                                               (:groups video)))]
+                         ;[:div {:class "ma2"} (str video)]
                          (if @hover-atm
                            [svg/trash {:on-click
                                        (fn [e]
@@ -285,6 +293,6 @@
        [new-end-user-creation selected-end-user-atom selected-end-user-update-set]
        [family-member-listing selected-end-user-atom selected-end-user-update-set]
        [group-listing groups-cursor selected-end-user-atom selected-end-user-update-set]
-       [:p {} (str @groups-cursor)]
-       [video-listing selected-end-user-atom selected-end-user-update-set]
+       ;;[:p {} (str (group-by :_id @groups-cursor))]
+       [video-listing groups-cursor selected-end-user-atom selected-end-user-update-set]
        ])))

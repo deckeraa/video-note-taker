@@ -104,58 +104,64 @@
   "Loads the list of connects users. Used to populate the list of options for the share dialog.
   At present, each user is connected to each other user in the Alpha Deploy.
   This will change in the future when a user connection workflow is implemented."
-  [user-list-atm]
-  (go (let [resp (<! (http/post (db/resolve-endpoint "get-connected-users")
-                               {:json-params {}
-                                :with-credentials true}))
-            users (set (:body resp))]
-        (reset! user-list-atm users))))
+  ([user-list-atm]
+   (load-connected-users user-list-atm nil))
+  ([user-list-atm username]
+   (go (let [resp (<! (http/post (db/resolve-endpoint "get-connected-users")
+                                 {:json-params (if username {:username username} {})
+                                  :with-credentials true}))
+             users (set (:body resp))]
+         (reset! user-list-atm users)))))
 
 (defn share-dialog
   "Dialog that allows a user to share the video with other users."
-  [remove-delegate-atm video-cursor notes-cursor]
-  (let [users-cursor  (reagent/cursor video-cursor [:users])
-        groups-cursor (reagent/cursor video-cursor [:groups])
-        users-save-atom (reagent/atom #())
-        groups-save-atom (reagent/atom #())
-        ]
-    (compare-and-set! groups-cursor nil []) ;; initialize groups if needed
-    (compare-and-set! users-cursor nil []) ;; initialize users if needed
-    (fn []
-      [:div {:class "flex flex-column"}
-       ;; List out the current users selected to be on the video
-       [pick-list/pick-list
-        {:data-cursor users-cursor
-         :option-load-fn load-connected-users
-         :caption "Share with users:"
-         :save-to-cursor-delegate-atom users-save-atom
-         :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))}]
-       [pick-list/pick-list-with-docs
-        {
-         :data-cursor           groups-cursor
-         :option-load-fn        groups/load-groups-into-map
-         :caption               "Share with groups:"
-         :save-to-cursor-delegate-atom groups-save-atom
-         :name-key :name
-         }]
-       ;; Cancel and OK buttons
-       [:div {:class "flex mt2 mh2"}
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
-         "Cancel"]
-        [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
-                  :on-click (fn [e]
-                              (@users-save-atom)
-                              (@groups-save-atom)
-                              (@remove-delegate-atm) ; closes the dialog
-                              (db/post-to-endpoint
-                               "update-video-permissions" @video-cursor
-                               (fn [new-doc]
-                                 (reset! video-cursor new-doc)
-                                 (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
-                                 (when notes-cursor
-                                   (load-notes notes-cursor video-cursor)))))}
-         "Ok"]]])))
+  ([remove-delegate-atm video-cursor notes-cursor]
+   [share-dialog remove-delegate-atm video-cursor notes-cursor nil])
+  ([remove-delegate-atm video-cursor notes-cursor username-cursor]
+   (let [users-cursor  (reagent/cursor video-cursor [:users])
+         groups-cursor (reagent/cursor video-cursor [:groups])
+         users-save-atom (reagent/atom #())
+         groups-save-atom (reagent/atom #())
+         ]
+     (compare-and-set! groups-cursor nil []) ;; initialize groups if needed
+     (compare-and-set! users-cursor nil []) ;; initialize users if needed
+     (fn []
+       [:div {:class "flex flex-column"}
+        ;; List out the current users selected to be on the video
+        [pick-list/pick-list
+         {:data-cursor users-cursor
+          :option-load-fn (fn [user-list-atm]
+                            (load-connected-users user-list-atm (when username-cursor @username-cursor)))
+          :caption "Share with users:"
+          :save-to-cursor-delegate-atom users-save-atom
+          :can-delete-option-fn  (fn [option] (not (= option (:name @atoms/user-cursor))))}]
+        [pick-list/pick-list-with-docs
+         {
+          :data-cursor           groups-cursor
+          :option-load-fn        (fn [data-cursor]
+                                   (groups/load-groups-into-map data-cursor (when username-cursor {:username @username-cursor})))
+          :caption               "Share with groups:"
+          :save-to-cursor-delegate-atom groups-save-atom
+          :name-key :name
+          }]
+        ;; Cancel and OK buttons
+        [:div {:class "flex mt2 mh2"}
+         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                   :on-click (fn [e] (@remove-delegate-atm))} ; closes the dialog
+          "Cancel"]
+         [:button {:class "black bg-white br3 dim pa2 ma2 shadow-4 bn"
+                   :on-click (fn [e]
+                               (@users-save-atom)
+                               (@groups-save-atom)
+                               (@remove-delegate-atm) ; closes the dialog
+                               (db/post-to-endpoint
+                                "update-video-permissions" @video-cursor
+                                (fn [new-doc]
+                                  (reset! video-cursor new-doc)
+                                  (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
+                                  (when notes-cursor
+                                    (load-notes notes-cursor video-cursor)))))}
+          "Ok"]]]))))
 
 (defcard-rg test-share-dialog
   (let [remove-delegate-atm (reagent/atom (fn [] nil))
