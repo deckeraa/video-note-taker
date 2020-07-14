@@ -147,7 +147,8 @@
 (defn audit-video-key-users
   [real-doc req-doc username roles users]
   ;;pull out any users that the user isn't allowed to share with. Only do this for non-admins.
-  (if (contains? (set roles) "_admin")
+  (if (or (contains? (set roles) "_admin")
+          (= username (:b2b-user real-doc)))
       req-doc
       (update-in req-doc [:users] (fn [req-users]
                                     (vec (update-users (:users real-doc) req-users users username roles))
