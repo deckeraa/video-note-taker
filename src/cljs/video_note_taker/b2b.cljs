@@ -26,7 +26,7 @@
                         (fn [vals]
                           (println "vals: " vals)
                           (reset! atm vals)
-                          (reset! selected-user-atom (xform-username (:id (first vals))))
+                          (reset! selected-user-atom (xform-username (:_id (first vals))))
                           (doall (map (fn [reactive-fn] (reactive-fn val))
                                       @selected-end-user-update-set))
                           )))
@@ -42,6 +42,7 @@
         ]
     (fn []
       [:div
+       [:div {} (str @in-progress-users-atom)]
        [:h2 {} "Create a new end-user"]
        [auth/user-name-picker username-atom validated-username-atom]
        [:button {:class (str "br3 white bn pa3 "
@@ -64,8 +65,8 @@
                                 (reset! selected-end-user-atom val)
                                 (doall (map (fn [reactive-fn] (reactive-fn val))
                                             @selected-end-user-update-set)))) }
-        (map (fn [{:keys [id key value]}]
-               (let [username (xform-username id)]
+        (map (fn [{:keys [_id key value]}]
+               (let [username (xform-username _id)]
                  ^{:key username}
                  [:option {:value username} username]))
              @in-progress-users-atom
@@ -273,15 +274,20 @@
          ;; :add-caption "Upload video"
          }]
     (swap! selected-end-user-update-set conj (fn [] (listing/reload video-listing-options)))
-    (println "Re-rendering video-listing!!!")
-    (println "video-listing-options: " video-listing-options)
     (fn []
       [:<>
        [listing/listing
         video-listing-options]
-       [:p {} (str @data-cursor)]
        [video-listing/upload-card selected-end-user-atom data-cursor]]
       )))
+
+(defn activate-and-email [selected-end-user-atom selected-end-user-update-set]
+  [:button {:class "white bg-green br3 pa4 ma4"
+            :on-click (fn [e]
+                        (db/post-to-endpoint
+                         "set-passwords-and-email"
+                         {:username @selected-end-user-atom}))}
+   "Send user activation email"])
 
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom "")
@@ -302,4 +308,5 @@
        [group-listing groups-cursor selected-end-user-atom selected-end-user-update-set]
        ;;[:p {} (str (group-by :_id @groups-cursor))]
        [video-listing groups-cursor selected-end-user-atom selected-end-user-update-set]
+       [activate-and-email selected-end-user-atom selected-end-user-update-set]
        ])))

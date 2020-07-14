@@ -16,7 +16,7 @@
 
 (defn get-in-progress-users-handler [req username roles]
   (println "b2b username: " username)
-  (json-response (db/get-view db/users-db access/get-hook-fn "users" "in_progress_end_users_by_business_user" {:key username} nil nil nil)))
+  (json-response (db/get-view db/users-db access/get-hook-fn "users" "in_progress_end_users_by_business_user" {:key username :include_docs true} nil nil nil)))
 
 (defn get-family-members-of-users [req username roles]
   (let [body (get-body req)
