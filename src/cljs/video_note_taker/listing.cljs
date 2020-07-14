@@ -33,6 +33,7 @@
                     (load-fn data-cursor)
                     (println "after load-fn: " data-cursor)))
   (fn []
+    (println "Rendering listing: " @data-cursor)
     [:div {:class "flex flex-column items-center"}
      ;;[:div {} (str @data-cursor)]
      [:ul {:class "list"}

@@ -115,9 +115,9 @@
 
 (defn share-dialog
   "Dialog that allows a user to share the video with other users."
-  ([remove-delegate-atm video-cursor notes-cursor]
-   [share-dialog remove-delegate-atm video-cursor notes-cursor nil])
-  ([remove-delegate-atm video-cursor notes-cursor username-cursor]
+  ([remove-delegate-atm video-cursor reload-fn]
+   [share-dialog remove-delegate-atm video-cursor reload-fn nil])
+  ([remove-delegate-atm video-cursor reload-fn username-cursor]
    (let [users-cursor  (reagent/cursor video-cursor [:users])
          groups-cursor (reagent/cursor video-cursor [:groups])
          users-save-atom (reagent/atom #())
@@ -159,17 +159,16 @@
                                 (fn [new-doc]
                                   (reset! video-cursor new-doc)
                                   (toaster-oven/add-toast "Video sharing settings updated." svg/check "green" nil)
-                                  (when notes-cursor
-                                    (load-notes notes-cursor video-cursor)))))}
+                                  (when reload-fn
+                                    (reload-fn)))))}
           "Ok"]]]))))
 
 (defcard-rg test-share-dialog
   (let [remove-delegate-atm (reagent/atom (fn [] nil))
         video-cursor        (reagent/atom {:_id "abc123" :users ["alpha" "bravo" "charlie"]
-                                           :groups ["6ad12c0291d9f043fb092d076a000cc1"]})
-        notes-cursor        (reagent/atom [])]
+                                           :groups ["6ad12c0291d9f043fb092d076a000cc1"]})]
     [:div {:class ""}
-     [share-dialog remove-delegate-atm video-cursor notes-cursor]]))
+     [share-dialog remove-delegate-atm video-cursor nil]]))
 
 (defn format-date-for-note-display
   ([date-obj]
@@ -273,7 +272,7 @@
                  :title "Share"
                  :on-click (fn [e]
                              (let [remove-delegate-atm (reagent/atom (fn [] nil))]
-                               (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor notes-cursor] remove-delegate-atm atoms/toaster-cursor)))}
+                               (toaster-oven/add-toast [share-dialog remove-delegate-atm video-cursor (fn [] (load-notes notes-cursor video-cursor))] remove-delegate-atm atoms/toaster-cursor)))}
         [svg/share-graph {:class "white"} "white" "32px"]])
      (when (not (:presigned-url @video-cursor))
        [:a (merge {:class "bn pa2 ma2 br3 dim bg-gray dib"}
