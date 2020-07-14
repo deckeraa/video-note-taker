@@ -61,10 +61,9 @@
   (let [req-group   (util/get-body req)
         saved-group (db/get-doc db access/get-hook-fn (:_id req-group)
                                 username roles (db/get-auth-cookie req))]
-    (println "saved-group: " saved-group)
     (if saved-group
       ;; Update an existing group -- this involves updating the denormalized :users on video
-      (if (= (:created-by saved-group) username)
+      (if (access/user-can-edit-group username roles saved-group)
         (let [updated-group (db/put-doc db access/put-hook-fn req-group
                                         username roles (db/get-auth-cookie req))
               videos-query {"selector"

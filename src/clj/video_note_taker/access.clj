@@ -51,10 +51,15 @@
   (contains? (set (:users note)) username))
 
 (defn user-has-access-to-group [username roles group]
-  (println "Running user-has-access-to-group: " username roles group)
   (or
    (= username (:created-by group))
    (contains? (set (:users group)) username)
+   (and (= (:b2b-user group) username)
+        (contains? (set roles) "business_user"))))
+
+(defn user-can-edit-group [username roles group]
+  (or
+   (= username (:created-by group))
    (and (= (:b2b-user group) username)
         (contains? (set roles) "business_user"))))
 
