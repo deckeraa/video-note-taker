@@ -67,6 +67,7 @@
 (defn get-doc
   ([db get-hook-fn id username roles auth-cookie]
    (try (let [real-doc (couch-request db :get id {} {} auth-cookie)]
+          (println "get-doc looked up from " db id real-doc)
           (if get-hook-fn
             (get-hook-fn real-doc username roles)
             ;; if not username, roles, or auth-cookie is passed in, that means we run it in admin mode.
@@ -74,6 +75,7 @@
               real-doc
               nil)))
         (catch Exception e
+          (println "Exception in get-doc: " db id e)
           {}))))
 
 (defn get-doc-handler [db get-hook-fn req username roles]

@@ -282,7 +282,7 @@
       )))
 
 (defn activate-and-email [selected-end-user-atom selected-end-user-update-set]
-  [:button {:class "white bg-green br3 pa4 ma4"
+  [:button {:class "white bg-green br3 pa4 ma4 f2"
             :on-click (fn [e]
                         (db/post-to-endpoint
                          "set-passwords-and-email"
