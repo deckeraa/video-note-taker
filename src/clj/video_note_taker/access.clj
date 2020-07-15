@@ -68,7 +68,6 @@
        (not (=    (:storage-location video) "local"))))
 
 (defn insert-presigned-url-into-video [video]
-  (warn "is-video-stored-in-spaces?" (is-video-stored-in-spaces? video) video)
   (if (is-video-stored-in-spaces? video)
     (assoc video
            :presigned-url
@@ -87,7 +86,6 @@
            :local)))
 
 (defn get-hook-fn [real-doc username roles]
-  (warn "get-hook-fn " real-doc)
   (case (:type real-doc)
     "video" (if (user-has-access-to-video username real-doc)
               (-> real-doc

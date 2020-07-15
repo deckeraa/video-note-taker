@@ -27,15 +27,6 @@
         ]
     (json-response (db/get-view db/users-db access/get-hook-fn "users" "by_creating_user" {:key family-lead :include_docs true} nil nil nil))))
 
-;; (defn gen-password [length]
-;;   (let [start-of-alphanumeric-ascii-range 65 ;; The character A
-;;         ascii-range-length (- 122 65) ;; range from A to z
-        
-;;         ]
-;;     (apply str (take length (repeatedly (fn [] (char (+ start-of-alphanumeric-ascii-range
-;;                                                         (rand-int ascii-range-length))))))))
-;;)
-
 (defn gen-password [length]
   (let [usable-letters (vec "0123456789abcdefghijklmnopqrstuvwxyz")        
         ]
@@ -56,19 +47,15 @@
 (defn set-passwords-and-email-handler [req username roles]
   (let [body (get-body req)
         family-lead-username (:username body)
-        family-lead-user (load-user family-lead-username) ;; (db/get-doc
+        ;;family-lead-user (load-user family-lead-username) ;; (db/get-doc
                          ;;  users-db
                          ;;  access/get-hook-fn
                          ;;  (str "org.couchdb.user:" family-lead-username)
                          ;;  nil nil nil)
         family-members (set (access/get-connected-users family-lead-username roles))]
-    (println "Successfully looked up: " family-lead-username family-lead-user)
     (println "family-members: " family-members)
-    (println "gen-password: " (gen-password 8))
-    (let [passwords-to-email (map (fn [username]
-                                    (let [user (load-user username)
-                                          password "foo" ;(set-password! user)
-                                          ]
+    (let [passwords-to-email (mapv (fn [username]
+                                    (let [user (load-user username)]
                                       (if (empty? user)
                                         (do
                                           (warn "Loaded empty document for user: " username)

@@ -67,7 +67,6 @@
 (defn get-doc
   ([db get-hook-fn id username roles auth-cookie]
    (try (let [real-doc (couch-request db :get id {} {} auth-cookie)]
-          (println "get-doc looked up from " db id real-doc)
           (if get-hook-fn
             (get-hook-fn real-doc username roles)
             ;; if not username, roles, or auth-cookie is passed in, that means we run it in admin mode.
@@ -126,8 +125,6 @@
          (if put-hook-fn
            (put-hook-fn doc username roles)
            doc)
-         _ (println "audited-doc: " audited-doc)
-         ;; [db method endpoint form-params http-options auth-cookie]
          couch-resp
          (couch-request db :post "" audited-doc {} auth-cookie)]
      (when (not (:ok couch-resp))
