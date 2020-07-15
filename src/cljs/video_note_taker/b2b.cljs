@@ -33,12 +33,20 @@
   ([atm]
    (db/put-endpoint-in-atom "get-in-progress-users" {} atm)))
 
+(defn load-all-business-users-users
+  ([atm selected-user-atom selected-end-user-update-set]
+)
+  ([atm]
+   (db/put-endpoint-in-atom "get-in-progress-users" {} atm)))
+
 (defn new-end-user-creation [selected-end-user-atom selected-end-user-update-set]
   (let [username-atom (reagent/atom "")
         validated-username-atom (reagent/atom "")
         in-progress-users-atom (reagent/atom nil)
+        all-users-atom (reagent/atom nil)
         family-members (reagent/atom nil)
         _ (load-in-progress-users in-progress-users-atom selected-end-user-atom selected-end-user-update-set)
+        _ (db/put-endpoint-in-atom "by-business-user" {} all-users-atom)
         ]
     (fn []
       [:div
@@ -59,7 +67,8 @@
                                    :req-role "family_lead"}))))}
         "Create new end-user"]
        [:h2 {} "Or select an existing user"]
-       [:select {:name "foo" :value @selected-end-user-atom
+       [:label {:for "inprogresselect"} "In progress:"]
+       [:select {:name "inprogresselect" :value @selected-end-user-atom
                  :on-change (fn [e]
                               (let [val (-> e .-target .-value)]
                                 (reset! selected-end-user-atom val)
@@ -70,6 +79,19 @@
                  ^{:key username}
                  [:option {:value username} username]))
              @in-progress-users-atom
+             )]
+       [:label {:for "allusersselect"} "All users you've created:"]
+       [:select {:name "allusersselect" :value @selected-end-user-atom
+                 :on-change (fn [e]
+                              (let [val (-> e .-target .-value)]
+                                (reset! selected-end-user-atom val)
+                                (doall (map (fn [reactive-fn] (reactive-fn val))
+                                            @selected-end-user-update-set)))) }
+        (map (fn [{:keys [_id key value]}]
+               (let [username (xform-username _id)]
+                 ^{:key username}
+                 [:option {:value username} username]))
+             @all-users-atom
              )]
        ;; [:div
        ;;  [:h2 {} "Family Members"]

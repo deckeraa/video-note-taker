@@ -18,6 +18,9 @@
   (println "b2b username: " username)
   (json-response (db/get-view db/users-db access/get-hook-fn "users" "in_progress_end_users_by_business_user" {:key username :include_docs true} nil nil nil)))
 
+(defn by-business-user-handler [req username roles]
+  (json-response (db/get-view db/users-db access/get-hook-fn "users" "by_business_user" {:key username :include_docs true} nil nil nil)))
+
 (defn get-family-members-of-users [req username roles]
   (let [body (get-body req)
         family-lead (:family-lead body) ;; TODO check that the business user hass access to the family lead
@@ -46,7 +49,7 @@
 (defn load-user [username]
   (db/get-doc
    users-db
-   access/get-hook-fn
+   nil
    (str "org.couchdb.user:" username)
    nil nil nil))
 

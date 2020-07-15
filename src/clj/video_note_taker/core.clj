@@ -668,6 +668,7 @@
         ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]
         ["report-error" (wrap-cookie-auth report-error-handler)]
         ["get-in-progress-users" (wrap-cookie-auth b2b/get-in-progress-users-handler)]
+        ["by-business-user" (wrap-cookie-auth b2b/by-business-user-handler)]
         ["get-family-members-of-users" (wrap-cookie-auth b2b/get-family-members-of-users)]
         ["set-passwords-and-email" (wrap-cookie-auth b2b/set-passwords-and-email-handler)]
         ;; ["hello" (fn [req]
