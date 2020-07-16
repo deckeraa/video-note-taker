@@ -195,7 +195,8 @@
         {:data-cursor groups-cursor
          :card-fn (fn [group-cursor options]
                     [groups/group-card group-cursor options
-                     (partial load-connected-users selected-end-user-atom)])
+                     (partial load-connected-users selected-end-user-atom)
+                     true])
          :load-fn (fn [] ;; (db/put-endpoint-in-atom
                          ;;  "get-groups"
                          ;;  {:username @selected-end-user-atom}

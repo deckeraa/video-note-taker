@@ -61,10 +61,13 @@
 
 (defn group-card
   ([group-cursor options]
-   [group-card group-cursor options nil])
+   [group-card group-cursor options nil nil])
   ([group-cursor options connected-users-fn]
+   [group-card group-cursor options connected-users-fn nil])
+  ([group-cursor options connected-users-fn show-b2b-controls?]
    (let [users-cursor (reagent/cursor group-cursor [:users])
-         is-editing? (reagent/atom false)]
+         is-editing? (reagent/atom false)
+         b2b-auto-add-atom (reagent/atom false)]
      (fn []
        [:div
         (if @is-editing?
@@ -76,6 +79,11 @@
               (close-fn)
                                         ;             (db/post-to-endpoint "group" @group-cursor close-fn)
               )]
+           [:input {:id "b2b-auto-add"
+                    :type :checkbox
+                    :checked (:b2b-auto-add @group-cursor)
+                    :on-change #(swap! group-cursor assoc :b2b-auto-add (-> % .-target .-checked))}]
+           [:label {:for "b2b-auto-add"} "Auto-add this group to uploaded videos."]
            [pick-list
             {
              :data-cursor           users-cursor
@@ -88,12 +96,15 @@
                                                 (fn []
                                                   (listing/reload options)
                                                   (reset! is-editing? false))))
-             }]]
+             }]
+           ]
           [:div {:class "flex flex-columns items-center justify-between br3 shadow-4 pv3 pl3"}
            ;;          [:div (str @group-cursor)]
            [:div
             [:div {:class "f3"} (:name @group-cursor)]
-            [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]]
+            [:div {:class "f4"} (clojure.string/join " " (:users @group-cursor))]
+            (when (:b2b-auto-add @group-cursor)
+              [:div {:class "f4"} "Auto-adds to uploaded videos." ])]
            [:div {:class "flex flex-columns"}
             [svg/pencil {:class "mh3" :on-click #(reset! is-editing? true)} "grey" "18px"]
             (when (= (:created-by @group-cursor) (:name @atoms/user-cursor))
