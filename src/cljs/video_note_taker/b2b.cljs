@@ -49,70 +49,72 @@
         _ (db/put-endpoint-in-atom "by-business-user" {} all-users-atom)
         ]
     (fn []
-      [:div {:class "flex flex-wrap"}
-       [:div
-        [:h2 {} "Create a new end-user"]
-        [:div {:class ""}
-         [auth/user-name-picker username-atom validated-username-atom true]]
-        [:button {:class (str "br3 white bn pa3 "
-                              (if (empty? @validated-username-atom)
-                                "bg-light-green"
-                                "bg-green dim"))
-                  :on-click (fn []
-                              (let [username @validated-username-atom]
-                                (when (not (empty? username))
-                                  ;; user creation goes here
-                                  (db/post-to-endpoint
-                                   "create-user"
-                                   {:user username
-                                    :req-role "family_lead"}))))}
-         "Create new end-user"]]
-       [:div 
-        [:h2 {} "Or select an existing user"]
-        [:div {:class ""}
-         [:label {:for "inprogresselect"} "In progress:"]
-         [:select {:name "inprogresselect" :value @selected-end-user-atom
-                   :on-change (fn [e]
-                                (let [val (-> e .-target .-value)]
-                                  (reset! selected-end-user-atom val)
-                                  (doall (map (fn [reactive-fn] (reactive-fn val))
-                                              @selected-end-user-update-set)))) }
-          (map (fn [{:keys [_id key value]}]
-                 (let [username (xform-username _id)]
-                   ^{:key username}
-                   [:option {:value username} username]))
-               @in-progress-users-atom
-               )]]
-        [:div {:class ""}
-         [:label {:for "allusersselect"} "All users you've created:"]
-         [:select {:name "allusersselect" :value @selected-end-user-atom
-                   :on-change (fn [e]
-                                (let [val (-> e .-target .-value)]
-                                  (reset! selected-end-user-atom val)
-                                  (doall (map (fn [reactive-fn] (reactive-fn val))
-                                              @selected-end-user-update-set)))) }
-          (map (fn [{:keys [_id key value]}]
-                 (let [username (xform-username _id)]
-                   ^{:key username}
-                   [:option {:value username} username]))
-               @all-users-atom
-               )]]]
-       ;; [:div
-       ;;  [:h2 {} "Family Members"]
-       ;;  [:p @selected-end-user-atom]
-       ;;  [listing/listing {:data-cursor family-members
-       ;;                   ;; :load-fn (fn [atm] (db/put-endpoint-in-atom
-       ;;                   ;;                     "get-family-members-of-users"
-       ;;                   ;;                     {:family-lead @selected-end-user-atom}
-       ;;                   ;;                     family-members))
-       ;;                   ;;:card-fn (fn [foo] [:p "foo"])
-       ;;                   ;;:new-async-fn (fn [] "foo")
-       ;;                    }]
-       ;;  ]
-       ;; [:button {:on-click (fn [] (load-in-progress-users in-progress-users-atom))}
-       ;;  "Load in-progress-users"]
-       ;;[:p (str "the atom: " @in-progress-users-atom)]
-       ])))
+      [:div {:class "flex flex-center flex-column"}
+       [:div {:class "flex flex-wrap"}
+        [:div
+         [:h2 {} "Create a new end-user"]
+         [:div {:class ""}
+          [auth/user-name-picker username-atom validated-username-atom true]]
+         [:button {:class (str "br3 white bn pa3 "
+                               (if (empty? @validated-username-atom)
+                                 "bg-light-green"
+                                 "bg-green dim"))
+                   :on-click (fn []
+                               (let [username @validated-username-atom]
+                                 (when (not (empty? username))
+                                   ;; user creation goes here
+                                   (db/post-to-endpoint
+                                    "create-user"
+                                    {:user username
+                                     :req-role "family_lead"}))))}
+          "Create new end-user"]]
+        [:div 
+         [:h2 {} "Or select an existing user"]
+         [:div {:class ""}
+          [:label {:for "inprogresselect"} "In progress:"]
+          [:select {:name "inprogresselect" :value @selected-end-user-atom
+                    :on-change (fn [e]
+                                 (let [val (-> e .-target .-value)]
+                                   (reset! selected-end-user-atom val)
+                                   (doall (map (fn [reactive-fn] (reactive-fn val))
+                                               @selected-end-user-update-set)))) }
+           (map (fn [{:keys [_id key value]}]
+                  (let [username (xform-username _id)]
+                    ^{:key username}
+                    [:option {:value username} username]))
+                @in-progress-users-atom
+                )]]
+         [:div {:class ""}
+          [:label {:for "allusersselect"} "All users you've created:"]
+          [:select {:name "allusersselect" :value @selected-end-user-atom
+                    :on-change (fn [e]
+                                 (let [val (-> e .-target .-value)]
+                                   (reset! selected-end-user-atom val)
+                                   (doall (map (fn [reactive-fn] (reactive-fn val))
+                                               @selected-end-user-update-set)))) }
+           (map (fn [{:keys [_id key value]}]
+                  (let [username (xform-username _id)]
+                    ^{:key username}
+                    [:option {:value username} username]))
+                @all-users-atom
+                )]]]
+        ;; [:div
+        ;;  [:h2 {} "Family Members"]
+        ;;  [:p @selected-end-user-atom]
+        ;;  [listing/listing {:data-cursor family-members
+        ;;                   ;; :load-fn (fn [atm] (db/put-endpoint-in-atom
+        ;;                   ;;                     "get-family-members-of-users"
+        ;;                   ;;                     {:family-lead @selected-end-user-atom}
+        ;;                   ;;                     family-members))
+        ;;                   ;;:card-fn (fn [foo] [:p "foo"])
+        ;;                   ;;:new-async-fn (fn [] "foo")
+        ;;                    }]
+        ;;  ]
+        ;; [:button {:on-click (fn [] (load-in-progress-users in-progress-users-atom))}
+        ;;  "Load in-progress-users"]
+        ;;[:p (str "the atom: " @in-progress-users-atom)]
+        ]
+       [:h2 "You are managing videos for " @selected-end-user-atom "."]])))
 
 (defn family-member-listing-card [family-member-cursor options]
   (let [family-member @family-member-cursor]
@@ -146,8 +148,6 @@
     (fn []
       [:div
        [:h2 {} "Family Members"]
-       [:p @selected-end-user-atom]
-       [listing/listing family-listing-options]
        [:h3 {} "Create a new family member"]
        [auth/user-name-picker family-member-username family-member-validated-username]
        [:label {:for "email"} "Email: "]
@@ -168,6 +168,8 @@
                                    :metadata {:email @email-atom}}
                                   (fn [] (listing/reload family-listing-options))))))}
         "Create new end-user"]
+       [:h3 {} "Create a new family member"]
+       [listing/listing family-listing-options]
        ])))
 
 (defn load-connected-users
