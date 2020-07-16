@@ -115,7 +115,7 @@
     ^{:key (:_id family-member)}
     [:div {:class "flex items-center br3 shadow-4 ma2"}
      [:p {:class "ma2 mr4"} (xform-username (:_id family-member))]
-     [:p {:class "ma2"} (:email family-member)]
+     ;;[:p {:class "ma2"} (:email family-member)]
      [editable-field/editable-field
       (:email family-member)
       (fn [val done-fn]
