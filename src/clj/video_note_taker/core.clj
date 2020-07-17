@@ -378,6 +378,9 @@
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)
         params (assoc params :file-name new-short-filename)
+        uploaded-by-username (or (and (contains? (set roles) "business_user")
+                                      (get-in req [:headers "username"]))
+                                 username)
         auto-add-groups (edn/read-string (get-in req [:headers "auto-add-groups"]))
         ;;params (assoc params "Content-Disposition" (str "attachment; filename=\"" filename "\""))
         ]
@@ -394,14 +397,20 @@
         ;; put the video metadata into Couch
         (let [video-doc (db/put-doc
                          db access/put-hook-fn
-                         {:_id id
-                          :type "video"
-                          :display-name filename
-                          :file-name new-short-filename
-                          :users [username]
-                          :uploaded-by username
-                          :uploaded-datetime (.toString (new java.util.Date))
-                          :storage-location bucket}
+                         (merge
+                          {:_id id
+                           :type "video"
+                           :display-name filename
+                           :file-name new-short-filename
+                           :users [uploaded-by-username]
+                           :uploaded-by uploaded-by-username
+                           :uploaded-datetime (.toString (new java.util.Date))
+                           :storage-location bucket}
+                          (when (not (= username uploaded-by-username))
+                            {:b2b-user username})
+                          (when auto-add-groups
+                            {:groups auto-add-groups}
+                            ))
                          username
                          roles
                          (db/get-auth-cookie req)
