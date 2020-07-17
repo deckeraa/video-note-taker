@@ -208,7 +208,7 @@
                                    (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
                                    (load-video-listing (if username-atom @username-atom nil) video-listing-cursor))
                                  @username-atom
-                                 (mapv :_id (filter :b2b-auto-add @groups-cursor)) ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded
+                                 (mapv :_id (filter :b2b-auto-add @groups-cursor)) ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded ;; TODO is this right? or shoul we juse be passing @gropus-cursor since the actual filter works is done in upload-files-to-s3?
                                  )
                                 :local
                                 (uploads/upload-files
@@ -217,7 +217,9 @@
                                    (load-video-listing (if username-atom @username-atom nil) video-listing-cursor))
                                  (fn [body]
                                    (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)}))
-                                 (if username-atom @username-atom nil))
+                                 (if username-atom @username-atom nil)
+                                 (mapv :_id (filter :b2b-auto-add @groups-cursor)) ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded
+                                 )
                                 ;; default
                                 (println "Upload method has not been set."))
                               )}]]))))

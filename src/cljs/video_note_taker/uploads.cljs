@@ -101,8 +101,8 @@
 
 (defn upload-files
   ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
-   (upload-files uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn nil))
-  ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn username]
+   (upload-files uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn nil nil))
+  ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn username auto-add-groups]
    (when-let [files (file-objects file-input-ref-atom)]
      (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
        ;; Send the POST to the upload endpoint
@@ -116,7 +116,9 @@
                             :query-params (merge {:id upload-id}
                                                  (if username
                                                    {:username username}
-                                                   {}))
+                                                   {})
+                                                 (when auto-add-groups
+                                                   {:auto-add-groups auto-add-groups}))
                             }))]
              (if (= 200 (:status resp))
                (when success-fn (success-fn (:body resp) resp))

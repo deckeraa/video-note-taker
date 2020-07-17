@@ -280,20 +280,15 @@
       (json-response {:didnt-import @failed-imports :successfully-imported @success-imports-counter}))))
 
 (defn single-video-upload [req username roles {:keys [filename tempfile] :as file}]
-  (let [body {}
-        uploaded-by-username (or (and (contains? (set roles) "business_user")
+  (let [uploaded-by-username (or (and (contains? (set roles) "business_user")
                                       (get-in req [:params "username"]))
                                  username)
+        auto-add-groups (get-in req [:params "auto-add-groups"])
         id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)
         ]
     (info "filename: " filename)
-    (info "(contains? (set roles) \"business_user\")" (contains? (set roles) "business_user"))
-    (info "params" (type (get-in req [:params])) (get-in req [:params]))
-    (info (get-in req [:params "username"]))
-    (info (and (contains? (set roles) "business_user")
-               (get-in req [:params "username"])))
     (info "username: " username uploaded-by-username)
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy tempfile
@@ -313,7 +308,10 @@
                        :uploaded-datetime (.toString (new java.util.Date))}
                       (if (= uploaded-by-username username)
                         {}
-                        {:b2b-user username}))
+                        {:b2b-user username})
+                      (when auto-add-groups
+                        {:groups auto-add-groups})
+                      )
                      username
                      roles (db/get-auth-cookie req))]
       video-doc)))
@@ -384,9 +382,8 @@
         auto-add-groups (edn/read-string (get-in req [:headers "auto-add-groups"]))
         ;;params (assoc params "Content-Disposition" (str "attachment; filename=\"" filename "\""))
         ]
-    (warn "auto-add-groups: " auto-add-groups)
-    (warn "filename: " filename)
-    (warn "updated params: " params)
+    (info "auto-add-groups: " auto-add-groups)
+    (info "filename: " filename)
     ;; TODO GB limit check could go here
     (if (has-user-exceeded-limits? username)
       {:status 402 ; payment required
@@ -414,8 +411,7 @@
                          username
                          roles
                          (db/get-auth-cookie req)
-                         )]
-          (warn "Just created: " video-doc))
+                         )])
         ;; Do an exponential backoff to query Spaces to get the content length of the uploaded video.
         ;; Content length isn't available until the upload is entirely complete.
         (go-loop [retry 0]
