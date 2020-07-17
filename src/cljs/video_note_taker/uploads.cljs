@@ -65,10 +65,12 @@
 (defn uploads-this-session? [uploads]
   (not (empty? uploads)))
 
-(defn upload-files-to-s3 [uploads-cursor file-input-ref-atom success-fn]
+(defn upload-files-to-s3 [uploads-cursor file-input-ref-atom success-fn auto-add-groups]
+  (println "Received auto-add-groups: " auto-add-groups)
   (let [
         uploaded (chan)
         upload-queue (s3-pipe uploaded {:server-url (db/resolve-endpoint "spaces-upload")
+                                        :headers-fn (fn [] {:auto-add-groups (str auto-add-groups)})
                                         :progress-events? true})]
     (when-let [files (file-objects file-input-ref-atom)]
       (doall (map (fn [file]

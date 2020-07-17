@@ -165,7 +165,7 @@
 (defn upload-card
   ([video-listing-cursor]
    [upload-card nil video-listing-cursor])
-  ([username-atom video-listing-cursor]
+  ([username-atom video-listing-cursor groups-cursor]
    (let [file-input-ref-atom (reagent/atom nil)]
      (fn []
        [:div {:class "br3 shadow-4 mt3 flex"
@@ -206,11 +206,14 @@
                                  file-input-ref-atom
                                  (fn []
                                    (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
-                                   (load-video-listing (if username-atom @username-atom nil) video-listing-cursor)))
+                                   (load-video-listing (if username-atom @username-atom nil) video-listing-cursor))
+                                 (mapv :_id (filter :b2b-auto-add @groups-cursor)) ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded
+                                 )
                                 :local
                                 (uploads/upload-files
                                  atoms/uploads-cursor file-input-ref-atom "upload-video"
-                                 #(load-video-listing (if username-atom @username-atom nil) video-listing-cursor)
+                                 (fn []
+                                   (load-video-listing (if username-atom @username-atom nil) video-listing-cursor))
                                  (fn [body]
                                    (toaster-oven/add-toast "Couldn't upload video :(" svg/x "red" {:ok-fn (fn [] nil)}))
                                  (if username-atom @username-atom nil))

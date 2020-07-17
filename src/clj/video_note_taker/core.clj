@@ -370,14 +370,18 @@
 
 (defn spaces-upload-handler [req username roles]
   (info "s3 req:" req)
+  ;; (warn "extraction: " (get-in req [:headers "auto-add-groups"]))
+  ;; (warn (get-in req [:headers]))
   (let [params (keywordize-keys (:params req))
         filename (:file-name params)
         id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)
         params (assoc params :file-name new-short-filename)
+        auto-add-groups (edn/read-string (get-in req [:headers "auto-add-groups"]))
         ;;params (assoc params "Content-Disposition" (str "attachment; filename=\"" filename "\""))
         ]
+    (warn "auto-add-groups: " auto-add-groups)
     (warn "filename: " filename)
     (warn "updated params: " params)
     ;; TODO GB limit check could go here
@@ -401,7 +405,8 @@
                          username
                          roles
                          (db/get-auth-cookie req)
-                         )])
+                         )]
+          (warn "Just created: " video-doc))
         ;; Do an exponential backoff to query Spaces to get the content length of the uploaded video.
         ;; Content length isn't available until the upload is entirely complete.
         (go-loop [retry 0]

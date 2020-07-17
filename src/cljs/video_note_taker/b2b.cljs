@@ -307,7 +307,12 @@
       [:<>
        [listing/listing
         video-listing-options]
-       [video-listing/upload-card selected-end-user-atom data-cursor]]
+       [:p {} (str (mapv :_id (filter :b2b-auto-add @groups-cursor)))]
+       [video-listing/upload-card selected-end-user-atom data-cursor
+        groups-cursor
+        ;; (mapv :_id (filter :b2b-auto-add @groups-cursor))
+        ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded
+        ]]
       )))
 
 (defn activate-and-email [selected-end-user-atom selected-end-user-update-set]
