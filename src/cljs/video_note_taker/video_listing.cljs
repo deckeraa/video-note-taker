@@ -208,7 +208,7 @@
                                    (db/put-endpoint-in-atom "get-user-usage" {} atoms/usage-cursor)
                                    (load-video-listing (if username-atom @username-atom nil) video-listing-cursor))
                                  @username-atom
-                                 (mapv :_id (filter :b2b-auto-add @groups-cursor)) ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded ;; TODO is this right? or shoul we juse be passing @gropus-cursor since the actual filter works is done in upload-files-to-s3?
+                                 (mapv :_id (filter :b2b-auto-add @groups-cursor)) ;; pass the _ids of the groups that should be auto-added to videos as they get uploaded
                                  )
                                 :local
                                 (uploads/upload-files
