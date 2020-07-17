@@ -21,23 +21,33 @@
     ""))
 
 (defn load-in-progress-users
-  ([atm selected-user-atom selected-end-user-update-set]
+  ([atm selected-user-atom selected-end-user-update-set username-to-set]
    (db/post-to-endpoint "get-in-progress-users" {}
                         (fn [vals]
-                          (println "vals: " vals)
                           (reset! atm vals)
-                          (reset! selected-user-atom (xform-username (:_id (first vals))))
-                          (doall (map (fn [reactive-fn] (reactive-fn val))
-                                      @selected-end-user-update-set))
+                          (let [username (or username-to-set
+                                             (xform-username (:_id (first vals))))]
+                            (println "Resetting to " username username-to-set)
+                            (reset! selected-user-atom username)
+                            (doall (map (fn [reactive-fn] (reactive-fn username))
+                                        @selected-end-user-update-set)))
                           )))
   ([atm]
    (db/put-endpoint-in-atom "get-in-progress-users" {} atm)))
 
 (defn load-all-business-users-users
-  ([atm selected-user-atom selected-end-user-update-set]
-)
   ([atm]
-   (db/put-endpoint-in-atom "get-in-progress-users" {} atm)))
+   (db/put-endpoint-in-atom "by-business-user" {} atm)))
+
+(defn load-all-users [in-progress-atm all-users-atm selected-user-atom selected-end-user-update-set username-to-set-after-load]
+  (let [has-the-other-load-completed? (atom false)]
+    (load-in-progress-users in-progress-atm selected-user-atom selected-end-user-update-set username-to-set-after-load)
+    (load-all-business-users-users all-users-atm)))
+
+(defn set-selected-user! [selected-end-user-atom selected-end-user-update-set val]
+  (reset! selected-end-user-atom val)
+  (doall (map (fn [reactive-fn] (reactive-fn val))
+              @selected-end-user-update-set)))
 
 (defn new-end-user-creation [selected-end-user-atom selected-end-user-update-set]
   (let [username-atom (reagent/atom "")
@@ -45,8 +55,12 @@
         in-progress-users-atom (reagent/atom nil)
         all-users-atom (reagent/atom nil)
         family-members (reagent/atom nil)
-        _ (load-in-progress-users in-progress-users-atom selected-end-user-atom selected-end-user-update-set)
-        _ (db/put-endpoint-in-atom "by-business-user" {} all-users-atom)
+        ;; load-users (fn []
+        ;;              (load-in-progress-users in-progress-users-atom selected-end-user-atom selected-end-user-update-set nil)
+        ;;              (db/put-endpoint-in-atom "by-business-user" {} all-users-atom))
+        ;; _ (load-users)
+        load-users (partial load-all-users in-progress-users-atom all-users-atom selected-end-user-atom selected-end-user-update-set)
+        _ (load-users nil)
         ]
     (fn []
       [:div {:class "flex flex-center flex-column"}
@@ -63,10 +77,24 @@
                                (let [username @validated-username-atom]
                                  (when (not (empty? username))
                                    ;; user creation goes here
+                                   (toaster-oven/add-toast "Creating user" nil "green" nil)
                                    (db/post-to-endpoint
                                     "create-user"
                                     {:user username
-                                     :req-role "family_lead"}))))}
+                                     :req-role "family_lead"}
+                                    (fn []
+                                      (toaster-oven/add-toast "User created!" svg/check "green" nil)
+                                      (load-users username)
+                                      ))
+                                   (db/post-to-endpoint
+                                    "group"
+                                    {:name (str username "'s Family ")
+                                     :created-by username
+                                     :b2b-auto-add true}
+                                    (fn [doc]
+                                      (println "Created the group" doc)
+                                      ))
+                                   )))}
           "Create new end-user"]]
         [:div 
          [:h2 {} "Or select an existing user"]
@@ -206,7 +234,6 @@
                      "get-groups"
                      {:username @selected-end-user-atom}
                      (fn [resp]
-                       (println "Loaded from get-groups: " resp)
                        (reset! groups-cursor resp))))
          :new-async-fn (fn [call-with-new-data-fn]
                          ;; (let [uuid (uuid/uuid-string (uuid/make-random-uuid))]

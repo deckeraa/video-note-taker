@@ -28,12 +28,10 @@
   ((:load-fn options) (:data-cursor options)))
 
 (defn listing [{:keys [data-cursor card-fn load-fn new-fn new-async-fn add-caption new-card-location] :as options}]
-  (println "Rendering listing for the first time. load-fn: " load-fn)
   (when load-fn (do (println "running load-fn: " load-fn data-cursor)
                     (load-fn data-cursor)
                     (println "after load-fn: " data-cursor)))
   (fn []
-    (println "Rendering listing: " @data-cursor)
     [:div {:class "flex flex-column items-center"}
      ;;[:div {} (str @data-cursor)]
      [:ul {:class "list"}
