@@ -287,16 +287,22 @@
         id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)
+        file-loc (str "./resources/private/" new-short-filename)
         ]
     (info "filename: " filename)
     (info "username: " username uploaded-by-username)
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy tempfile
-             (io/file (str "./resources/private/" new-short-filename)))
+             (io/file file-loc))
     ;; delete the temp file -- this happens automatically by Ring, but takes an hour, so this frees up space sooner
     (io/delete-file tempfile)
     ;; put some video metadata into Couch
-    (let [video-doc (db/put-doc
+    (let [content-length (-> (sh "du" "--bytes" file-loc)
+                             (:out)
+                             (clojure.string/split #"\t")
+                             (first)
+                             (Integer.))
+          video-doc (db/put-doc
                      db access/put-hook-fn
                      (merge
                       {:_id id
@@ -304,6 +310,7 @@
                        :display-name filename
                        :file-name new-short-filename
                        :users [uploaded-by-username]
+                       :content-length content-length
                        :uploaded-by uploaded-by-username
                        :uploaded-datetime (.toString (new java.util.Date))}
                       (if (= uploaded-by-username username)
