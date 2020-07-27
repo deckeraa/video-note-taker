@@ -161,8 +161,8 @@
                                )))]
      ]))
 
-(defn family-member-listing [selected-end-user-atom selected-end-user-update-set]
-  (let [family-members (reagent/atom nil)
+(defn family-member-listing [selected-end-user-atom selected-end-user-update-set family-members]
+  (let [;;family-members (reagent/atom nil)
         family-listing-options {:data-cursor family-members
                                 :load-fn (fn [atm] (db/put-endpoint-in-atom
                                              "get-family-members-of-users"
@@ -286,15 +286,16 @@
                             ]
                            [:div {:class "ma2"} "Groups: "
                             [:ul {:class "list pl0"}
-                             (map (fn [user] ^{:key user} [:li user])
-                                  (map
-                                   (fn [group-id]
-                                     (:name
-                                      (first
-                                       (get
-                                        (group-by :_id @groups-cursor)
-                                        group-id))))
-                                   (:groups video)))]]
+                             (doall
+                              (map (fn [user] ^{:key user} [:li user])
+                                   (map
+                                    (fn [group-id]
+                                      (:name
+                                       (first
+                                        (get
+                                         (group-by :_id @groups-cursor)
+                                         group-id))))
+                                    (:groups video))))]]
                            (if @hover-atm
                              [svg/trash {:on-click
                                          (fn [e]
@@ -348,18 +349,23 @@
                         (db/post-to-endpoint
                          "set-passwords-and-email"
                          {:username @selected-end-user-atom}))}
-   "Send user activation email"])
+   "Pay & Send user activation email"])
 
-(defn pricing-widget [selected-end-user-atom]
+(defn pricing-widget [selected-end-user-atom family-members]
   (let [gbs (reagent/atom nil)]
     (db/put-endpoint-in-atom "get-user-usage" {:username @selected-end-user-atom} gbs)
     (fn []
-      [pricing/price-card (/ @gbs 1000000000) 2 1])))
+      [pricing/price-card
+       (/ @gbs 1000000000)
+       (+ 1 (count @family-members))
+       1 ;; TODO implement way to pick months
+       ])))
 
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom "")
         selected-end-user-update-set (reagent/atom #{})
         groups-cursor (reagent/atom [])
+        family-members (reagent/atom nil)
         ]
     (fn []
       [:div {}
@@ -372,7 +378,7 @@
        ;;                   (println "resp " resp))))} "load-connected-users"]
        [new-end-user-creation selected-end-user-atom selected-end-user-update-set]
        [:h1 {} "2) Create family members"]
-       [family-member-listing selected-end-user-atom selected-end-user-update-set]
+       [family-member-listing selected-end-user-atom selected-end-user-update-set family-members]
        [:h1 {} "3) Create a group to grant access to videos"]
        [group-listing groups-cursor selected-end-user-atom selected-end-user-update-set]
        ;;[:p {} (str (group-by :_id @groups-cursor))]
@@ -381,6 +387,7 @@
        [:h1 {} "5) Activate"]
        [:div {:class "flex items-center flex-wrap justify-center"}
         [activate-and-email selected-end-user-atom selected-end-user-update-set]
-        [pricing-widget selected-end-user-atom]]
+        [pricing-widget selected-end-user-atom family-members]]
+       ;;[:p {} (count @family-members) (str @family-members)]
        [:div {:style {:height "500px"}}] ;; TODO remove, this is just so the bottom doesn't keep scrolling off when I hot-reload
        ])))
