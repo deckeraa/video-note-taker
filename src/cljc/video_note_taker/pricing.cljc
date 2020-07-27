@@ -63,7 +63,7 @@
    (defn price-card [gbs family-members months]
      (let [
            calc (b2b-price-in-cents-calculations gbs family-members months)]
-       [:div {}
+       [:div {:class "ma2 pa2"}
         [:table {:style {:border-collapse :collapse}}
          [:tr [:td] [:td "Quantity"] [:td "Charge"]]
          [:tr {:class (when (nil? (:gb-fee calc)) "gray")}

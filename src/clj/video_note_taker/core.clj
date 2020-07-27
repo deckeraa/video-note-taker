@@ -365,7 +365,13 @@
 (defn get-user-usage-handler
   "Returns the user's storage usage in bytes"
   [req username roles]
-  (json-response (get-user-usage username)))
+  (let [body (get-body req)
+        passed-username (:username req)
+        username (if (and passed-username
+                          ((set roles) "business_user"))
+                   passed-username
+                   username)]
+    (json-response (get-user-usage username))))
 
 (defn has-user-exceeded-limits? [username]
   (let [limit (:gb-limit (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))

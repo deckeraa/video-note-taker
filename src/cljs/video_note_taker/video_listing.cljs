@@ -164,7 +164,7 @@
 
 (defn upload-card
   ([video-listing-cursor]
-   [upload-card nil video-listing-cursor])
+   [upload-card nil video-listing-cursor nil])
   ([username-atom video-listing-cursor groups-cursor]
    (let [file-input-ref-atom (reagent/atom nil)]
      (fn []
