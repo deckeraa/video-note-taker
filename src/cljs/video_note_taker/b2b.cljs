@@ -368,7 +368,7 @@
         family-members (reagent/atom nil)
         ]
     (fn []
-      [:div {}
+      [:div {:class "ma2"}
        [:h1 {} "1) Select a family lead"]
        ;; [:button {:on-click
        ;;           (fn [e]
