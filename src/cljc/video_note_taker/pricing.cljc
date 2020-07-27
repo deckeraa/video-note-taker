@@ -65,17 +65,18 @@
            calc (b2b-price-in-cents-calculations gbs family-members months)]
        [:div {:class "ma2 pa2"}
         [:table {:style {:border-collapse :collapse}}
-         [:tr [:td] [:td "Quantity"] [:td "Charge"]]
-         [:tr {:class (when (nil? (:gb-fee calc)) "gray")}
-          [:td gbs " GBs"]
-          [:td (:gb-buckets calc) " " (pluralize "unit" (:gb-buckets calc)) " of 50 GB"]
-          [:td (in-dollars (:gb-fee calc))]]
-         [:tr {:class (when (nil? (:family-fee calc)) "gray")}
-          [:td family-members " family members"]
-          [:td (:family-buckets calc) " " (pluralize "unit" (:family-buckets calc)) " of 15 family members"]
-          [:td (in-dollars (:family-fee calc))]]
-         [:tr [:td "Setup Fee"] [:td] [:td (in-dollars (:setup-fee calc))]]
-         [:tr {:style {:border-top "1px solid #ddd"}} [:td "Total"] [:td] [:td (in-dollars (:total calc))]]]
+         [:tbody
+          [:tr [:td] [:td "Quantity"] [:td "Charge"]]
+          [:tr {:class (when (nil? (:gb-fee calc)) "gray")}
+           [:td gbs " GBs"]
+           [:td (:gb-buckets calc) " " (pluralize "unit" (:gb-buckets calc)) " of 50 GB"]
+           [:td (in-dollars (:gb-fee calc))]]
+          [:tr {:class (when (nil? (:family-fee calc)) "gray")}
+           [:td family-members " family members"]
+           [:td (:family-buckets calc) " " (pluralize "unit" (:family-buckets calc)) " of 15 family members"]
+           [:td (in-dollars (:family-fee calc))]]
+          [:tr [:td "Setup Fee"] [:td] [:td (in-dollars (:setup-fee calc))]]
+          [:tr {:style {:border-top "1px solid #ddd"}} [:td "Total"] [:td] [:td (in-dollars (:total calc))]]]]
         ])))
 
 #?(:cljs

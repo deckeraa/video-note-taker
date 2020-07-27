@@ -350,10 +350,11 @@
                          {:username @selected-end-user-atom}))}
    "Send user activation email"])
 
-(defn pricing-widget []
-  (let [foo 1]
+(defn pricing-widget [selected-end-user-atom]
+  (let [gbs (reagent/atom nil)]
+    (db/put-endpoint-in-atom "get-user-usage" {:username @selected-end-user-atom} gbs)
     (fn []
-      [pricing/price-card 100 2 1])))
+      [pricing/price-card (/ @gbs 1000000000) 2 1])))
 
 (defn business-view []
   (let [selected-end-user-atom (reagent/atom "")
@@ -380,6 +381,6 @@
        [:h1 {} "5) Activate"]
        [:div {:class "flex items-center flex-wrap justify-center"}
         [activate-and-email selected-end-user-atom selected-end-user-update-set]
-        [pricing-widget]]
+        [pricing-widget selected-end-user-atom]]
        [:div {:style {:height "500px"}}] ;; TODO remove, this is just so the bottom doesn't keep scrolling off when I hot-reload
        ])))
