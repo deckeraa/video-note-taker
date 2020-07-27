@@ -11,7 +11,8 @@
    [video-note-taker.groups :as groups]
    [video-note-taker.video-listing :as video-listing]
    [video-note-taker.video-notes :as video-notes]
-   [video-note-taker.toaster-oven :as toaster-oven])
+   [video-note-taker.toaster-oven :as toaster-oven]
+   [video-note-taker.pricing :as pricing])
   (:require-macros
    [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -334,7 +335,6 @@
       [:<>
        [listing/listing
         video-listing-options]
-       [:p {} (str (mapv :_id (filter :b2b-auto-add @groups-cursor)))]
        [video-listing/upload-card selected-end-user-atom data-cursor
         groups-cursor
         ;; (mapv :_id (filter :b2b-auto-add @groups-cursor))
