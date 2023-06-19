@@ -4,6 +4,8 @@ This is a cljs app that I made in 2020. It provides a searchable interface for u
 It was built for a friend who had a large number of family videos on VHS that they were digitizing.
 So I turned it into a product, which I sunset in June 2023 (I chose to pursue software consulting instead of marketing this product, so it never got many users).
 
+Internet archive link: https://web.archive.org/web/20221024064857/https://familymemorystream.com/
+
 If using this code, please consider that the cljs ecosystem has changed substantially since 2020. You may want to consider using shadow-cljs and reframe.
 
 ## Development Mode
