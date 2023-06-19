@@ -8,11 +8,19 @@
 (defonce file-upload-progress-atom (atom {}))
 (defonce cookie-mapping-atom (atom {}))
 
+(defn get-upload-id-from-query-string [query-string]
+  (let [;; kv-vec will look something like ["username" "yankee1"] ["id" "a2c9effc-0a77-4be3-b02e-6cd1299b82ec"]
+        kv-vec (map (fn [kv]
+                      (clojure.string/split kv #"="))
+                    (clojure.string/split query-string #"&"))
+        upload-id-kv (first (filter #(= "id" (first %)) kv-vec))]
+    (second upload-id-kv)))
+
 (defn upload-progress-fn [db req bytes-read content-length item-count]
   (let [req (cookies-request req)
         cookie-value (get-in req [:cookies "AuthSession" :value])
         upload-id (when-let [query-string (:query-string req)]
-                    (second (clojure.string/split query-string #"="))) 
+                    (get-upload-id-from-query-string query-string))
         username (get (swap! cookie-mapping-atom
                              (fn [cookie-map]
                                (if (get cookie-map cookie-value) ; if the cookie is already mapped ...

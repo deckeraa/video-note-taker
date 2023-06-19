@@ -212,11 +212,11 @@
                                    )))}
         "Change password"]])))
 
-(defn user-name-picker [username-atom validated-username-atom]
+(defn user-name-picker [username-atom validated-username-atom place-label-below?]
   (let [check-ctr (reagent/atom 0)
         username-status (reagent/atom :none)]
     (fn []
-      [:div {:class "flex items-center flex-wrap flex-nowrap-ns" :style {:min-height "2rem"}}
+      [:div {:class (str "flex items-center flex-wrap flex-nowrap-ns" (when place-label-below? " flex-column")) :style {:min-height "2rem"}}
        [:div {:class "flex"}
         [:p {:class "ma1" :style {:width "5em"}} "Username: "]
         [:input {:type :text :value @username-atom
@@ -253,13 +253,14 @@
                                    :invalid
                                    (reset! username-status :invalid))))))))
                       350)))}]]
-       (case @username-status
-         :none      [:p {:class ""}      "Please pick a username"]
-         :checking  [:p {:class ""}      "Checking username...  "]
-         :taken     [:p {:class "red"}   "Username is taken.    "]
-         :invalid   [:p {:class "red"}   "Username can only contain letters, numbers, and underscores."]
-         :validated [:p {:class "green "} "Username is available."]
-         [:p {:class "" :style {:width "12em"}}])])))
+       (let [height (if place-label-below? {:style {:height "1em"}} {})]
+         (case @username-status
+           :none      [:p (merge {:class ""} height)      "Please pick a username"]
+           :checking  [:p (merge {:class ""} height)      "Checking username...  "]
+           :taken     [:p (merge {:class "red"} height)   "Username is taken.    "]
+           :invalid   [:p (merge {:class "red"} height)   "Username can only contain letters, numbers, and underscores."]
+           :validated [:p (merge {:class "green "} height) "Username is available."]
+           [:p {:class "" :style (merge {:width "12em"} (if place-label-below? {} {}) {:height "1em"})}]))])))
 
 (defn password-picker
   ([password-atom]

@@ -7,12 +7,16 @@
               spy get-env]]
    [video-note-taker.db :as db :refer [db]]
    [video-note-taker.access :as access]
-   [video-note-taker.util :as util]))
+   [video-note-taker.util :as util :refer [get-body]]))
 
 (defn get-groups-handler [req username roles]
-  (let [groups (db/get-view db access/get-hook-fn
+  (let [body (get-body req)
+        username-for-view (if (and (contains? (set roles) "business_user") (:username body))
+                            (:username body)
+                            username)
+        groups (db/get-view db access/get-hook-fn
                             "groups" "by_user"
-                            {:key username :include_docs true}
+                            {:key username-for-view :include_docs true}
                             username roles (db/get-auth-cookie req))]
     (json-response (vec (set groups)))))
 
@@ -58,7 +62,8 @@
         saved-group (db/get-doc db access/get-hook-fn (:_id req-group)
                                 username roles (db/get-auth-cookie req))]
     (if saved-group
-      (if (= (:created-by saved-group) username)
+      ;; Update an existing group -- this involves updating the denormalized :users on video
+      (if (access/user-can-edit-group username roles saved-group)
         (let [updated-group (db/put-doc db access/put-hook-fn req-group
                                         username roles (db/get-auth-cookie req))
               videos-query {"selector"
@@ -74,5 +79,6 @@
           (doall (map denormalize-users-on-video affected-videos))
           (json-response updated-group))
         (util/not-authorized-response))
-      (json-response (db/put-doc db access/put-hook-fn (merge req-group {:type "group" :created-by username :users []})
+      ;; Create a new group
+      (json-response (db/put-doc db access/put-hook-fn (merge req-group {:type "group" :users []})
                                  username roles (db/get-auth-cookie req))))))

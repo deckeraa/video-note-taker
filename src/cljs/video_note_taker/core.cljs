@@ -20,7 +20,8 @@
    [video-note-taker.video :as video :refer [video]]
    [video-note-taker.search :as search]
    [video-note-taker.uploads :as uploads]
-   [video-note-taker.landing-page])
+   [video-note-taker.landing-page]
+   [video-note-taker.b2b :as b2b])
   (:require-macros
    [devcards.core :refer [defcard deftest]]
    [cljs.core.async.macros :refer [go go-loop]]))
@@ -78,10 +79,12 @@
           [:div {:class "flex flex-column items-center"}
            [header atoms/screen-cursor atoms/video-cursor]
            (when (= :video-selection (peek @atoms/screen-cursor))
-             [:div {:class "mh3"}
-              [search/search atoms/video-cursor atoms/screen-cursor]
-              [:h2 {:class "mh3"} "Videos"]
-              [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor]] ;; TODO that's a lot of cursors. Maybe decouple this a bit.
+             (if (contains? (set (get-in @atoms/user-cursor [:roles])) "business_user")
+               [b2b/business-view]
+               [:div {:class "mh3"}
+                [search/search atoms/video-cursor atoms/screen-cursor]
+                [:h2 {:class "mh3"} "Videos"]
+                [listing/video-listing atoms/video-listing-cursor atoms/video-cursor atoms/notes-cursor atoms/screen-cursor]]) ;; TODO that's a lot of cursors. Maybe decouple this a bit.
              )
            (when (= :video (peek @atoms/screen-cursor))
              [:div {:class "flex flex-column items-center"}

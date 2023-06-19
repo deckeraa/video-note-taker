@@ -44,22 +44,30 @@
                                         ; Are they listed in the :users key?
        (not (empty? (filter #(= username %) (:users video))))
                                         ; Is one of the groups of which they are part listed in the :groups key?
-       (not (empty? (clojure.set/intersection (set groups) (set (:groups video)))))))))
+       (not (empty? (clojure.set/intersection (set groups) (set (:groups video)))))
+       (= (:b2b-user video) username)))))
 
 (defn user-has-access-to-note [username note]
   (contains? (set (:users note)) username))
 
-(defn user-has-access-to-group [username group]
+(defn user-has-access-to-group [username roles group]
   (or
    (= username (:created-by group))
-   (contains? (set (:users group)) username)))
+   (contains? (set (:users group)) username)
+   (and (= (:b2b-user group) username)
+        (contains? (set roles) "business_user"))))
+
+(defn user-can-edit-group [username roles group]
+  (or
+   (= username (:created-by group))
+   (and (= (:b2b-user group) username)
+        (contains? (set roles) "business_user"))))
 
 (defn is-video-stored-in-spaces? [video]
   (and (not (nil? (:storage-location video)))
        (not (=    (:storage-location video) "local"))))
 
 (defn insert-presigned-url-into-video [video]
-  (warn "is-video-stored-in-spaces?" (is-video-stored-in-spaces? video) video)
   (if (is-video-stored-in-spaces? video)
     (assoc video
            :presigned-url
@@ -78,14 +86,13 @@
            :local)))
 
 (defn get-hook-fn [real-doc username roles]
-  (warn "get-hook-fn " real-doc)
   (case (:type real-doc)
     "video" (if (user-has-access-to-video username real-doc)
               (-> real-doc
                   (insert-presigned-url-into-video))
               nil)
     "note"  (if (user-has-access-to-note  username real-doc) real-doc nil)
-    "group" (if (user-has-access-to-group username real-doc) real-doc nil)
+    "group" (if (user-has-access-to-group username roles real-doc) real-doc nil)
     "settings" (insert-upload-setting real-doc)
     "user" (select-keys real-doc [:_id :_rev :name :roles :type :gb-limit :user-limit])
     nil))
@@ -138,7 +145,8 @@
 (defn audit-video-key-users
   [real-doc req-doc username roles users]
   ;;pull out any users that the user isn't allowed to share with. Only do this for non-admins.
-  (if (contains? (set roles) "_admin")
+  (if (or (contains? (set roles) "_admin")
+          (= username (:b2b-user real-doc)))
       req-doc
       (update-in req-doc [:users] (fn [req-users]
                                     (vec (update-users (:users real-doc) req-users users username roles))
@@ -219,24 +227,55 @@
       (audit-video-key-display-name real-doc $ username roles)
       (audit-video-key-users real-doc $ username roles users))))
 
+(defn audit-b2b-user-hook [real-doc req-doc username roles]
+  (if (= (:created-by req-doc) username)
+    req-doc
+    (if (contains? (set roles) "business_user")
+      (assoc req-doc :b2b-user username)
+      (assoc req-doc :created-by username))))
+
+(defn group-put-hook [real-doc req-doc username roles]
+  (as-> req-doc $
+    (audit-b2b-user-hook real-doc $ username roles)))
+
 (defn put-hook-fn
   "When a CouchDB call is made using a db.clj function that uses the hooks,
   put-hook-fn will be called so that you can modify the document (for example, adding timestamps)
   before it gets sent to CouchDB. Returns nil if the user doesn't have permission to modify the doc."
   [doc username roles]
+  (let [real-doc (and (:_id doc)
+                      (try
+                        (db/couch-request db :get (:_id doc) {} {} nil)
+                        (catch Exception e
+                          {})))]
+    (if real-doc
+      ;; Case 1: It's a real doc:
+      (case (:type real-doc)
+        "note" (note-put-hook real-doc doc username roles)
+        "video" (video-put-hook real-doc doc username roles)
+        doc)
+      ;; Case 2: It's a new doc:
+      (case (:type doc)
+        "group" (group-put-hook real-doc doc username roles)
+        doc))))
+
+(defn users-put-hook-fn [doc username roles]
+  (println "About to look up doc: " (:_id doc) doc)
   (let [real-doc (try
-                   (db/couch-request db :get (:_id doc) {} {} nil)
+                   (db/couch-request users-db :get (:_id doc) {} {} nil)
                    (catch Exception e
                      {}))]
-    ;; TODO make sure types match
-    (case (:type real-doc)
-      "note" (note-put-hook real-doc doc username roles)
-      "video" (video-put-hook real-doc doc username roles)
-      doc)))
+    (println "users-put-hook-fn: " real-doc)
+    (println "new doc: " (merge real-doc doc {:_rev (:_rev real-doc)}))
+    (if (:b2b-user real-doc)
+      (merge real-doc doc {:_rev (:_rev real-doc)})
+      nil)))
 
 (defn delete-hook-fn [real-doc req-doc username roles]
   (case (:type req-doc)
-    "video" (= username (:uploaded-by real-doc))
+    "video" (or
+             (= username (:uploaded-by real-doc))
+             (= username (:b2b-user real-doc)))
     "note"  (or (= (:created-by real-doc) username)
                 (access-shared/can-edit-others-notes roles)) 
     "group" (= username (:created-by real-doc))

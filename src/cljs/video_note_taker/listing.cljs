@@ -28,32 +28,34 @@
   ((:load-fn options) (:data-cursor options)))
 
 (defn listing [{:keys [data-cursor card-fn load-fn new-fn new-async-fn add-caption new-card-location] :as options}]
-  (when load-fn (load-fn data-cursor)
-        (fn []
-          [:div {:class "flex flex-column items-center"}
-           ;;[:div {} (str @data-cursor)]
-           [:ul {:class "list"}
-            (doall
-             (map (fn [idx]
-                    (let [item-cursor (reagent/cursor data-cursor [idx])
-                          id (:_id @item-cursor)]
-                      ^{:key id}
-                      [:li {} [card-fn item-cursor options;; (partial remove-item-from-listing
-                                                   ;;          data-cursor
-                                                   ;;          id)
-                               ]]))
-                  (range 0 (count @data-cursor))))]
-           (when (or new-fn new-async-fn)
-             [:button {:class "bn br3 white bg-green dim pa2"
-                       :on-click
-                       (fn [evt]
-;                         (new-async-fn (partial add-item data-cursor new-card-location))
-                         (if new-async-fn
-                           (new-async-fn (partial add-item data-cursor new-card-location))
-                           (add-item data-cursor new-card-location (new-fn)))
-                         )}
-              (or add-caption "+ Add")])
-           ])))
+  (when load-fn (do (println "running load-fn: " load-fn data-cursor)
+                    (load-fn data-cursor)
+                    (println "after load-fn: " data-cursor)))
+  (fn []
+    [:div {:class "flex flex-column items-center"}
+     ;;[:div {} (str @data-cursor)]
+     [:ul {:class "list"}
+      (doall
+       (map (fn [idx]
+              (let [item-cursor (reagent/cursor data-cursor [idx])
+                    id (:_id @item-cursor)]
+                ^{:key id}
+                [:li {} [card-fn item-cursor options;; (partial remove-item-from-listing
+                         ;;          data-cursor
+                         ;;          id)
+                         ]]))
+            (range 0 (count @data-cursor))))]
+     (when (or new-fn new-async-fn)
+       [:button {:class "bn br3 white bg-green dim pa2"
+                 :on-click
+                 (fn [evt]
+                                        ;                         (new-async-fn (partial add-item data-cursor new-card-location))
+                   (if new-async-fn
+                     (new-async-fn (partial add-item data-cursor new-card-location))
+                     (add-item data-cursor new-card-location (new-fn)))
+                   )}
+        (or add-caption "+ Add")])
+     ]))
 
 (defcard-rg listing-devcard
   (let [data-cursor (reagent/atom [])

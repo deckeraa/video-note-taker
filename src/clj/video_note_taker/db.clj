@@ -74,6 +74,7 @@
               real-doc
               nil)))
         (catch Exception e
+          (println "Exception in get-doc: " db id e)
           {}))))
 
 (defn get-doc-handler [db get-hook-fn req username roles]
@@ -135,7 +136,12 @@
 (defn put-doc-handler [db put-hook-fn req username roles]
   (let [doc (get-body req)
         cookie (get-auth-cookie req)]
-    (json-response (put-doc db put-hook-fn doc username roles cookie))))
+    (json-response (put-doc db put-hook-fn doc username roles))))
+
+;; (defn put-user-doc-handler [db put-hook-fn req username roles]
+;;   (let [doc (get-body req)
+;;         cookie (get-auth-cookie req)]
+;;     (json-response (put-doc users-db put-hook-fn doc username roles cookie))))
 
 (defn delete-doc [db delete-hook-fn doc username roles auth-cookie]
   (let [real-doc (couch-request db :get (:_id doc) {} {} auth-cookie)]
@@ -258,6 +264,12 @@
                              if(doc[\"created-by\"]){
                                 emit(doc[\"created-by\"],doc._id);
                              }
+                    }"}
+                   :in_progress_end_users_by_business_user
+                   {:map "function (doc) {
+                              if(doc.type === \"user\" && doc.password === null && doc[\"created-by\"] === doc[\"b2b-user\"]) {
+                                 emit(doc[\"b2b-user\"], doc._id);
+                              }
                     }"}}
                   :language "javascript"}
                  username roles)

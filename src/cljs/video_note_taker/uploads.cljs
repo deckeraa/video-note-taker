@@ -65,10 +65,13 @@
 (defn uploads-this-session? [uploads]
   (not (empty? uploads)))
 
-(defn upload-files-to-s3 [uploads-cursor file-input-ref-atom success-fn]
+(defn upload-files-to-s3 [uploads-cursor file-input-ref-atom success-fn username auto-add-groups]
+  (println "Received auto-add-groups: " auto-add-groups)
   (let [
         uploaded (chan)
         upload-queue (s3-pipe uploaded {:server-url (db/resolve-endpoint "spaces-upload")
+                                        :headers-fn (fn [] (merge {:auto-add-groups (str auto-add-groups)}
+                                                                  (when username {:username username})))
                                         :progress-events? true})]
     (when-let [files (file-objects file-input-ref-atom)]
       (doall (map (fn [file]
@@ -96,27 +99,35 @@
                           (recur)))))
                   files)))))
 
-(defn upload-files [uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
-  (when-let [files (file-objects file-input-ref-atom)]
-    (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
-      ;; Send the POST to the upload endpoint
-      (go (let [resp (<! (http/post
-                          (db/resolve-endpoint upload-endpoint)
-                          {:multipart-params
-                           (mapv (fn [file] ["file" file]) files)          
-                           ;; (vec (map (fn [idx]
-                           ;;             ["file" (aget (.-files file-input) idx)])
-                           ;;           (range (alength (.-files file-input)))))
-                           :query-params {:id upload-id}
-                           }))]
-            (if (= 200 (:status resp))
-              (when success-fn (success-fn (:body resp) resp))
-              (when fail-fn    (fail-fn    (:body resp) resp)))
-            ;; nothing to do here, since file upload progress is tracked separately
-            ))
-      ;; Add in this upload to the uploads cursor.
-      ;; This enables the file upload progress tracker to 
-      (swap! uploads-cursor assoc upload-id (cursor-entry upload-id files :local)))))
+(defn upload-files
+  ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn]
+   (upload-files uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn nil nil))
+  ([uploads-cursor file-input-ref-atom upload-endpoint success-fn fail-fn username auto-add-groups]
+   (when-let [files (file-objects file-input-ref-atom)]
+     (let [upload-id (uuid/uuid-string (uuid/make-random-uuid))]
+       ;; Send the POST to the upload endpoint
+       (go (let [resp (<! (http/post
+                           (db/resolve-endpoint upload-endpoint)
+                           {:multipart-params
+                            (mapv (fn [file] ["file" file]) files)          
+                            ;; (vec (map (fn [idx]
+                            ;;             ["file" (aget (.-files file-input) idx)])
+                            ;;           (range (alength (.-files file-input)))))
+                            :query-params (merge {:id upload-id}
+                                                 (if username
+                                                   {:username username}
+                                                   {})
+                                                 (when auto-add-groups
+                                                   {:auto-add-groups auto-add-groups}))
+                            }))]
+             (if (= 200 (:status resp))
+               (when success-fn (success-fn (:body resp) resp))
+               (when fail-fn    (fail-fn    (:body resp) resp)))
+             ;; nothing to do here, since file upload progress is tracked separately
+             ))
+       ;; Add in this upload to the uploads cursor.
+       ;; This enables the file upload progress tracker to 
+       (swap! uploads-cursor assoc upload-id (cursor-entry upload-id files :local))))))
 
 (defn upload-progress-updater
   ([uploads-cursor repeat?]
@@ -132,6 +143,7 @@
                                        (db/resolve-endpoint "get-upload-progress")
                                        {:query-params {:id upload-id}}))
                              updated-progress (:body resp)]
+                         ;;(println "upload-progress-updater: " resp)
                          (if (= 200 (:status resp))
                            (do
                              (swap! uploads-cursor assoc-in [upload-id :progress] updated-progress))                         

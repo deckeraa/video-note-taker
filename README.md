@@ -1,6 +1,10 @@
 # video-note-taker
 
-A [reagent](https://github.com/reagent-project/reagent) application designed to ... well, that part is up to you.
+This is a cljs app that I made in 2020. It provides a searchable interface for uploading and viewing videos.
+It was built for a friend who had a large number of family videos on VHS that they were digitizing.
+So I turned it into a product, which I sunset in June 2023 (I chose to pursue software consulting instead of marketing this product, so it never got many users).
+
+If using this code, please consider that the cljs ecosystem has changed substantially since 2020. You may want to consider using shadow-cljs and reframe.
 
 ## Development Mode
 

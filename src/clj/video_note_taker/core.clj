@@ -53,6 +53,7 @@
    [clj-time.core :as time]
    [clj-time.coerce :as coerce]
    [video-note-taker.stripe-handlers :as stripe-handlers]
+   [video-note-taker.b2b :as b2b]
    [clojure.core.async :as async :refer [<! go go-loop timeout]]
    [clojure.math.numeric-tower :as math :refer [expt]]
    )
@@ -67,7 +68,7 @@
        :syslog-options (byte 0x03)
        :facility :log-user})}}))
 
-(timbre/set-level! :debug)
+(timbre/set-level! :warn)
 
 (def bucket (System/getenv "VNT_BUCKET"))
 (def access-key (System/getenv "AWS_ACCESS_KEY_ID"))
@@ -117,7 +118,9 @@
   (vec (map :id (db/get-view db nil "groups" "by_user_in_group" {:key username} nil nil nil))))
 
 (defn get-video-listing-handler [req username roles]
-  (let [groups (load-groups-for-user username)
+  (let [body (get-body req)
+        username (or (:username body) username)
+        groups (load-groups-for-user username)
         query {"selector"
                {"$and" [{"type"
                          {"$eq" "video"}}
@@ -277,26 +280,45 @@
       (json-response {:didnt-import @failed-imports :successfully-imported @success-imports-counter}))))
 
 (defn single-video-upload [req username roles {:keys [filename tempfile] :as file}]
-  (let [id (uuid/to-string (uuid/v4))
+  (let [uploaded-by-username (or (and (contains? (set roles) "business_user")
+                                      (get-in req [:params "username"]))
+                                 username)
+        auto-add-groups (get-in req [:params "auto-add-groups"])
+        id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
-        new-short-filename (str id "." file-ext)]
+        new-short-filename (str id "." file-ext)
+        file-loc (str "./resources/private/" new-short-filename)
+        ]
     (info "filename: " filename)
-    (info "username " username)
+    (info "username: " username uploaded-by-username)
     ;; copy the file over -- it's going to get renamed to a uuid to avoid conflicts
     (io/copy tempfile
-             (io/file (str "./resources/private/" new-short-filename)))
+             (io/file file-loc))
     ;; delete the temp file -- this happens automatically by Ring, but takes an hour, so this frees up space sooner
     (io/delete-file tempfile)
     ;; put some video metadata into Couch
-    (let [video-doc (db/put-doc
+    (let [content-length (-> (sh "du" "--bytes" file-loc)
+                             (:out)
+                             (clojure.string/split #"\t")
+                             (first)
+                             (Integer.))
+          video-doc (db/put-doc
                      db access/put-hook-fn
-                     {:_id id
-                      :type "video"
-                      :display-name filename
-                      :file-name new-short-filename
-                      :users [username]
-                      :uploaded-by username
-                      :uploaded-datetime (.toString (new java.util.Date))}
+                     (merge
+                      {:_id id
+                       :type "video"
+                       :display-name filename
+                       :file-name new-short-filename
+                       :users [uploaded-by-username]
+                       :content-length content-length
+                       :uploaded-by uploaded-by-username
+                       :uploaded-datetime (.toString (new java.util.Date))}
+                      (if (= uploaded-by-username username)
+                        {}
+                        {:b2b-user username})
+                      (when auto-add-groups
+                        {:groups auto-add-groups})
+                      )
                      username
                      roles (db/get-auth-cookie req))]
       video-doc)))
@@ -322,6 +344,7 @@
   (let [file-array (if (vector? (get-in req [:params "file"]))
                      (get-in req [:params "file"])
                      [(get-in req [:params "file"])])]
+    (info "(:params req)" (:params req))
     (info "file-array: " (remove nil? file-array) file-array)
     (json-response (map (partial single-video-upload req username roles) (remove nil? file-array)))))
 
@@ -342,7 +365,13 @@
 (defn get-user-usage-handler
   "Returns the user's storage usage in bytes"
   [req username roles]
-  (json-response (get-user-usage username)))
+  (let [body (get-body req)
+        passed-username (:username req)
+        username (if (and passed-username
+                          ((set roles) "business_user"))
+                   passed-username
+                   username)]
+    (json-response (get-user-usage username))))
 
 (defn has-user-exceeded-limits? [username]
   (let [limit (:gb-limit (db/get-doc users-db nil (str "org.couchdb.user:" username) nil nil nil))
@@ -352,16 +381,22 @@
 
 (defn spaces-upload-handler [req username roles]
   (info "s3 req:" req)
+  ;; (warn "extraction: " (get-in req [:headers "auto-add-groups"]))
+  ;; (warn (get-in req [:headers]))
   (let [params (keywordize-keys (:params req))
         filename (:file-name params)
         id (uuid/to-string (uuid/v4))
         file-ext (last (clojure.string/split filename #"\."))
         new-short-filename (str id "." file-ext)
         params (assoc params :file-name new-short-filename)
+        uploaded-by-username (or (and (contains? (set roles) "business_user")
+                                      (get-in req [:headers "username"]))
+                                 username)
+        auto-add-groups (edn/read-string (get-in req [:headers "auto-add-groups"]))
         ;;params (assoc params "Content-Disposition" (str "attachment; filename=\"" filename "\""))
         ]
-    (warn "filename: " filename)
-    (warn "updated params: " params)
+    (info "auto-add-groups: " auto-add-groups)
+    (info "filename: " filename)
     ;; TODO GB limit check could go here
     (if (has-user-exceeded-limits? username)
       {:status 402 ; payment required
@@ -372,14 +407,20 @@
         ;; put the video metadata into Couch
         (let [video-doc (db/put-doc
                          db access/put-hook-fn
-                         {:_id id
-                          :type "video"
-                          :display-name filename
-                          :file-name new-short-filename
-                          :users [username]
-                          :uploaded-by username
-                          :uploaded-datetime (.toString (new java.util.Date))
-                          :storage-location bucket}
+                         (merge
+                          {:_id id
+                           :type "video"
+                           :display-name filename
+                           :file-name new-short-filename
+                           :users [uploaded-by-username]
+                           :uploaded-by uploaded-by-username
+                           :uploaded-datetime (.toString (new java.util.Date))
+                           :storage-location bucket}
+                          (when (not (= username uploaded-by-username))
+                            {:b2b-user username})
+                          (when auto-add-groups
+                            {:groups auto-add-groups}
+                            ))
                          username
                          roles
                          (db/get-auth-cookie req)
@@ -496,6 +537,7 @@
 
 (defn update-video-permissions-handler [req username roles]
   (try
+    (println "Running update-video-permissions-handler" username roles)
     (let [video (get-body req)
           current-video (get-doc (:_id video) nil nil nil)
           listed-users (set (:users video))
@@ -525,7 +567,12 @@
       (error "update-video-permissions-handler e: " e))))
 
 (defn get-connected-users-handler [req username roles]
-  (json-response (access/get-connected-users username roles))
+  (println "get-connected-users-handler req: " req)
+  (let [body (get-body req)
+        username (if (and (contains? (set roles) "business_user") (:username body))
+                   (:username body)
+                   username)]
+    (json-response (access/get-connected-users username roles)))
   ;; TODO implement an actual connected-users concept -- right now this returns all users.
   ;; (if (contains? (set roles) "_admin")
   ;;   ;; admins get all users
@@ -564,8 +611,23 @@
       (if (< (count users) (:user-limit user-doc))
         (let [params (get-body req)
               name  (:user params)
-              pass  (:pass params)]
-          (json-response (auth/create-user name pass ["family_member"] {:created-by username})))
+              pass  (:pass params)
+              business-user? (contains? (set roles) "business_user")
+              req-role (:req-role params)
+              family-lead (:family-lead params)
+              metadata (dissoc (or (:metadata params) {}) :password)]
+          (json-response (auth/create-user
+                          name pass
+                          (if business-user?
+                            (if (= req-role "family_lead")
+                              ["family_lead"]
+                              ["family_member"])
+                            ["family_member"])
+                          (merge metadata
+                                 (if business-user?
+                                   {:created-by (or family-lead username)
+                                    :b2b-user username}
+                                   {:created-by username})))))
         (not-authorized-response)))
     (not-authorized-response)))
 
@@ -592,6 +654,7 @@
         ["get-doc" (wrap-cookie-auth (partial db/get-doc-handler db access/get-hook-fn))]
         ["bulk-get-doc" (wrap-cookie-auth (partial db/bulk-get-doc-handler db access/get-hook-fn))]
         ["put-doc" (wrap-cookie-auth (partial db/put-doc-handler db access/put-hook-fn))]
+        ["put-user-doc" (wrap-cookie-auth (partial db/put-doc-handler users-db access/users-put-hook-fn))]
         ["get-notes" (wrap-cookie-auth get-notes-handler)]
         ["create-note" (wrap-cookie-auth create-note-handler)]
         ["delete-doc" (wrap-cookie-auth (partial db/delete-doc-handler db access/delete-hook-fn))]
@@ -627,6 +690,10 @@
         ["dec-subscription" (wrap-cookie-auth stripe-handlers/dec-subscription-handler)]
         ["cancel-subscription" (wrap-cookie-auth stripe-handlers/cancel-subscription-handler)]
         ["report-error" (wrap-cookie-auth report-error-handler)]
+        ["get-in-progress-users" (wrap-cookie-auth b2b/get-in-progress-users-handler)]
+        ["by-business-user" (wrap-cookie-auth b2b/by-business-user-handler)]
+        ["get-family-members-of-users" (wrap-cookie-auth b2b/get-family-members-of-users)]
+        ["set-passwords-and-email" (wrap-cookie-auth b2b/set-passwords-and-email-handler)]
         ;; ["hello" (fn [req]
         ;;            (let [id "62df5602-91c5-4b7e-964a-29379190483f.mp3"
         ;;                  metadata (s3/get-object-metadata :bucket-name "vnt-spaces-0" :key id)]
